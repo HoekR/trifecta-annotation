@@ -23,7 +23,7 @@ This project uses the **DH data template**: `data_manifest.toml` + `data_io/` fo
 
 | Logical name | Phase | Description |
 |--------------|-------|-------------|
-| `food_terms` | frozen | `Food_terms.csv` from preservare |
+| `food_terms` | frozen | `Food_terms.csv` on warm tier (`/Volumes/2tb disk/reference/`) |
 | `voc_recipes` | frozen | VOC recipe corpus |
 | `recipe_web` | frozen | 20th-c. newspaper recipes |
 | `kwic_gold_review` | semi | KWIC calibration pool |

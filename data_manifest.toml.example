@@ -22,8 +22,8 @@ mount_check = "/Volumes/your-scratch-drive"
 # --- ontology (sibling repo, optional) ---
 
 [datasets.food_terms]
-tier = "hot"
-path = "recepten-preservare-analysis/source_data/Food_terms.csv"
+tier = "warm"
+path = "reference/Food_terms.csv"
 phase = "frozen"
 description = "TRIFECTA food ontology"
 parent = ""

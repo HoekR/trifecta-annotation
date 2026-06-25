@@ -27,6 +27,8 @@ kwic = [
     "hist-text-utils[llm] @ git+https://github.com/HoekR/hist-text-utils.git",
 ]
 parquet = ["pyarrow>=14.0"]
+gold-ui = ["flask>=3.0"]
+gijsbert = ["torch>=2.0", "transformers>=4.40", "scikit-learn>=1.4"]
 dev = [
     "pytest>=7.0",
     "ruff>=0.1.0",
@@ -37,9 +39,10 @@ trifecta-classify = "trifecta_annotation.cli:main_classify"
 trifecta-annotate = "trifecta_annotation.cli:main_annotate"
 trifecta-batch = "trifecta_annotation.cli:main_batch"
 trifecta-eval = "trifecta_annotation.cli:main_eval"
+trifecta-gold-ui = "gold_labeller.app:main"
 
 [tool.hatch.build.targets.wheel]
-packages = ["trifecta_annotation", "data_io"]
+packages = ["trifecta_annotation", "data_io", "gold_labeller"]
 
 [tool.hatch.metadata]
 allow-direct-references = true

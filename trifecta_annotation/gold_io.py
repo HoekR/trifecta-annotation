@@ -16,6 +16,7 @@ from trifecta_annotation.schemas import (
     FrameClassification,
     GoldAnnotation,
     KwicInput,
+    TrifectaAnnotation,
     TrifectaFrame,
 )
 
@@ -187,6 +188,63 @@ def _drop_from_step_a(step_a: EntityValidation) -> tuple[bool, str | None]:
     if not step_a.is_food_entity:
         return True, "not_food_entity"
     return False, None
+
+
+def annotation_to_labelling_row(
+    annotation: TrifectaAnnotation | GoldAnnotation,
+    *,
+    notes: str = "",
+    labelled: bool = True,
+) -> dict[str, Any]:
+    """Flatten a pipeline or gold annotation into a gold_labelling CSV row."""
+    if isinstance(annotation, TrifectaAnnotation):
+        gold = GoldAnnotation.model_validate(
+            {**annotation.model_dump(mode="json"), "gold": True},
+        )
+    else:
+        gold = annotation
+    row = annotation_to_row(gold)
+    row["labelled"] = labelled
+    if notes:
+        existing = str(row.get("notes") or "").strip()
+        row["notes"] = f"{existing}; {notes}".strip("; ").strip()
+    return row
+
+
+def bootstrap_gold_rows_from_annotations(
+    annotations: list[TrifectaAnnotation],
+    *,
+    notes: str = "llm_bootstrap",
+) -> list[dict[str, Any]]:
+    """Convert pipeline outputs into importable gold CSV rows."""
+    return [
+        annotation_to_labelling_row(ann, notes=notes, labelled=True)
+        for ann in annotations
+    ]
+
+
+def merge_labelling_rows(
+    existing: pd.DataFrame,
+    updates: list[dict[str, Any]],
+    *,
+    overwrite_labelled: bool = False,
+) -> pd.DataFrame:
+    """Merge bootstrap or hand labels into a candidate CSV by record_id."""
+    update_index = {str(row["record_id"]): row for row in updates}
+    rows: list[dict[str, Any]] = []
+    for record in existing.to_dict(orient="records"):
+        record_id = str(record.get("record_id", ""))
+        if record_id in update_index:
+            incoming = update_index[record_id]
+            labelled = _parse_bool(record.get("labelled"))
+            if labelled and not overwrite_labelled:
+                rows.append(record)
+            else:
+                merged = {**record, **incoming}
+                rows.append(merged)
+        else:
+            rows.append(record)
+    return pd.DataFrame(rows, columns=GOLD_CSV_COLUMNS)
 
 
 def kwic_input_to_candidate_row(inp: KwicInput) -> dict[str, Any]:

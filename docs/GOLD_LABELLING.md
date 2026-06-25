@@ -2,6 +2,28 @@
 
 Use the CSV workflow to curate the ~50-record `trifecta_gold` eval set. Column definitions follow the [TRIFECTA annotation guidelines](Annotation_Guidelines_final.pdf) (English) and [Annotation_Guidelines_NL.pdf](Annotation_Guidelines_NL.pdf) (Dutch).
 
+## Web UI (recommended)
+
+Hand-label rows in the browser instead of editing the CSV in Excel:
+
+```bash
+cd ~/develop/trifecta-annotation
+uv sync --extra gold-ui
+uv run trifecta-gold-ui
+```
+
+Open http://127.0.0.1:5050 — you get one snippet at a time with the **target word highlighted**, Step A/B fields, prev/next navigation, and progress (`N / 50 labelled`).
+
+- **Save** — writes directly to `trifecta/gold_labelling.csv` on scratch.
+- **Save & next** — save and jump to the next row.
+- **LLM suggest** — optional draft from the pipeline (you must review; do not accept blindly).
+
+When all rows are done:
+
+```bash
+uv run python scripts/import_gold_csv.py
+```
+
 ## Export candidates
 
 ```bash
