@@ -1,0 +1,121 @@
+# Copy to data_manifest.toml and edit tier roots + absolute source paths.
+# cp data_manifest.toml.example data_manifest.toml
+# Optional: cp data_manifest.local.toml.example data_manifest.local.toml
+
+[phases]
+explore = "jsonl, pkl, xlsx, ad-hoc notebooks"
+semi = "jsonl, markdown+yaml frontmatter"
+frozen = "parquet (duckdb-queryable)"
+
+[tiers.hot]
+root = "/Users/you/develop"
+mount_check = ""
+
+[tiers.warm]
+root = "/Volumes/your-warm-drive"
+mount_check = "/Volumes/your-warm-drive"
+
+[tiers.scratch]
+root = "/Volumes/your-scratch-drive/scratch"
+mount_check = "/Volumes/your-scratch-drive"
+
+# --- ontology (sibling repo, optional) ---
+
+[datasets.food_terms]
+tier = "hot"
+path = "recepten-preservare-analysis/source_data/Food_terms.csv"
+phase = "frozen"
+description = "TRIFECTA food ontology"
+parent = ""
+
+# --- cort_voc_db snippet sources (absolute paths; not in git) ---
+
+[datasets.food_snippets_source]
+tier = "hot"
+path = "/path/to/OneDrive/data/trifecta/cort_voc_db/processed_outputs/food_snippets_for_annotation.csv"
+phase = "frozen"
+description = "Canonical food snippets CSV on OneDrive"
+parent = ""
+
+[datasets.food_snippets_manual_source]
+tier = "hot"
+path = "/path/to/snippets_for_annotation.txt"
+phase = "semi"
+description = "Manual annotation snippet list"
+parent = ""
+
+# --- scratch copies (created by scripts/ingest_food_snippets.py) ---
+
+[datasets.food_snippets]
+tier = "scratch"
+path = "trifecta/food_snippets_for_annotation.csv"
+phase = "frozen"
+description = "Working copy of food snippets CSV"
+parent = "food_snippets_source"
+
+[datasets.food_snippets_manual]
+tier = "scratch"
+path = "trifecta/snippets_for_annotation.txt"
+phase = "semi"
+description = "Working copy of manual annotation snippets txt"
+parent = "food_snippets_manual_source"
+
+# --- other corpora (optional sibling repos) ---
+
+[datasets.recipe_web]
+tier = "hot"
+path = "Dutch-historical-recipe-trends/Corpus/clean_recipe_web.csv"
+phase = "frozen"
+description = "20th-c. newspaper recipes"
+parent = ""
+
+# --- pipeline outputs (scratch tier; gitignored under trifecta/) ---
+
+[datasets.kwic_inputs]
+tier = "scratch"
+path = "trifecta/kwic_inputs.jsonl"
+phase = "semi"
+description = "Normalized KwicInput records"
+parent = "food_snippets"
+
+[datasets.trifecta_gold_csv]
+tier = "scratch"
+path = "trifecta/gold_labelling.csv"
+phase = "semi"
+description = "Gold labelling spreadsheet"
+parent = "kwic_inputs"
+
+[datasets.trifecta_gold_jsonl]
+tier = "scratch"
+path = "trifecta/gold.jsonl"
+phase = "frozen"
+description = "Gold set JSONL mirror"
+parent = "trifecta_gold_csv"
+
+[datasets.trifecta_gold]
+tier = "scratch"
+path = "trifecta/gold.parquet"
+phase = "frozen"
+description = "Hand-labelled gold eval set"
+parent = "trifecta_gold_csv"
+
+[datasets.trifecta_annotations]
+tier = "scratch"
+path = "trifecta/annotations.jsonl"
+phase = "semi"
+description = "Full A→B→C pipeline outputs"
+parent = "kwic_inputs"
+
+[datasets.frame_classifications]
+tier = "scratch"
+path = "trifecta/frame_classifications.jsonl"
+phase = "semi"
+description = "Step B outputs"
+parent = "kwic_inputs"
+
+[datasets.eval_reports]
+tier = "scratch"
+path = "trifecta/eval"
+phase = "semi"
+description = "Evaluation reports"
+parent = "trifecta_gold"

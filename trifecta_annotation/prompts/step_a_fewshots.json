@@ -1,0 +1,24 @@
+{
+  "examples": [
+    {
+      "target_word": "zout",
+      "context_text": "men behoefd een hand vol zout pond of daar omtrent osse-niervet",
+      "output": "{\"is_food_entity\": true, \"is_metaphor\": false, \"formal_dimension\": \"FOOD_Whole\", \"reasoning\": \"zout is a literal food preservative ingredient.\"}"
+    },
+    {
+      "target_word": "brood",
+      "context_text": "het brood des levens dat uit de hemel daalt",
+      "output": "{\"is_food_entity\": false, \"is_metaphor\": true, \"formal_dimension\": null, \"reasoning\": \"brood is used metaphorically in a religious idiom, not as food.\"}"
+    },
+    {
+      "target_word": "schil",
+      "context_text": "sukade schellen aan stukjes gesneden",
+      "output": "{\"is_food_entity\": true, \"is_metaphor\": false, \"formal_dimension\": \"FOOD_Constituent_Part\", \"reasoning\": \"schil refers to peel as a constituent part of fruit.\"}"
+    },
+    {
+      "target_word": "Amsterdam",
+      "context_text": "het schip Amsterdam voer naar Batavia met proviand",
+      "output": "{\"is_food_entity\": false, \"is_metaphor\": false, \"formal_dimension\": null, \"reasoning\": \"Amsterdam is a ship name, not a food entity.\"}"
+    }
+  ]
+}

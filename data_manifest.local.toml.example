@@ -1,0 +1,10 @@
+# Optional local overrides (gitignored). Copy to data_manifest.local.toml on SURF.
+# DATA_MANIFEST_OVERRIDE=/path/to/data_manifest.local.toml
+
+[tiers.scratch]
+root = "/scratch/trifecta"
+mount_check = "/scratch"
+
+[tiers.warm]
+root = "/data/trifecta"
+mount_check = "/data"

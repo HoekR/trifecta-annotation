@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "trifecta-annotation"
+version = "0.1.0"
+description = "Multi-stage LLM pipeline for TRIFECTA Qualia-style FrameNet annotation of historical food texts (17th–20th c.)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [{ name = "Rik Hoekstra" }]
+keywords = ["framenet", "trifecta", "historical-text", "food", "nlp", "dutch"]
+
+dependencies = [
+    "pandas>=2.0",
+    "numpy>=1.24",
+    "pyarrow>=14.0",
+    "pydantic>=2.0",
+    "instructor>=1.0",
+    "openai>=1.0",
+    "tomli-w>=1.0",
+]
+
+[project.optional-dependencies]
+kwic = [
+    "hist-text-utils[llm] @ git+https://github.com/HoekR/hist-text-utils.git",
+]
+parquet = ["pyarrow>=14.0"]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+trifecta-classify = "trifecta_annotation.cli:main_classify"
+trifecta-annotate = "trifecta_annotation.cli:main_annotate"
+trifecta-batch = "trifecta_annotation.cli:main_batch"
+trifecta-eval = "trifecta_annotation.cli:main_eval"
+
+[tool.hatch.build.targets.wheel]
+packages = ["trifecta_annotation", "data_io"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.1.0",
+]

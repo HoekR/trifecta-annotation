@@ -1,0 +1,379 @@
+"""CSV import/export for TRIFECTA gold annotation curation."""
+
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+import pandas as pd
+from data_io import load_jsonl, load_parquet, resolve, save_jsonl, save_parquet
+
+from trifecta_annotation.schemas import (
+    AnnotationProvenance,
+    EntityValidation,
+    FormalDimension,
+    FrameClassification,
+    GoldAnnotation,
+    KwicInput,
+    TrifectaFrame,
+)
+
+GOLD_CSV_COLUMNS = [
+    "record_id",
+    "corpus",
+    "target_word",
+    "context_text",
+    "date",
+    "source_path",
+    "dropped",
+    "drop_reason",
+    "is_food_entity",
+    "is_metaphor",
+    "formal_dimension",
+    "canonical_pref_label",
+    "ontology_match",
+    "step_a_reasoning",
+    "selected_frame",
+    "lexical_unit",
+    "step_b_reasoning",
+    "labelled",
+    "notes",
+]
+
+BOOL_COLUMNS = {"dropped", "is_food_entity", "is_metaphor", "ontology_match", "labelled"}
+
+
+def _parse_bool(value: object) -> bool | None:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return None
+    if isinstance(value, bool):
+        return value
+    text = str(value).strip().lower()
+    if text in {"", "nan", "none"}:
+        return None
+    if text in {"true", "1", "yes", "y", "ja"}:
+        return True
+    if text in {"false", "0", "no", "n", "nee"}:
+        return False
+    raise ValueError(f"Cannot parse boolean value: {value!r}")
+
+
+def _empty(value: object) -> bool:
+    return value is None or (isinstance(value, float) and pd.isna(value)) or str(value).strip() == ""
+
+
+def _parse_formal_dimension(value: object) -> FormalDimension | None:
+    if _empty(value):
+        return None
+    text = str(value).strip()
+    for item in FormalDimension:
+        if text == item.value or text == item.name:
+            return item
+    return FormalDimension(text)
+
+
+def _parse_frame(value: object) -> TrifectaFrame | None:
+    if _empty(value):
+        return None
+    text = str(value).strip()
+    for item in TrifectaFrame:
+        if text == item.value or text == item.name:
+            return item
+    return TrifectaFrame(text)
+
+
+def annotation_to_row(annotation: GoldAnnotation | dict[str, Any]) -> dict[str, Any]:
+    """Flatten a gold annotation to a CSV row."""
+    if isinstance(annotation, GoldAnnotation):
+        data = annotation.model_dump(mode="json")
+    else:
+        data = annotation
+
+    provenance = data.get("provenance") or {}
+    step_a = data.get("step_a") or {}
+    step_b = data.get("step_b") or {}
+
+    return {
+        "record_id": provenance.get("record_id", ""),
+        "corpus": provenance.get("corpus", ""),
+        "target_word": provenance.get("target_word", ""),
+        "context_text": provenance.get("context_text", ""),
+        "date": provenance.get("date", ""),
+        "source_path": provenance.get("source_path", ""),
+        "dropped": data.get("dropped", False),
+        "drop_reason": data.get("drop_reason", ""),
+        "is_food_entity": step_a.get("is_food_entity", ""),
+        "is_metaphor": step_a.get("is_metaphor", ""),
+        "formal_dimension": step_a.get("formal_dimension", ""),
+        "canonical_pref_label": step_a.get("canonical_pref_label", ""),
+        "ontology_match": step_a.get("ontology_match", ""),
+        "step_a_reasoning": step_a.get("reasoning", ""),
+        "selected_frame": (step_b.get("selected_frame") if step_b else ""),
+        "lexical_unit": step_b.get("lexical_unit", "") if step_b else "",
+        "step_b_reasoning": step_b.get("reasoning", "") if step_b else "",
+        "labelled": bool(step_a) or bool(data.get("dropped")),
+        "notes": data.get("notes", ""),
+    }
+
+
+def row_to_annotation(row: dict[str, Any]) -> GoldAnnotation | None:
+    """Convert a labelled CSV row to GoldAnnotation; skip unlabelled rows."""
+    labelled = _parse_bool(row.get("labelled"))
+    if labelled is False:
+        return None
+
+    has_step_a = not _empty(row.get("is_food_entity")) or not _empty(row.get("is_metaphor"))
+    dropped = _parse_bool(row.get("dropped")) or False
+    if labelled is None and not has_step_a and not dropped:
+        return None
+
+    provenance = AnnotationProvenance(
+        record_id=str(row["record_id"]),
+        corpus=str(row.get("corpus") or ""),
+        target_word=str(row.get("target_word") or ""),
+        context_text=str(row.get("context_text") or ""),
+        date=None if _empty(row.get("date")) else str(row.get("date")),
+        source_path=None if _empty(row.get("source_path")) else str(row.get("source_path")),
+    )
+
+    step_a: EntityValidation | None = None
+    if has_step_a:
+        entity = _parse_bool(row.get("is_food_entity"))
+        metaphor = _parse_bool(row.get("is_metaphor"))
+        if entity is None or metaphor is None:
+            raise ValueError(
+                f"Row {row.get('record_id')}: labelled rows need is_food_entity and is_metaphor",
+            )
+        step_a = EntityValidation(
+            is_food_entity=entity,
+            is_metaphor=metaphor,
+            formal_dimension=_parse_formal_dimension(row.get("formal_dimension")),
+            canonical_pref_label=None
+            if _empty(row.get("canonical_pref_label"))
+            else str(row.get("canonical_pref_label")),
+            ontology_match=bool(_parse_bool(row.get("ontology_match")) or False),
+            reasoning=str(row.get("step_a_reasoning") or ""),
+        )
+        if dropped is False:
+            dropped, drop_reason = _drop_from_step_a(step_a)
+        else:
+            drop_reason = None if _empty(row.get("drop_reason")) else str(row.get("drop_reason"))
+    else:
+        drop_reason = None if _empty(row.get("drop_reason")) else str(row.get("drop_reason"))
+
+    step_b: FrameClassification | None = None
+    frame = _parse_frame(row.get("selected_frame"))
+    if frame is not None and not dropped:
+        step_b = FrameClassification(
+            selected_frame=frame,
+            lexical_unit=str(row.get("lexical_unit") or ""),
+            reasoning=str(row.get("step_b_reasoning") or ""),
+        )
+
+    return GoldAnnotation(
+        provenance=provenance,
+        step_a=step_a,
+        step_b=step_b,
+        dropped=dropped,
+        drop_reason=drop_reason,
+        gold=True,
+    )
+
+
+def _drop_from_step_a(step_a: EntityValidation) -> tuple[bool, str | None]:
+    if step_a.is_metaphor:
+        return True, "metaphor"
+    if not step_a.is_food_entity:
+        return True, "not_food_entity"
+    return False, None
+
+
+def kwic_input_to_candidate_row(inp: KwicInput) -> dict[str, Any]:
+    """Build an empty labelling row from a KwicInput."""
+    notes = ""
+    if inp.candidate_terms and len(inp.candidate_terms) > 1:
+        notes = f"candidate_terms: {', '.join(inp.candidate_terms)}"
+    if inp.title:
+        notes = f"{inp.title}. {notes}".strip()
+    return {
+        "record_id": inp.record_id,
+        "corpus": inp.corpus,
+        "target_word": inp.target_word,
+        "context_text": inp.context_text,
+        "date": inp.date or "",
+        "source_path": inp.source_path or "",
+        "dropped": "",
+        "drop_reason": "",
+        "is_food_entity": "",
+        "is_metaphor": "",
+        "formal_dimension": "",
+        "canonical_pref_label": "",
+        "ontology_match": "",
+        "step_a_reasoning": "",
+        "selected_frame": "",
+        "lexical_unit": "",
+        "step_b_reasoning": "",
+        "labelled": False,
+        "notes": notes,
+    }
+
+
+def load_kwic_input_candidates(
+    *,
+    limit: int | None = None,
+    input_logical: str = "kwic_inputs",
+    input_path: str | Path | None = None,
+) -> list[KwicInput]:
+    if input_path is not None:
+        records = load_jsonl(Path(input_path))
+    else:
+        records = load_jsonl(resolve(input_logical))
+    inputs = [KwicInput.model_validate(record) for record in records]
+    if limit is not None:
+        return inputs[:limit]
+    return inputs
+
+
+def export_candidates_csv(
+    *,
+    limit: int | None = 50,
+    output_logical: str = "trifecta_gold_csv",
+    output_path: str | Path | None = None,
+    input_logical: str = "kwic_inputs",
+    input_path: str | Path | None = None,
+    source: str = "diverse",
+    seed: int = 0,
+    include_manual: bool = True,
+) -> Path:
+    """Export blank labelling rows for gold annotation."""
+    if source == "diverse":
+        from trifecta_annotation.sampling import sample_kwic_inputs_for_gold
+
+        records = sample_kwic_inputs_for_gold(
+            limit=limit or 50,
+            seed=seed,
+            include_manual=include_manual,
+        )
+        rows = [kwic_input_to_candidate_row(inp) for inp in records]
+    elif input_path is not None or source == "kwic_inputs":
+        rows = [
+            kwic_input_to_candidate_row(inp)
+            for inp in load_kwic_input_candidates(
+                limit=limit,
+                input_logical=input_logical,
+                input_path=input_path,
+            )
+        ]
+    else:
+        from trifecta_annotation.adapters.food_snippets import (
+            load_kwic_inputs_from_food_snippets,
+        )
+
+        records, _ = load_kwic_inputs_from_food_snippets(
+            manual_only=(source == "manual"),
+            limit=limit,
+        )
+        rows = [kwic_input_to_candidate_row(inp) for inp in records]
+    return export_gold_csv(rows, output_logical=output_logical, output_path=output_path)
+
+
+def export_gold_csv(
+    rows: list[dict[str, Any]],
+    *,
+    output_logical: str | None = "trifecta_gold_csv",
+    output_path: str | Path | None = None,
+) -> Path:
+    """Write gold rows to CSV."""
+    frame = pd.DataFrame(rows, columns=GOLD_CSV_COLUMNS)
+    if output_path is not None:
+        path = Path(output_path).expanduser().resolve()
+    else:
+        path = resolve(output_logical)  # type: ignore[arg-type]
+    path.parent.mkdir(parents=True, exist_ok=True)
+    frame.to_csv(path, index=False)
+    return path
+
+
+def import_gold_csv(
+    *,
+    input_logical: str | None = "trifecta_gold_csv",
+    input_path: str | Path | None = None,
+    output_logical: str = "trifecta_gold",
+    output_jsonl_logical: str = "trifecta_gold_jsonl",
+    script: str | None = None,
+) -> tuple[list[GoldAnnotation], Path, Path]:
+    """Import labelled CSV rows into gold parquet + JSONL."""
+    if input_path is not None:
+        path = Path(input_path).expanduser().resolve()
+    else:
+        path = resolve(input_logical)  # type: ignore[arg-type]
+
+    frame = pd.read_csv(path, dtype=str, keep_default_na=False)
+    annotations: list[GoldAnnotation] = []
+    for row in frame.to_dict(orient="records"):
+        parsed = row_to_annotation(row)
+        if parsed is not None:
+            annotations.append(parsed)
+
+    if not annotations:
+        raise ValueError(
+            "No labelled rows found in CSV. Set labelled=true and fill Step A/B "
+            "columns for rows you want to import (see docs/GOLD_LABELLING.md).",
+        )
+
+    records = [ann.model_dump(mode="json") for ann in annotations]
+    jsonl_path = save_jsonl(
+        records,
+        logical_name=output_jsonl_logical,
+        parent_sources=["trifecta_gold_csv"],
+        description="Hand-labelled TRIFECTA gold set (JSONL mirror)",
+        script=script,
+    )
+    parquet_df = pd.DataFrame({"annotation_json": [json.dumps(record) for record in records]})
+    parquet_path = save_parquet(
+        parquet_df,
+        logical_name=output_logical,
+        parent_sources=["trifecta_gold_csv", output_jsonl_logical],
+        description="Hand-labelled TRIFECTA gold eval set",
+        script=script,
+    )
+    return annotations, parquet_path, jsonl_path
+
+
+def load_gold_records(
+    *,
+    gold_logical: str = "trifecta_gold",
+    gold_path: str | Path | None = None,
+) -> list[dict[str, Any]]:
+    """Load gold annotations from parquet (annotation_json) or JSONL."""
+    if gold_path is not None:
+        path = Path(gold_path)
+        if path.suffix.lower() == ".csv":
+            frame = pd.read_csv(path, dtype=str, keep_default_na=False)
+            return [
+                ann.model_dump(mode="json")
+                for row in frame.to_dict(orient="records")
+                if (ann := row_to_annotation(row)) is not None
+            ]
+        return load_jsonl(path)
+
+    df = load_parquet(gold_logical)
+    if df.empty:
+        return []
+    if "annotation_json" in df.columns:
+        return [json.loads(text) for text in df["annotation_json"]]
+    return df.to_dict(orient="records")
+
+
+def export_existing_gold_csv(
+    *,
+    gold_logical: str = "trifecta_gold",
+    gold_path: str | Path | None = None,
+    output_logical: str = "trifecta_gold_csv",
+    output_path: str | Path | None = None,
+) -> Path:
+    """Export an existing gold set back to CSV for editing."""
+    records = load_gold_records(gold_logical=gold_logical, gold_path=gold_path)
+    rows = [annotation_to_row(record) for record in records]
+    return export_gold_csv(rows, output_logical=output_logical, output_path=output_path)
