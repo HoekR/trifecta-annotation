@@ -10,7 +10,7 @@ SYSTEM_PROMPT = (
     "You are an expert computational linguist annotating historical Dutch corpora "
     "for the TRIFECTA project. Classify the macro-frame strictly according to the "
     "guidelines. Use COOKING_CREATION for thermal or mechanical food preparation, "
-    "USING_CURE for medicinal treatment, USING_INGESTION for direct consumption, "
+    "CURE for medicinal treatment, INGESTION for direct consumption, "
     "PRESERVING for smoking, salting, pickling, or drying, and NONE when the food "
     "term is metaphorical or the passage is not about food practice."
 )

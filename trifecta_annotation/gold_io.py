@@ -11,14 +11,20 @@ from data_io import load_jsonl, load_parquet, resolve, save_jsonl, save_parquet
 
 from trifecta_annotation.schemas import (
     AnnotationProvenance,
+    CookingCreationQualia,
     EntityValidation,
     FormalDimension,
     FrameClassification,
+    FrameQualia,
     GoldAnnotation,
     KwicInput,
+    PreservingQualia,
     TrifectaAnnotation,
     TrifectaFrame,
+    UsingCureQualia,
+    UsingIngestionQualia,
 )
+from trifecta_annotation.thesaurus import canonical_pref_for_term
 
 GOLD_CSV_COLUMNS = [
     "record_id",
@@ -38,9 +44,49 @@ GOLD_CSV_COLUMNS = [
     "selected_frame",
     "lexical_unit",
     "step_b_reasoning",
+    "COOKING_CREATION_Method",
+    "COOKING_CREATION_Process",
+    "COOKING_CREATION_Food_Product",
+    "CURE_Affliction",
+    "CURE_Food_Treatment",
+    "INGESTION_Context",
+    "INGESTION_Ingestor",
+    "INGESTION_Manner",
+    "PR_Technique",
+    "PR_Medium",
+    "PR_Food_Patient",
     "labelled",
     "notes",
 ]
+
+STEP_C_COLUMNS = [
+    "COOKING_CREATION_Method",
+    "COOKING_CREATION_Process",
+    "COOKING_CREATION_Food_Product",
+    "CURE_Affliction",
+    "CURE_Food_Treatment",
+    "INGESTION_Context",
+    "INGESTION_Ingestor",
+    "INGESTION_Manner",
+    "PR_Technique",
+    "PR_Medium",
+    "PR_Food_Patient",
+]
+
+# Legacy CSV column names still accepted on import.
+_CSV_LEGACY_ALIASES = {
+    "preparation_method": "COOKING_CREATION_Method",
+    "heat_or_mechanical_process": "COOKING_CREATION_Process",
+    "result_state": "COOKING_CREATION_Food_Product",
+    "cure_affliction": "CURE_Affliction",
+    "cure_food_treatment": "CURE_Food_Treatment",
+    "consumption_context": "INGESTION_Context",
+    "consumer": "INGESTION_Ingestor",
+    "manner": "INGESTION_Manner",
+    "preservation_technique": "PR_Technique",
+    "preserving_agent": "PR_Medium",
+    "target_food": "PR_Food_Patient",
+}
 
 BOOL_COLUMNS = {"dropped", "is_food_entity", "is_metaphor", "ontology_match", "labelled"}
 
@@ -78,10 +124,89 @@ def _parse_frame(value: object) -> TrifectaFrame | None:
     if _empty(value):
         return None
     text = str(value).strip()
+    legacy = {"USING_CURE": "CURE", "USING_INGESTION": "INGESTION"}
+    text = legacy.get(text, text)
     for item in TrifectaFrame:
         if text == item.value or text == item.name:
             return item
     return TrifectaFrame(text)
+
+
+def _normalize_csv_row(row: dict[str, Any]) -> dict[str, Any]:
+    out = dict(row)
+    for legacy, canonical in _CSV_LEGACY_ALIASES.items():
+        if legacy in out and _empty(out.get(canonical)) and not _empty(out.get(legacy)):
+            out[canonical] = out[legacy]
+    if not _empty(out.get("selected_frame")):
+        out["selected_frame"] = _parse_frame(out["selected_frame"])
+        if out["selected_frame"] is not None:
+            out["selected_frame"] = out["selected_frame"].value
+    return out
+
+
+def _step_c_from_row(row: dict[str, Any], frame: TrifectaFrame) -> FrameQualia | None:
+    lu = str(row.get("lexical_unit") or "")
+    if frame == TrifectaFrame.COOKING_CREATION:
+        if all(_empty(row.get(c)) for c in STEP_C_COLUMNS[:3]):
+            return None
+        return CookingCreationQualia(
+            COOKING_CREATION_Method=str(row.get("COOKING_CREATION_Method") or ""),
+            COOKING_CREATION_Process=str(row.get("COOKING_CREATION_Process") or ""),
+            COOKING_CREATION_Food_Product=str(row.get("COOKING_CREATION_Food_Product") or ""),
+            lexical_unit=lu,
+        )
+    if frame == TrifectaFrame.CURE:
+        if all(_empty(row.get(c)) for c in STEP_C_COLUMNS[3:5]):
+            return None
+        return UsingCureQualia(
+            CURE_Affliction=str(row.get("CURE_Affliction") or ""),
+            CURE_Food_Treatment=str(row.get("CURE_Food_Treatment") or ""),
+            lexical_unit=lu,
+        )
+    if frame == TrifectaFrame.INGESTION:
+        if all(_empty(row.get(c)) for c in STEP_C_COLUMNS[5:8]):
+            return None
+        return UsingIngestionQualia(
+            INGESTION_Context=str(row.get("INGESTION_Context") or ""),
+            INGESTION_Ingestor=str(row.get("INGESTION_Ingestor") or ""),
+            INGESTION_Manner=str(row.get("INGESTION_Manner") or ""),
+            lexical_unit=lu,
+        )
+    if frame == TrifectaFrame.PRESERVING:
+        if all(_empty(row.get(c)) for c in STEP_C_COLUMNS[8:]):
+            return None
+        return PreservingQualia(
+            PR_Technique=str(row.get("PR_Technique") or ""),
+            PR_Medium=str(row.get("PR_Medium") or ""),
+            PR_Food_Patient=str(row.get("PR_Food_Patient") or ""),
+            lexical_unit=lu,
+        )
+    return None
+
+
+def _step_c_to_row(step_c: dict[str, Any] | None) -> dict[str, str]:
+    empty = {col: "" for col in STEP_C_COLUMNS}
+    if not step_c:
+        return empty
+    frame = step_c.get("frame")
+    if frame == TrifectaFrame.COOKING_CREATION.value:
+        empty["COOKING_CREATION_Method"] = str(step_c.get("COOKING_CREATION_Method", ""))
+        empty["COOKING_CREATION_Process"] = str(step_c.get("COOKING_CREATION_Process", ""))
+        empty["COOKING_CREATION_Food_Product"] = str(step_c.get("COOKING_CREATION_Food_Product", ""))
+    elif frame in {TrifectaFrame.CURE.value, "USING_CURE"}:
+        empty["CURE_Affliction"] = str(step_c.get("CURE_Affliction", step_c.get("cure_affliction", "")))
+        empty["CURE_Food_Treatment"] = str(
+            step_c.get("CURE_Food_Treatment", step_c.get("cure_food_treatment", "")),
+        )
+    elif frame in {TrifectaFrame.INGESTION.value, "USING_INGESTION"}:
+        empty["INGESTION_Context"] = str(step_c.get("INGESTION_Context", step_c.get("consumption_context", "")))
+        empty["INGESTION_Ingestor"] = str(step_c.get("INGESTION_Ingestor", step_c.get("consumer", "")))
+        empty["INGESTION_Manner"] = str(step_c.get("INGESTION_Manner", step_c.get("manner", "")))
+    elif frame == TrifectaFrame.PRESERVING.value:
+        empty["PR_Technique"] = str(step_c.get("PR_Technique", step_c.get("preservation_technique", "")))
+        empty["PR_Medium"] = str(step_c.get("PR_Medium", step_c.get("preserving_agent", "")))
+        empty["PR_Food_Patient"] = str(step_c.get("PR_Food_Patient", step_c.get("target_food", "")))
+    return empty
 
 
 def annotation_to_row(annotation: GoldAnnotation | dict[str, Any]) -> dict[str, Any]:
@@ -94,8 +219,9 @@ def annotation_to_row(annotation: GoldAnnotation | dict[str, Any]) -> dict[str, 
     provenance = data.get("provenance") or {}
     step_a = data.get("step_a") or {}
     step_b = data.get("step_b") or {}
+    step_c = data.get("step_c") or {}
 
-    return {
+    row = {
         "record_id": provenance.get("record_id", ""),
         "corpus": provenance.get("corpus", ""),
         "target_word": provenance.get("target_word", ""),
@@ -116,9 +242,12 @@ def annotation_to_row(annotation: GoldAnnotation | dict[str, Any]) -> dict[str, 
         "labelled": bool(step_a) or bool(data.get("dropped")),
         "notes": data.get("notes", ""),
     }
+    row.update(_step_c_to_row(step_c))
+    return row
 
 
 def row_to_annotation(row: dict[str, Any]) -> GoldAnnotation | None:
+    row = _normalize_csv_row(row)
     """Convert a labelled CSV row to GoldAnnotation; skip unlabelled rows."""
     labelled = _parse_bool(row.get("labelled"))
     if labelled is False:
@@ -164,6 +293,7 @@ def row_to_annotation(row: dict[str, Any]) -> GoldAnnotation | None:
         drop_reason = None if _empty(row.get("drop_reason")) else str(row.get("drop_reason"))
 
     step_b: FrameClassification | None = None
+    step_c: FrameQualia | None = None
     frame = _parse_frame(row.get("selected_frame"))
     if frame is not None and not dropped:
         step_b = FrameClassification(
@@ -171,11 +301,13 @@ def row_to_annotation(row: dict[str, Any]) -> GoldAnnotation | None:
             lexical_unit=str(row.get("lexical_unit") or ""),
             reasoning=str(row.get("step_b_reasoning") or ""),
         )
+        step_c = _step_c_from_row(row, frame)
 
     return GoldAnnotation(
         provenance=provenance,
         step_a=step_a,
         step_b=step_b,
+        step_c=step_c,
         dropped=dropped,
         drop_reason=drop_reason,
         gold=True,
@@ -247,13 +379,19 @@ def merge_labelling_rows(
     return pd.DataFrame(rows, columns=GOLD_CSV_COLUMNS)
 
 
-def kwic_input_to_candidate_row(inp: KwicInput) -> dict[str, Any]:
+def kwic_input_to_candidate_row(
+    inp: KwicInput,
+    *,
+    thesaurus_lookup: dict[str, str] | None = None,
+) -> dict[str, Any]:
     """Build an empty labelling row from a KwicInput."""
     notes = ""
     if inp.candidate_terms and len(inp.candidate_terms) > 1:
         notes = f"candidate_terms: {', '.join(inp.candidate_terms)}"
     if inp.title:
         notes = f"{inp.title}. {notes}".strip()
+
+    canonical = canonical_pref_for_term(inp.target_word, thesaurus_lookup or {})
     return {
         "record_id": inp.record_id,
         "corpus": inp.corpus,
@@ -266,12 +404,13 @@ def kwic_input_to_candidate_row(inp: KwicInput) -> dict[str, Any]:
         "is_food_entity": "",
         "is_metaphor": "",
         "formal_dimension": "",
-        "canonical_pref_label": "",
-        "ontology_match": "",
+        "canonical_pref_label": canonical or "",
+        "ontology_match": "true" if canonical else "",
         "step_a_reasoning": "",
         "selected_frame": "",
         "lexical_unit": "",
         "step_b_reasoning": "",
+        **{col: "" for col in STEP_C_COLUMNS},
         "labelled": False,
         "notes": notes,
     }
@@ -303,8 +442,19 @@ def export_candidates_csv(
     source: str = "diverse",
     seed: int = 0,
     include_manual: bool = True,
+    thesaurus_filter: bool = True,
+    thesaurus_path: str | Path | None = None,
 ) -> Path:
     """Export blank labelling rows for gold annotation."""
+    from trifecta_annotation.vocabulary import resolve_thesaurus_lookup
+
+    lookup = (
+        resolve_thesaurus_lookup(thesaurus_path=thesaurus_path)
+        if thesaurus_filter
+        else {}
+    )
+    to_row = lambda inp: kwic_input_to_candidate_row(inp, thesaurus_lookup=lookup or None)
+
     if source == "diverse":
         from trifecta_annotation.sampling import sample_kwic_inputs_for_gold
 
@@ -312,17 +462,32 @@ def export_candidates_csv(
             limit=limit or 50,
             seed=seed,
             include_manual=include_manual,
+            snippet_format="long",
+            logical_name="food_snippets_long",
+            thesaurus_filter=thesaurus_filter,
+            thesaurus_path=str(thesaurus_path) if thesaurus_path else None,
         )
-        rows = [kwic_input_to_candidate_row(inp) for inp in records]
+        rows = [to_row(inp) for inp in records]
     elif input_path is not None or source == "kwic_inputs":
         rows = [
-            kwic_input_to_candidate_row(inp)
+            to_row(inp)
             for inp in load_kwic_input_candidates(
                 limit=limit,
                 input_logical=input_logical,
                 input_path=input_path,
             )
         ]
+    elif source == "long":
+        from trifecta_annotation.adapters.food_snippets import (
+            load_kwic_inputs_from_food_snippets_long,
+        )
+
+        records, _ = load_kwic_inputs_from_food_snippets_long(
+            limit=limit,
+            thesaurus_filter=thesaurus_filter,
+            thesaurus_path=str(thesaurus_path) if thesaurus_path else None,
+        )
+        rows = [to_row(inp) for inp in records]
     else:
         from trifecta_annotation.adapters.food_snippets import (
             load_kwic_inputs_from_food_snippets,
@@ -332,7 +497,7 @@ def export_candidates_csv(
             manual_only=(source == "manual"),
             limit=limit,
         )
-        rows = [kwic_input_to_candidate_row(inp) for inp in records]
+        rows = [to_row(inp) for inp in records]
     return export_gold_csv(rows, output_logical=output_logical, output_path=output_path)
 
 

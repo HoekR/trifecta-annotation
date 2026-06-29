@@ -27,17 +27,26 @@ def main() -> None:
         help="Canonical food_snippets CSV on OneDrive",
     )
     parser.add_argument(
+        "--long-csv-source",
+        default="/Users/rikhoekstra/Library/CloudStorage/OneDrive-KNAW/data/trifecta/cort_voc_db/processed_outputs/food_snippets_long.csv",
+        help="Exploded food_snippets_long CSV (one matched_term per row)",
+    )
+    parser.add_argument(
         "--txt-source",
         default="/Users/rikhoekstra/Downloads/snippets_for_annotation.txt",
         help="Manual annotation snippet list (txt)",
     )
     parser.add_argument("--skip-csv", action="store_true")
+    parser.add_argument("--skip-long-csv", action="store_true")
     parser.add_argument("--skip-txt", action="store_true")
     args = parser.parse_args()
 
     if not args.skip_csv:
         csv_dest = _copy(Path(args.csv_source), "food_snippets")
         print(f"CSV: {csv_dest}")
+    if not args.skip_long_csv:
+        long_dest = _copy(Path(args.long_csv_source), "food_snippets_long")
+        print(f"LONG CSV: {long_dest}")
     if not args.skip_txt:
         txt_dest = _copy(Path(args.txt_source), "food_snippets_manual")
         print(f"TXT: {txt_dest}")

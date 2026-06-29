@@ -7,25 +7,52 @@ import argparse
 
 from data_io import save_semi_structured
 
-from trifecta_annotation.adapters.food_snippets import load_kwic_inputs_from_food_snippets
+from trifecta_annotation.adapters.food_snippets import (
+    load_kwic_inputs_from_food_snippets,
+    load_kwic_inputs_from_food_snippets_long,
+)
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build kwic_inputs from food snippets.")
     parser.add_argument(
-        "--all-snippets",
-        action="store_true",
-        help="Use full food_snippets CSV (~31k rows) instead of manual txt subset",
+        "--source",
+        choices=["manual", "wide", "long"],
+        default="long",
+        help="manual = curated txt subset; wide = food_snippets CSV; long = one keyword per row (default)",
     )
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument(
+        "--no-thesaurus-filter",
+        action="store_true",
+        help="Include all long-format rows (skip thesaurus filter)",
+    )
+    parser.add_argument("--thesaurus-path", default=None)
     args = parser.parse_args()
 
-    manual_only = not args.all_snippets
-    records, skipped = load_kwic_inputs_from_food_snippets(
-        manual_only=manual_only,
-        limit=args.limit,
-    )
-    parent = "food_snippets_manual" if manual_only else "food_snippets"
+    thesaurus_filter = not args.no_thesaurus_filter
+    thesaurus_path = args.thesaurus_path
+
+    if args.source == "manual":
+        records, skipped = load_kwic_inputs_from_food_snippets(
+            manual_only=True,
+            limit=args.limit,
+        )
+        parent = "food_snippets_manual"
+    elif args.source == "wide":
+        records, skipped = load_kwic_inputs_from_food_snippets(
+            manual_only=False,
+            limit=args.limit,
+        )
+        parent = "food_snippets"
+    else:
+        records, skipped = load_kwic_inputs_from_food_snippets_long(
+            limit=args.limit,
+            thesaurus_filter=thesaurus_filter,
+            thesaurus_path=thesaurus_path,
+        )
+        parent = "food_snippets_long"
+
     save_semi_structured(
         [record.model_dump(mode="json") for record in records],
         logical_name="kwic_inputs",
@@ -33,8 +60,7 @@ def main() -> None:
         description="Normalized KwicInput records from cort_voc_db food snippets",
         script=__file__,
     )
-    subset = "manual" if manual_only else "full"
-    print(f"Wrote {len(records)} inputs ({len(skipped)} skipped, source={subset})")
+    print(f"Wrote {len(records)} inputs ({len(skipped)} skipped, source={args.source})")
 
 
 if __name__ == "__main__":

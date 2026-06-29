@@ -7,7 +7,7 @@ from trifecta_annotation.schemas import CookingCreationQualia, FrameClassificati
 
 SYSTEM_PROMPT = (
     "You are annotating historical Dutch food texts for the TRIFECTA COOKING_CREATION frame. "
-    "Extract preparation method, thermal or mechanical process, and resulting food state. "
+    "Extract COOKING_CREATION_Method, COOKING_CREATION_Process, and COOKING_CREATION_Food_Product. "
     "Use empty string when a field is not stated in the context."
 )
 

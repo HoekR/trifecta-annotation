@@ -48,7 +48,7 @@ KWIC record (target_word, context, provenance)
         │  early exit: metaphor / non-food
         ▼
   Step B — Macro-frame enum
-        │  COOKING_CREATION | USING_CURE | USING_INGESTION | PRESERVING | NONE
+        │  COOKING_CREATION | CURE | INGESTION | PRESERVING | NONE
         ▼
   Step C — Frame-specific qualia roles (sub-prompt per frame)
         ▼
@@ -112,10 +112,10 @@ Legacy preservare `kwic_gold_review` is **not** used for TRIFECTA gold.
 
 | Frame | Schema | Key fields |
 |-------|--------|------------|
-| `USING_CURE` | `UsingCureQualia` | `cure_affliction`, `cure_food_treatment` |
-| `COOKING_CREATION` | `CookingCreationQualia` | `preparation_method`, `heat_or_mechanical_process`, `result_state` |
-| `USING_INGESTION` | `UsingIngestionQualia` | `consumption_context`, `consumer`, `manner` |
-| `PRESERVING` | `PreservingQualia` | `preservation_technique`, `preserving_agent`, `target_food` |
+| `CURE` | `CureQualia` | `CURE_Affliction`, `CURE_Food_Treatment` |
+| `COOKING_CREATION` | `CookingCreationQualia` | `COOKING_CREATION_Method`, `COOKING_CREATION_Process`, `COOKING_CREATION_Food_Product` |
+| `INGESTION` | `IngestionQualia` | `INGESTION_Context`, `INGESTION_Ingestor`, `INGESTION_Manner` |
+| `PRESERVING` | `PreservingQualia` | `PR_Technique`, `PR_Medium`, `PR_Food_Patient` |
 | `NONE` | skip C | terminal at B |
 
 ---

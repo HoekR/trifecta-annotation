@@ -7,6 +7,7 @@ from trifecta_annotation.schemas import (
     FormalDimension,
     FrameClassification,
     GoldAnnotation,
+    PreservingQualia,
     TrifectaFrame,
 )
 
@@ -33,6 +34,12 @@ def test_gold_csv_roundtrip() -> None:
             lexical_unit="zout",
             reasoning="Salting context.",
         ),
+        step_c=PreservingQualia(
+            PR_Technique="salting",
+            PR_Medium="zout",
+            PR_Food_Patient="vis",
+            lexical_unit="zout",
+        ),
         dropped=False,
     )
     row = annotation_to_row(ann)
@@ -42,6 +49,42 @@ def test_gold_csv_roundtrip() -> None:
     assert parsed.provenance.record_id == "g1"
     assert parsed.step_b is not None
     assert parsed.step_b.selected_frame == TrifectaFrame.PRESERVING
+    assert parsed.step_c is not None
+    assert parsed.step_c.PR_Technique == "salting"
+
+
+def test_gold_csv_legacy_frame_and_step_c() -> None:
+    row = {
+        "record_id": "g3",
+        "corpus": "en_pilot",
+        "target_word": "milk",
+        "context_text": "Milk is commonly preserved",
+        "date": "1791",
+        "source_path": "",
+        "dropped": "false",
+        "drop_reason": "",
+        "is_food_entity": "true",
+        "is_metaphor": "false",
+        "formal_dimension": "",
+        "canonical_pref_label": "",
+        "ontology_match": "false",
+        "step_a_reasoning": "Literal milk.",
+        "selected_frame": "PRESERVING",
+        "lexical_unit": "preserved",
+        "step_b_reasoning": "",
+        "preservation_technique": "condensing",
+        "preserving_agent": "",
+        "target_food": "milk",
+        "labelled": "true",
+        "notes": "",
+    }
+    parsed = row_to_annotation(row)
+    assert parsed is not None
+    assert parsed.step_b is not None
+    assert parsed.step_b.selected_frame == TrifectaFrame.PRESERVING
+    assert parsed.step_c is not None
+    assert parsed.step_c.PR_Technique == "condensing"
+    assert parsed.step_c.PR_Food_Patient == "milk"
 
 
 def test_gold_csv_dropout_row() -> None:

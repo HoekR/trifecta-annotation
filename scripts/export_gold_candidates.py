@@ -18,8 +18,8 @@ def main() -> None:
     parser.add_argument(
         "--source",
         default="diverse",
-        choices=["diverse", "kwic_inputs", "manual", "food_snippets"],
-        help="diverse = stratified mix (default); manual = txt subset only",
+        choices=["diverse", "kwic_inputs", "manual", "food_snippets", "long"],
+        help="diverse = stratified mix from food_snippets_long (default); manual = txt subset only",
     )
     parser.add_argument("--seed", type=int, default=0, help="Random seed for sampling")
     parser.add_argument(
@@ -32,6 +32,18 @@ def main() -> None:
     parser.add_argument("--output-logical", default="trifecta_gold_csv")
     parser.add_argument("--output-path", default=None)
     parser.add_argument(
+        "--snippet-format",
+        choices=["long", "wide"],
+        default="long",
+        help="For diverse source: long = food_snippets_long (default); wide = legacy food_snippets",
+    )
+    parser.add_argument(
+        "--no-thesaurus-filter",
+        action="store_true",
+        help="Disable thesaurus filtering (include all matched_term rows)",
+    )
+    parser.add_argument("--thesaurus-path", default=None)
+    parser.add_argument(
         "--summary",
         action="store_true",
         help="Print work distribution JSON to stderr",
@@ -43,6 +55,14 @@ def main() -> None:
             limit=args.limit,
             seed=args.seed,
             include_manual=not args.no_manual_seed,
+            snippet_format=args.snippet_format,
+            logical_name=(
+                "food_snippets_long"
+                if args.snippet_format == "long"
+                else "food_snippets"
+            ),
+            thesaurus_filter=not args.no_thesaurus_filter,
+            thesaurus_path=args.thesaurus_path,
         )
         import sys
 
@@ -57,6 +77,8 @@ def main() -> None:
         input_path=args.input_path,
         output_logical=args.output_logical,
         output_path=args.output_path,
+        thesaurus_filter=not args.no_thesaurus_filter,
+        thesaurus_path=args.thesaurus_path,
     )
     print(path)
 

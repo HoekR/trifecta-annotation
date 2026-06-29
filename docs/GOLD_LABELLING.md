@@ -50,9 +50,10 @@ Writes `trifecta_gold_csv` (scratch tier: `trifecta/gold_labelling.csv`).
 | `is_metaphor` | if not dropped at A | `true` / `false` |
 | `formal_dimension` | no | `FOOD_Unit`, `FOOD_Constituent_Part`, `FOOD_Whole`, `OTHER` |
 | `canonical_pref_label` | no | From `Food_terms` when matched |
+| `pref_label_en` / `gloss_en` | no | From `trifecta_thesaurus_glossary.csv` when available (English reviewer hint) |
 | `ontology_match` | no | `true` / `false` |
 | `step_a_reasoning` | recommended | Short justification |
-| `selected_frame` | if passes A | `COOKING_CREATION`, `USING_CURE`, `USING_INGESTION`, `PRESERVING`, `NONE` |
+| `selected_frame` | if passes A | `COOKING_CREATION`, `CURE`, `INGESTION`, `PRESERVING`, `NONE` |
 | `lexical_unit` | if frame ≠ NONE | Frame trigger word |
 | `step_b_reasoning` | recommended | Short justification |
 | `notes` | no | Free-text reviewer notes |

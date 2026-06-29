@@ -28,7 +28,7 @@ def test_evaluate_frame_accuracy() -> None:
             "provenance": {"record_id": "2", "corpus": "t", "target_word": "bier", "context_text": "y"},
             "dropped": False,
             "step_a": {"is_food_entity": True, "is_metaphor": False, "ontology_match": True, "reasoning": ""},
-            "step_b": {"selected_frame": "USING_INGESTION", "lexical_unit": "drinken", "reasoning": ""},
+            "step_b": {"selected_frame": "INGESTION", "lexical_unit": "drinken", "reasoning": ""},
         },
     ]
     metrics = evaluate(gold, pred)

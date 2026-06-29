@@ -5,21 +5,47 @@ from __future__ import annotations
 from enum import Enum
 from typing import Annotated, Literal
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
 
 class TrifectaFrame(str, Enum):
     COOKING_CREATION = "COOKING_CREATION"
-    USING_CURE = "USING_CURE"
-    USING_INGESTION = "USING_INGESTION"
+    CURE = "CURE"
+    INGESTION = "INGESTION"
     PRESERVING = "PRESERVING"
     NONE = "NONE"
+
+    @classmethod
+    def _missing_(cls, value: object) -> TrifectaFrame | None:
+        legacy = {
+            "USING_CURE": cls.CURE,
+            "USING_INGESTION": cls.INGESTION,
+        }
+        if isinstance(value, str) and value in legacy:
+            return legacy[value]
+        return None
+
+
+# Deprecated enum names — kept for imports during migration.
+USING_CURE = TrifectaFrame.CURE
+USING_INGESTION = TrifectaFrame.INGESTION
+
+
+def _normalize_qualia_payload(data: object) -> object:
+    if isinstance(data, dict):
+        frame = data.get("frame")
+        if frame == "USING_CURE":
+            data = {**data, "frame": TrifectaFrame.CURE}
+        elif frame == "USING_INGESTION":
+            data = {**data, "frame": TrifectaFrame.INGESTION}
+    return data
 
 
 class FormalDimension(str, Enum):
     FOOD_UNIT = "FOOD_Unit"
     FOOD_CONSTITUENT_PART = "FOOD_Constituent_Part"
     FOOD_WHOLE = "FOOD_Whole"
+    FOOD_DESCRIPTOR = "FOOD_Descriptor"
     OTHER = "OTHER"
 
 
@@ -30,7 +56,7 @@ class FrameClassification(BaseModel):
         description="Active TRIFECTA macro-frame surrounding the food target.",
     )
     lexical_unit: str = Field(
-        description="Trigger word (verb or noun) activating the frame.",
+        description="Trigger word (verb or noun) activating the frame; WebAnno *_LU.",
     )
     reasoning: str = Field(
         description="Brief linguistic justification per TRIFECTA guidelines.",
@@ -63,48 +89,94 @@ class EntityValidation(BaseModel):
     )
 
 
-class UsingCureQualia(BaseModel):
-    frame: Literal[TrifectaFrame.USING_CURE] = TrifectaFrame.USING_CURE
-    cure_affliction: str = Field(description="Ailment or symptom being treated.")
-    cure_food_treatment: str = Field(description="How the food acts as treatment.")
-    lexical_unit: str = Field(description="Trigger word activating the cure frame.")
+class CureQualia(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _legacy_frame(cls, data: object) -> object:
+        return _normalize_qualia_payload(data)
+
+    frame: Literal[TrifectaFrame.CURE] = TrifectaFrame.CURE
+    CURE_Affliction: str = Field(
+        validation_alias=AliasChoices("CURE_Affliction", "cure_affliction"),
+        description="Ailment or symptom being treated (WebAnno CURE_Affliction).",
+    )
+    CURE_Food_Treatment: str = Field(
+        validation_alias=AliasChoices("CURE_Food_Treatment", "cure_food_treatment"),
+        description="How the food acts as treatment (WebAnno CURE_Food_Treatment).",
+    )
+    lexical_unit: str = Field(description="Trigger word activating the frame (CURE_LU).")
 
 
 class CookingCreationQualia(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     frame: Literal[TrifectaFrame.COOKING_CREATION] = TrifectaFrame.COOKING_CREATION
-    preparation_method: str = Field(description="Named preparation or recipe step.")
-    heat_or_mechanical_process: str = Field(
+    COOKING_CREATION_Method: str = Field(
+        validation_alias=AliasChoices("COOKING_CREATION_Method", "preparation_method"),
+        description="Named preparation or recipe step.",
+    )
+    COOKING_CREATION_Process: str = Field(
+        validation_alias=AliasChoices("COOKING_CREATION_Process", "heat_or_mechanical_process"),
         description="Thermal or mechanical process applied.",
     )
-    result_state: str = Field(description="Resulting food state after preparation.")
-    lexical_unit: str = Field(description="Trigger word activating the cooking frame.")
+    COOKING_CREATION_Food_Product: str = Field(
+        validation_alias=AliasChoices("COOKING_CREATION_Food_Product", "result_state"),
+        description="Resulting food state after preparation.",
+    )
+    lexical_unit: str = Field(description="Trigger word activating the frame (COOKING_CREATION_LU).")
 
 
-class UsingIngestionQualia(BaseModel):
-    frame: Literal[TrifectaFrame.USING_INGESTION] = TrifectaFrame.USING_INGESTION
-    consumption_context: str = Field(description="Situation or setting of consumption.")
-    consumer: str = Field(description="Who consumes the food, if stated.")
-    manner: str = Field(description="Manner of ingestion (eating, drinking, etc.).")
-    lexical_unit: str = Field(description="Trigger word activating the ingestion frame.")
+class IngestionQualia(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _legacy_frame(cls, data: object) -> object:
+        return _normalize_qualia_payload(data)
+
+    frame: Literal[TrifectaFrame.INGESTION] = TrifectaFrame.INGESTION
+    INGESTION_Context: str = Field(
+        validation_alias=AliasChoices("INGESTION_Context", "consumption_context"),
+        description="Situation or setting of consumption.",
+    )
+    INGESTION_Ingestor: str = Field(
+        validation_alias=AliasChoices("INGESTION_Ingestor", "consumer"),
+        description="Who consumes the food, if stated.",
+    )
+    INGESTION_Manner: str = Field(
+        validation_alias=AliasChoices("INGESTION_Manner", "manner"),
+        description="Manner of ingestion (eating, drinking, etc.).",
+    )
+    lexical_unit: str = Field(description="Trigger word activating the frame (INGESTION_LU).")
 
 
 class PreservingQualia(BaseModel):
+    model_config = ConfigDict(populate_by_name=True)
+
     frame: Literal[TrifectaFrame.PRESERVING] = TrifectaFrame.PRESERVING
-    preservation_technique: str = Field(
+    PR_Technique: str = Field(
+        validation_alias=AliasChoices("PR_Technique", "preservation_technique"),
         description="Technique: salting, smoking, pickling, drying, etc.",
     )
-    preserving_agent: str = Field(
+    PR_Medium: str = Field(
+        validation_alias=AliasChoices("PR_Medium", "preserving_agent"),
         description="Agent or medium used (salt, smoke, vinegar, etc.).",
     )
-    target_food: str = Field(description="Food item being preserved.")
-    lexical_unit: str = Field(description="Trigger word activating the preserving frame.")
+    PR_Food_Patient: str = Field(
+        validation_alias=AliasChoices("PR_Food_Patient", "target_food"),
+        description="Food item being preserved.",
+    )
+    lexical_unit: str = Field(description="Trigger word activating the frame (PR_LU).")
 
+
+# Backward-compatible class aliases.
+UsingCureQualia = CureQualia
+UsingIngestionQualia = IngestionQualia
 
 FrameQualia = Annotated[
-    UsingCureQualia
-    | CookingCreationQualia
-    | UsingIngestionQualia
-    | PreservingQualia,
+    CureQualia | CookingCreationQualia | IngestionQualia | PreservingQualia,
     Field(discriminator="frame"),
 ]
 

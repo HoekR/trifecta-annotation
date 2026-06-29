@@ -8,13 +8,17 @@ from collections import defaultdict
 import pandas as pd
 
 from trifecta_annotation.adapters.food_snippets import (
+    adapt_food_snippet_long_row,
     adapt_food_snippet_row,
     load_food_snippets_frame,
+    load_food_snippets_long_frame,
     load_kwic_inputs_from_food_snippets,
     parse_found_terms,
     terms_in_snippet,
 )
 from trifecta_annotation.schemas import KwicInput
+from trifecta_annotation.thesaurus import filter_long_snippets_frame
+from trifecta_annotation.vocabulary import resolve_thesaurus_lookup
 
 
 def _work_key(row: pd.Series) -> str:
@@ -29,6 +33,9 @@ def _row_has_target(row: pd.Series) -> bool:
     snippet = str(row.get("snippet") or "").strip()
     if not snippet:
         return False
+    if "matched_term" in row.index and str(row.get("matched_term") or "").strip():
+        term = str(row["matched_term"]).strip()
+        return bool(terms_in_snippet(snippet, [term]))
     terms = parse_found_terms(row.get("original_found_terms"))
     return bool(terms_in_snippet(snippet, terms))
 
@@ -75,8 +82,12 @@ def stratified_row_indices(
 
 def _adapt_indices(frame: pd.DataFrame, indices: list[int]) -> list[KwicInput]:
     records: list[KwicInput] = []
+    long_format = "matched_term" in frame.columns
     for index in indices:
-        result = adapt_food_snippet_row(frame.loc[index])
+        if long_format:
+            result = adapt_food_snippet_long_row(frame.loc[index])
+        else:
+            result = adapt_food_snippet_row(frame.loc[index])
         if result.input_record is not None:
             records.append(result.input_record)
     return records
@@ -105,14 +116,17 @@ def sample_kwic_inputs_for_gold(
     include_manual: bool = True,
     manual_share: float = 0.5,
     max_per_work: int = 3,
-    logical_name: str = "food_snippets",
+    logical_name: str = "food_snippets_long",
     path: str | None = None,
+    snippet_format: str = "long",
+    thesaurus_filter: bool = True,
+    thesaurus_path: str | None = None,
 ) -> list[KwicInput]:
     """
     Build a diverse annotation set across works and target words.
 
     1. Optionally seed from manual txt subset (curated snippets).
-    2. Fill remaining slots via stratified sample from full CSV.
+    2. Fill remaining slots via stratified sample from long/wide CSV.
     """
     selected: list[KwicInput] = []
     seen_ids: set[str] = set()
@@ -134,7 +148,22 @@ def sample_kwic_inputs_for_gold(
     if remaining <= 0:
         return selected[:limit]
 
-    frame = load_food_snippets_frame(logical_name=logical_name, path=path)
+    frame = (
+        load_food_snippets_long_frame(logical_name=logical_name, path=path)
+        if snippet_format == "long"
+        else load_food_snippets_frame(logical_name=logical_name, path=path)
+    )
+    if snippet_format == "long" and "doc_id" in frame.columns and "matched_term" in frame.columns:
+        frame = frame.assign(
+            _term_norm=frame["matched_term"].astype(str).str.lower(),
+        ).drop_duplicates(subset=["doc_id", "_term_norm"], keep="first")
+
+    lookup: dict[str, str] = {}
+    if thesaurus_filter:
+        lookup = resolve_thesaurus_lookup(thesaurus_path=thesaurus_path)
+        if snippet_format == "long":
+            frame = filter_long_snippets_frame(frame, lookup)
+
     if seen_ids:
         frame = frame[~frame["doc_id"].astype(str).isin(seen_ids)]
 

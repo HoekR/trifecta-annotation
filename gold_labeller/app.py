@@ -22,6 +22,7 @@ from gold_labeller.store import (
     update_row,
 )
 from trifecta_annotation.gold_io import annotation_to_labelling_row
+from trifecta_annotation.glossary import english_hint_for_term, glossary_en_lookup, read_glossary_csv
 from trifecta_annotation.pipeline import annotate_record
 from trifecta_annotation.schemas import KwicInput
 
@@ -45,6 +46,27 @@ def create_app(
     def _path() -> Path:
         return csv_path(app.config["CSV_LOGICAL"], app.config["CSV_FILE"])
 
+    def _glossary_lookup() -> dict[str, str]:
+        cached = app.config.get("_GLOSSARY_LOOKUP")
+        if cached is not None:
+            return cached
+        candidates = []
+        try:
+            from data_io import resolve
+
+            candidates.append(resolve("trifecta_thesaurus_glossary"))
+        except Exception:
+            pass
+        candidates.append(Path(__file__).resolve().parents[1] / "trifecta_thesaurus_glossary.csv")
+        lookup: dict[str, str] = {}
+        for path in candidates:
+            path = Path(path)
+            if path.exists():
+                lookup = glossary_en_lookup(read_glossary_csv(path))
+                break
+        app.config["_GLOSSARY_LOOKUP"] = lookup
+        return lookup
+
     def _load():
         return load_frame(_path())
 
@@ -67,6 +89,7 @@ def create_app(
         next_id = rows[idx + 1]["record_id"] if idx + 1 < len(rows) else None
         st = stats(frame)
         options = choice_options()
+        english_hint = english_hint_for_term(row["target_word"], _glossary_lookup())
         return render_template(
             "label.html",
             row=row,
@@ -77,6 +100,7 @@ def create_app(
             options=options,
             highlighted=highlight_target(row["context_text"], row["target_word"]),
             is_done=is_labelled(row),
+            english_hint=english_hint,
         )
 
     @app.get("/api/stats")

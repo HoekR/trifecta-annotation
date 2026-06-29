@@ -20,7 +20,7 @@
     <div><span class="label">Record</span><code>{{ row.record_id }}</code></div>
     <div><span class="label">Corpus</span>{{ row.corpus }}</div>
     <div><span class="label">Date</span>{{ row.date or "—" }}</div>
-    <div><span class="label">Target</span><strong>{{ row.target_word }}</strong></div>
+    <div><span class="label">Target</span><strong>{{ row.target_word }}</strong>{% if english_hint %} <span class="english-hint">({{ english_hint }})</span>{% endif %}</div>
   </div>
   {% if row.notes %}
   <p class="notes-hint">Notes: {{ row.notes }}</p>

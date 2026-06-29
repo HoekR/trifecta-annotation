@@ -107,6 +107,58 @@ def load_food_snippets_frame(
     return pd.read_csv(resolved)
 
 
+def load_food_snippets_long_frame(
+    *,
+    logical_name: str = "food_snippets_long",
+    path: str | Path | None = None,
+) -> pd.DataFrame:
+    """Load exploded snippet CSV (one row per matched keyword)."""
+    resolved = Path(path).expanduser().resolve() if path else resolve(logical_name)
+    return pd.read_csv(resolved)
+
+
+def _term_in_snippet(snippet: str, term: str) -> bool:
+    if len(term) < 3:
+        return False
+    return bool(re.search(rf"\b{re.escape(term.lower())}\b", snippet.lower()))
+
+
+def make_long_record_id(doc_id: str, term: str, occurrence: int = 0) -> str:
+    """Stable id for one (snippet, keyword) pair; suffix when term repeats in snippet."""
+    base = f"{doc_id}__{term.lower()}"
+    return base if occurrence == 0 else f"{base}__{occurrence}"
+
+
+def adapt_food_snippet_long_row(
+    row: pd.Series,
+    *,
+    occurrence: int = 0,
+) -> FoodSnippetAdaptation:
+    """Adapt one row from food_snippets_long.csv (explicit ``matched_term``)."""
+    snippet = str(row.get("snippet", "")).strip()
+    if not snippet:
+        return FoodSnippetAdaptation(None, [], "empty_snippet")
+
+    term = str(row.get("matched_term", "")).strip()
+    if not term:
+        return FoodSnippetAdaptation(None, [], "empty_matched_term")
+    if not _term_in_snippet(snippet, term):
+        return FoodSnippetAdaptation(None, [term], "term_not_in_snippet")
+
+    doc_id = str(row["doc_id"])
+    record = KwicInput(
+        record_id=make_long_record_id(doc_id, term, occurrence),
+        corpus=_corpus_from_filename(str(row.get("filename", ""))),
+        target_word=term,
+        context_text=snippet,
+        date=None,
+        source_path=str(row.get("filename") or "") or None,
+        title=str(row.get("title") or "") or None,
+        candidate_terms=[term],
+    )
+    return FoodSnippetAdaptation(record, [term])
+
+
 def load_kwic_inputs_from_food_snippets(
     *,
     logical_name: str = "food_snippets",
@@ -139,6 +191,66 @@ def load_kwic_inputs_from_food_snippets(
                     "doc_id": row.get("doc_id"),
                     "reason": result.reason,
                     "candidate_terms": result.candidate_terms,
+                },
+            )
+            continue
+        records.append(result.input_record)
+        if limit is not None and len(records) >= limit:
+            break
+
+    return records, skipped
+
+
+def load_kwic_inputs_from_food_snippets_long(
+    *,
+    logical_name: str = "food_snippets_long",
+    path: str | Path | None = None,
+    limit: int | None = None,
+    dedupe_doc_term: bool = True,
+    thesaurus_filter: bool = True,
+    thesaurus_path: str | Path | None = None,
+) -> tuple[list[KwicInput], list[dict[str, object]]]:
+    """Build KwicInput records from food_snippets_long.csv (one keyword per row)."""
+    from trifecta_annotation.thesaurus import filter_long_snippets_frame
+    from trifecta_annotation.vocabulary import resolve_thesaurus_lookup
+
+    frame = load_food_snippets_long_frame(logical_name=logical_name, path=path)
+    if thesaurus_filter:
+        lookup = resolve_thesaurus_lookup(thesaurus_path=thesaurus_path)
+        frame = filter_long_snippets_frame(frame, lookup)
+    records: list[KwicInput] = []
+    skipped: list[dict[str, object]] = []
+    seen_doc_term: set[str] = set()
+    occurrence: dict[str, int] = {}
+
+    for _, row in frame.iterrows():
+        doc_id = str(row.get("doc_id", ""))
+        term = str(row.get("matched_term", "")).strip().lower()
+        doc_term_key = f"{doc_id}__{term}"
+
+        if dedupe_doc_term:
+            if doc_term_key in seen_doc_term:
+                skipped.append(
+                    {
+                        "doc_id": doc_id,
+                        "matched_term": term,
+                        "reason": "duplicate_doc_term",
+                    },
+                )
+                continue
+            seen_doc_term.add(doc_term_key)
+            occ = 0
+        else:
+            occ = occurrence.get(doc_term_key, 0)
+            occurrence[doc_term_key] = occ + 1
+
+        result = adapt_food_snippet_long_row(row, occurrence=occ)
+        if result.input_record is None:
+            skipped.append(
+                {
+                    "doc_id": doc_id,
+                    "matched_term": term,
+                    "reason": result.reason,
                 },
             )
             continue

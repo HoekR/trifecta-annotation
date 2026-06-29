@@ -7,7 +7,7 @@ from trifecta_annotation.schemas import FrameClassification, PreservingQualia
 
 SYSTEM_PROMPT = (
     "You are annotating historical Dutch food texts for the TRIFECTA PRESERVING frame. "
-    "Extract preservation technique, preserving agent or medium, and target food. "
+    "Extract PR_Technique, PR_Medium, and PR_Food_Patient. "
     "Use empty string when a field is not stated in the context."
 )
 

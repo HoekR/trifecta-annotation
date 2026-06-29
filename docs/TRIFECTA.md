@@ -25,7 +25,7 @@ KWIC window + target_word
         │  early exit: metaphor / non-food
         ▼
   Step B — Macro-frame enum
-        │  COOKING_CREATION | USING_CURE | USING_INGESTION | PRESERVING | NONE
+        │  COOKING_CREATION | CURE | INGESTION | PRESERVING | NONE
         ▼
   Step C — Frame-specific qualia roles
         ▼
@@ -37,8 +37,8 @@ KWIC window + target_word
 | Frame | Description |
 |-------|-------------|
 | `COOKING_CREATION` | Thermal / mechanical preparation |
-| `USING_CURE` | Medicinal treatment |
-| `USING_INGESTION` | Direct consumption |
+| `CURE` | Medicinal treatment |
+| `INGESTION` | Direct consumption |
 | `PRESERVING` | Smoking, salting, pickling, drying |
 | `NONE` | Metaphorical or irrelevant |
 

@@ -37,6 +37,13 @@ phase = "frozen"
 description = "Canonical food snippets CSV on OneDrive"
 parent = ""
 
+[datasets.food_snippets_long_source]
+tier = "hot"
+path = "/path/to/OneDrive/data/trifecta/cort_voc_db/processed_outputs/food_snippets_long.csv"
+phase = "frozen"
+description = "Exploded food snippets — one row per matched keyword"
+parent = ""
+
 [datasets.food_snippets_manual_source]
 tier = "hot"
 path = "/path/to/snippets_for_annotation.txt"
@@ -52,6 +59,13 @@ path = "trifecta/food_snippets_for_annotation.csv"
 phase = "frozen"
 description = "Working copy of food snippets CSV"
 parent = "food_snippets_source"
+
+[datasets.food_snippets_long]
+tier = "scratch"
+path = "trifecta/food_snippets_long.csv"
+phase = "frozen"
+description = "Working copy of exploded food snippets (one keyword per row)"
+parent = "food_snippets_long_source"
 
 [datasets.food_snippets_manual]
 tier = "scratch"
@@ -71,12 +85,26 @@ parent = ""
 
 # --- pipeline outputs (scratch tier; gitignored under trifecta/) ---
 
+[datasets.trifecta_thesaurus]
+tier = "scratch"
+path = "trifecta/trifecta_thesaurus.csv"
+phase = "semi"
+description = "Merged food thesaurus (pref_label + aliases + keep flags)"
+parent = "food_terms"
+
+[datasets.trifecta_thesaurus_glossary]
+tier = "scratch"
+path = "trifecta/trifecta_thesaurus_glossary.csv"
+phase = "semi"
+description = "Top pref_labels with English glosses for reviewer review"
+parent = "trifecta_thesaurus"
+
 [datasets.kwic_inputs]
 tier = "scratch"
 path = "trifecta/kwic_inputs.jsonl"
 phase = "semi"
 description = "Normalized KwicInput records"
-parent = "food_snippets"
+parent = "food_snippets_long"
 
 [datasets.trifecta_gold_csv]
 tier = "scratch"
