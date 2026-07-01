@@ -15,6 +15,6 @@ data_manifest.local.toml
 # Annotation guidelines PDFs (large; keep on OneDrive or place in docs/ locally)
 docs/*.pdf
 
-# Pipeline data and scratch outputs (see data_manifest.toml)
-trifecta/
+# Generated / reviewed frame-verb corpus (scripts/build_frame_verb_lexicon.py)
+trifecta_frame_verb_corpus.csv
 *.parquet

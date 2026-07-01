@@ -99,6 +99,13 @@ phase = "semi"
 description = "Top pref_labels with English glosses for reviewer review"
 parent = "trifecta_thesaurus"
 
+[datasets.trifecta_gijsbert]
+tier = "scratch"
+path = "trifecta/gijsbert"
+phase = "semi"
+description = "GijsBERT frame-classification export (train/dev JSONL)"
+parent = "trifecta_annotations"
+
 [datasets.kwic_inputs]
 tier = "scratch"
 path = "trifecta/kwic_inputs.jsonl"

@@ -246,6 +246,36 @@ def annotation_to_row(annotation: GoldAnnotation | dict[str, Any]) -> dict[str, 
     return row
 
 
+def _resolve_step_a_bools(row: dict[str, Any]) -> tuple[bool, bool]:
+    """Parse Step A booleans; infer ``is_food_entity`` from ontology fields when blank."""
+    entity = _parse_bool(row.get("is_food_entity"))
+    metaphor = _parse_bool(row.get("is_metaphor"))
+    if metaphor is None:
+        metaphor = False
+    if entity is None:
+        if not _empty(row.get("formal_dimension")) or not _empty(row.get("canonical_pref_label")):
+            entity = True
+        elif _parse_bool(row.get("ontology_match")) is True:
+            entity = True
+        else:
+            entity = False
+    return entity, metaphor
+
+
+def _has_step_a_context(row: dict[str, Any]) -> bool:
+    return any(
+        not _empty(row.get(key))
+        for key in (
+            "is_food_entity",
+            "is_metaphor",
+            "formal_dimension",
+            "canonical_pref_label",
+            "step_a_reasoning",
+            "ontology_match",
+        )
+    )
+
+
 def row_to_annotation(row: dict[str, Any]) -> GoldAnnotation | None:
     row = _normalize_csv_row(row)
     """Convert a labelled CSV row to GoldAnnotation; skip unlabelled rows."""
@@ -253,9 +283,12 @@ def row_to_annotation(row: dict[str, Any]) -> GoldAnnotation | None:
     if labelled is False:
         return None
 
-    has_step_a = not _empty(row.get("is_food_entity")) or not _empty(row.get("is_metaphor"))
+    entity = _parse_bool(row.get("is_food_entity"))
+    metaphor = _parse_bool(row.get("is_metaphor"))
+    has_any_step_a = entity is not None or metaphor is not None
+    has_step_a_context = _has_step_a_context(row)
     dropped = _parse_bool(row.get("dropped")) or False
-    if labelled is None and not has_step_a and not dropped:
+    if labelled is None and not has_step_a_context and not dropped:
         return None
 
     provenance = AnnotationProvenance(
@@ -268,13 +301,26 @@ def row_to_annotation(row: dict[str, Any]) -> GoldAnnotation | None:
     )
 
     step_a: EntityValidation | None = None
-    if has_step_a:
-        entity = _parse_bool(row.get("is_food_entity"))
-        metaphor = _parse_bool(row.get("is_metaphor"))
-        if entity is None or metaphor is None:
-            raise ValueError(
-                f"Row {row.get('record_id')}: labelled rows need is_food_entity and is_metaphor",
-            )
+    drop_reason: str | None = None
+    if has_any_step_a and entity is not None and metaphor is not None:
+        step_a = EntityValidation(
+            is_food_entity=entity,
+            is_metaphor=metaphor,
+            formal_dimension=_parse_formal_dimension(row.get("formal_dimension")),
+            canonical_pref_label=None
+            if _empty(row.get("canonical_pref_label"))
+            else str(row.get("canonical_pref_label")),
+            ontology_match=bool(_parse_bool(row.get("ontology_match")) or False),
+            reasoning=str(row.get("step_a_reasoning") or ""),
+        )
+        if dropped is False:
+            dropped, drop_reason = _drop_from_step_a(step_a)
+        else:
+            drop_reason = None if _empty(row.get("drop_reason")) else str(row.get("drop_reason"))
+    elif has_any_step_a and dropped:
+        drop_reason = None if _empty(row.get("drop_reason")) else str(row.get("drop_reason"))
+    elif has_step_a_context:
+        entity, metaphor = _resolve_step_a_bools(row)
         step_a = EntityValidation(
             is_food_entity=entity,
             is_metaphor=metaphor,
@@ -386,8 +432,14 @@ def kwic_input_to_candidate_row(
 ) -> dict[str, Any]:
     """Build an empty labelling row from a KwicInput."""
     notes = ""
+    if inp.discovery_verb:
+        notes = f"discovery_verb={inp.discovery_verb}"
+        if inp.frame_hint:
+            notes += f"; frame_hint={inp.frame_hint}"
+        notes += f"; kwic_mode={inp.kwic_mode}"
     if inp.candidate_terms and len(inp.candidate_terms) > 1:
-        notes = f"candidate_terms: {', '.join(inp.candidate_terms)}"
+        extra = f"candidate_terms: {', '.join(inp.candidate_terms)}"
+        notes = f"{notes}. {extra}".strip(". ")
     if inp.title:
         notes = f"{inp.title}. {notes}".strip()
 
@@ -442,6 +494,7 @@ def export_candidates_csv(
     source: str = "diverse",
     seed: int = 0,
     include_manual: bool = True,
+    verb_share: float = 0.0,
     thesaurus_filter: bool = True,
     thesaurus_path: str | Path | None = None,
 ) -> Path:
@@ -455,16 +508,27 @@ def export_candidates_csv(
     )
     to_row = lambda inp: kwic_input_to_candidate_row(inp, thesaurus_lookup=lookup or None)
 
-    if source == "diverse":
+    if source in {"diverse", "mixed"}:
         from trifecta_annotation.sampling import sample_kwic_inputs_for_gold
 
+        share = 0.5 if source == "mixed" else verb_share
         records = sample_kwic_inputs_for_gold(
             limit=limit or 50,
             seed=seed,
             include_manual=include_manual,
+            verb_share=share,
             snippet_format="long",
             logical_name="food_snippets_long",
             thesaurus_filter=thesaurus_filter,
+            thesaurus_path=str(thesaurus_path) if thesaurus_path else None,
+        )
+        rows = [to_row(inp) for inp in records]
+    elif source == "verb":
+        from trifecta_annotation.verb_kwic import sample_verb_kwic_for_gold
+
+        records = sample_verb_kwic_for_gold(
+            limit=limit or 25,
+            seed=seed,
             thesaurus_path=str(thesaurus_path) if thesaurus_path else None,
         )
         rows = [to_row(inp) for inp in records]

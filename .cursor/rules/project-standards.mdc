@@ -1,0 +1,59 @@
+---
+description: Core project standards for TRIFECTA annotation pipeline code managed via uv
+alwaysApply: true
+---
+
+# Context & Environment
+
+- Target: Python package (`trifecta_annotation/`) and CLI scripts (`scripts/`) managed via uv
+- Primary Stack: Python 3.11+, Pandas, Pydantic, instructor, `data_io` + `data_manifest.toml`
+- Optional extras: `gijsbert` (PyTorch/transformers), `gold-ui` (Flask), `kwic` (hist-text-utils)
+
+# Workflow & Planning (STRICT)
+
+- **PLAN.md Priority**: Always read, consult, and work directly from `PLAN.md` in the repo root before executing any task.
+- **Plan Updates**: When a milestone, task, or sub-task is started, modified, or completed, immediately update `PLAN.md`.
+- **No Action Without Plan**: Never write code or modify files without ensuring the step aligns with the current milestone in `PLAN.md`.
+- **Agent docs**: Also consult `AGENTS.md`, `docs/TRIFECTA.md`, and `docs/GOLD_LABELLING.md` for pipeline-specific conventions.
+
+# Core AI Behavior
+
+- Be extremely concise. No introductory fluff, basic Python syntax explanations, or conversational filler.
+- Provide pure, production-ready code blocks that can be executed instantly.
+- When modifying code, output only changed lines or specific functions, never the full file unless requested.
+
+# uv Coding Practices
+
+- **Package Management**: Never suggest `pip install`. Always use `uv add`, `uv sync`, or `uv run`.
+- **Execution**: Run scripts and CLIs via `uv run` (e.g. `uv run trifecta-batch`, `uv run python scripts/import_gold_csv.py`).
+- **Manifest check**: After `data_manifest.toml` edits, run `uv run python -m data_io.check`.
+
+# Data paths & governance
+
+- Use `from data_io import resolve, save_parquet, save_jsonl, save_semi_structured` — no hardcoded absolute paths in scripts.
+- Register new datasets in `data_manifest.toml` before referencing them in code.
+- Keep `PLAN.md` dataset table in sync with `[datasets.*]` keys.
+- Semi-structured outputs: `save_semi_structured(..., logical_name=..., script=__file__)`.
+- Frozen eval sets: `save_parquet(..., logical_name=..., script=__file__)`.
+- Preserve provenance (`record_id`, `corpus`, `date`, `source_path`) on all annotation records.
+
+# TRIFECTA pipeline
+
+- Steps A → B → C; early dropout on Step A (not food / metaphor).
+- Structured outputs only (`instructor` + Pydantic) — no free-text frame labels in production code.
+- Era = provenance on records, not separate pipelines or code paths.
+- Frame verbs are discovery triggers; gold labels frame in context.
+
+# Code Style & Efficiency Standards
+
+- **Vectorization**: Never use loops (`for`, `while`) for row-by-row Pandas/NumPy operations. Use vectorized operations.
+- **Pandas**: Avoid `inplace=True`. Use explicit assignment (e.g., `df = df.drop(...)`).
+- **Pandas Historical Dates**: Never use `pd.to_datetime` or standard datetime for years before 1678 (OutOfBoundsDatetime). Use `pd.Period` or `period_range`.
+- **PyTorch** (optional `gijsbert` extra only): `device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")`
+- **PyTorch Performance**: Use `torch.inference_mode()` instead of `torch.no_grad()` for evaluations.
+- **Memory Management**: Explicitly delete large objects (`del obj; gc.collect()`). Clear MPS cache (`torch.mps.empty_cache()`) if needed.
+
+# Scope boundaries
+
+- Keep TRIFECTA logic in this repo — do not add frame annotation code to `hist-text-utils`.
+- Sibling repos (`recepten-preservare-analysis`, `Dutch-historical-recipe-trends`) are data sources referenced via manifest keys only.

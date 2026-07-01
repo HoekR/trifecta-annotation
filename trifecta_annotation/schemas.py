@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Literal
+from typing import Annotated, Literal, Literal
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
@@ -192,6 +192,18 @@ class KwicInput(BaseModel):
     source_path: str | None = None
     title: str | None = None
     candidate_terms: list[str] | None = None
+    discovery_verb: str | None = Field(
+        default=None,
+        description="Frame verb that discovered this snippet (verb-seeded KWIC).",
+    )
+    frame_hint: str | None = Field(
+        default=None,
+        description="Expected macro-frame from discovery_verb lexicon.",
+    )
+    kwic_mode: Literal["food", "verb_food", "verb"] = Field(
+        default="food",
+        description="food = noun target; verb_food = verb found snippet, food highlighted.",
+    )
 
 
 class AnnotationProvenance(BaseModel):
@@ -203,6 +215,9 @@ class AnnotationProvenance(BaseModel):
     source_path: str | None = None
     record_id: str | None = None
     date: str | None = None
+    discovery_verb: str | None = None
+    frame_hint: str | None = None
+    kwic_mode: Literal["food", "verb_food", "verb"] = "food"
 
 
 class TrifectaAnnotation(BaseModel):

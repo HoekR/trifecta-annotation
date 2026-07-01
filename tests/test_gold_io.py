@@ -114,3 +114,63 @@ def test_gold_csv_dropout_row() -> None:
     assert parsed.dropped is True
     assert parsed.drop_reason == "metaphor"
     assert parsed.step_b is None
+
+
+def test_gold_csv_dropout_partial_step_a() -> None:
+    row = {
+        "record_id": "g4",
+        "corpus": "nieuwen",
+        "target_word": "rogge",
+        "context_text": "rogge op het veld",
+        "date": "",
+        "source_path": "",
+        "dropped": "true",
+        "drop_reason": "irrelevant",
+        "is_food_entity": "",
+        "is_metaphor": "false",
+        "formal_dimension": "",
+        "canonical_pref_label": "",
+        "ontology_match": "",
+        "step_a_reasoning": "",
+        "selected_frame": "",
+        "lexical_unit": "",
+        "step_b_reasoning": "",
+        "labelled": "true",
+        "notes": "",
+    }
+    parsed = row_to_annotation(row)
+    assert parsed is not None
+    assert parsed.dropped is True
+    assert parsed.drop_reason == "irrelevant"
+    assert parsed.step_a is None
+
+
+def test_gold_csv_active_partial_step_a_defaults_false() -> None:
+    row = {
+        "record_id": "g5",
+        "corpus": "hove",
+        "target_word": "eieren",
+        "context_text": "eieren in de pan",
+        "date": "",
+        "source_path": "",
+        "dropped": "false",
+        "drop_reason": "",
+        "is_food_entity": "",
+        "is_metaphor": "false",
+        "formal_dimension": "FOOD_Whole",
+        "canonical_pref_label": "ei",
+        "ontology_match": "true",
+        "step_a_reasoning": "eieren braken",
+        "selected_frame": "NONE",
+        "lexical_unit": "",
+        "step_b_reasoning": "",
+        "labelled": "true",
+        "notes": "",
+    }
+    parsed = row_to_annotation(row)
+    assert parsed is not None
+    assert parsed.step_a is not None
+    assert parsed.step_a.is_food_entity is True
+    assert parsed.step_a.is_metaphor is False
+    assert parsed.step_b is not None
+    assert parsed.step_b.selected_frame.value == "NONE"

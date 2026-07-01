@@ -11,15 +11,16 @@ from trifecta_annotation.adapters.food_snippets import (
     load_kwic_inputs_from_food_snippets,
     load_kwic_inputs_from_food_snippets_long,
 )
+from trifecta_annotation.verb_kwic import sample_verb_kwic_for_gold
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build kwic_inputs from food snippets.")
     parser.add_argument(
         "--source",
-        choices=["manual", "wide", "long"],
+        choices=["manual", "wide", "long", "verb"],
         default="long",
-        help="manual = curated txt subset; wide = food_snippets CSV; long = one keyword per row (default)",
+        help="manual = curated txt; wide/long = food keyword; verb = frame-verb discovery",
     )
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument(
@@ -44,6 +45,13 @@ def main() -> None:
             manual_only=False,
             limit=args.limit,
         )
+        parent = "food_snippets"
+    elif args.source == "verb":
+        records = sample_verb_kwic_for_gold(
+            limit=args.limit or 500,
+            thesaurus_path=thesaurus_path,
+        )
+        skipped = []
         parent = "food_snippets"
     else:
         records, skipped = load_kwic_inputs_from_food_snippets_long(

@@ -47,9 +47,30 @@ Default: **50 diverse examples** — mix of curated txt snippets + stratified pi
 uv run python scripts/export_gold_candidates.py --limit 50 --summary
 ```
 
+**Verb-seeded gold** (frame verbs discover snippet, food noun is `target_word`):
+
+```bash
+# 25 rows stratified by PRESERVING / CURE / COOKING / INGESTION verbs
+uv run python scripts/export_gold_candidates.py --source verb --limit 25 --summary
+
+# 50/50 food + verb (recommended second tranche after noun-first gold)
+uv run python scripts/export_gold_candidates.py --source mixed --limit 30 --summary
+
+# Custom verb share on diverse export
+uv run python scripts/export_gold_candidates.py --verb-share 0.4 --limit 50
+```
+
+Build verb-seeded `kwic_inputs` for batch/LLM:
+
+```bash
+uv run python scripts/build_kwic_inputs.py --source verb --limit 500
+```
+
 | Flag | Meaning |
 |------|---------|
-| `--source diverse` | Default: ~half from manual txt, half stratified from long CSV |
+| `--source diverse` | Default: manual txt + food long CSV (optional `--verb-share`) |
+| `--source mixed` | 50% verb-seeded + 50% food-seeded |
+| `--source verb` | Frame-verb discovery only (wide snippets + thesaurus food in window) |
 | `--source manual` | Only your 106-line txt subset |
 | `--snippet-format wide` | Legacy: sample from wide `food_snippets` instead |
 | `--seed 42` | Reproducible sample |
@@ -73,3 +94,17 @@ uv run python scripts/import_gold_csv.py
 uv run trifecta-batch --input-logical kwic_inputs --resume
 uv run trifecta-eval --gold trifecta_gold --predictions trifecta_annotations
 ```
+
+## 5. GijsBERT export
+
+Mark food target `[TGT]…[/TGT]`, frame verb `[VRB]…[/VRB]`, or both:
+
+```bash
+uv run python scripts/export_gijsbert.py --mark-mode both
+```
+
+| `--mark-mode` | Use when |
+|---------------|----------|
+| `food` | Noun-centred KWIC (first gold tranche) |
+| `verb` | Verb trigger only |
+| `both` | Verb-seeded rows: model sees food + frame verb |

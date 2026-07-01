@@ -22,6 +22,9 @@ def _provenance_from_input(inp: KwicInput) -> AnnotationProvenance:
         source_path=inp.source_path,
         record_id=inp.record_id,
         date=inp.date,
+        discovery_verb=inp.discovery_verb,
+        frame_hint=inp.frame_hint,
+        kwic_mode=inp.kwic_mode,
     )
 
 
