@@ -25,10 +25,12 @@ from trifecta_annotation.schemas import (
     UsingIngestionQualia,
 )
 from trifecta_annotation.thesaurus import canonical_pref_for_term
+from trifecta_annotation.text_regime import TextRegime, infer_text_regime
 
 GOLD_CSV_COLUMNS = [
     "record_id",
     "corpus",
+    "text_regime",
     "target_word",
     "context_text",
     "date",
@@ -73,6 +75,68 @@ STEP_C_COLUMNS = [
     "PR_Food_Patient",
 ]
 
+GOLD_FIX_VERDICTS = frozenset({"keep_gold", "adopt_pred", "custom"})
+
+GOLD_FIX_VERDICT_ALIASES = {
+    "adopt_gold": "keep_gold",
+    "keep": "keep_gold",
+    "gold": "keep_gold",
+    "k": "keep_gold",
+    "adopt": "adopt_pred",
+    "pred": "adopt_pred",
+    "a": "adopt_pred",
+    "adopt_prediction": "adopt_pred",
+    "w": "custom",
+    "wijzig": "custom",
+    "wijzigen": "custom",
+}
+
+
+def normalize_gold_fix_verdict(verdict: object) -> str:
+    """Normalize reviewer verdict strings (typos, spacing, aliases, shorthand)."""
+    raw = _excel_cell(verdict).lower().replace(" ", "_").replace("-", "_")
+    if not raw:
+        return ""
+    if raw in GOLD_FIX_VERDICT_ALIASES:
+        return GOLD_FIX_VERDICT_ALIASES[raw]
+    if raw.startswith("keep"):
+        return "keep_gold"
+    if raw.startswith("adopt") or raw.startswith("pred"):
+        return "adopt_pred"
+    if raw.startswith("wij") or raw.startswith("custom"):
+        return "custom"
+    return raw
+
+GOLD_FIX_OVERRIDE_COLUMNS = [
+    "selected_frame",
+    "dropped",
+    "drop_reason",
+    "is_food_entity",
+    "is_metaphor",
+    "formal_dimension",
+    "canonical_pref_label",
+    "ontology_match",
+    "step_a_reasoning",
+    "lexical_unit",
+    "step_b_reasoning",
+    "notes",
+    *STEP_C_COLUMNS,
+]
+
+GOLD_FIXES_SHEET_COLUMNS = [
+    "record_id",
+    "target_word",
+    "issue",
+    "context_snippet",
+    "gold_frame",
+    "pred_frame",
+    "gold_dropped",
+    "pred_dropped",
+    "verdict",
+    "review_notes",
+    *GOLD_FIX_OVERRIDE_COLUMNS,
+]
+
 # Legacy CSV column names still accepted on import.
 _CSV_LEGACY_ALIASES = {
     "preparation_method": "COOKING_CREATION_Method",
@@ -104,6 +168,15 @@ def _parse_bool(value: object) -> bool | None:
     if text in {"false", "0", "no", "n", "nee"}:
         return False
     raise ValueError(f"Cannot parse boolean value: {value!r}")
+
+
+def _parse_text_regime(value: object) -> TextRegime | None:
+    if _empty(value):
+        return None
+    try:
+        return TextRegime(str(value).strip())
+    except ValueError:
+        return None
 
 
 def _empty(value: object) -> bool:
@@ -224,6 +297,7 @@ def annotation_to_row(annotation: GoldAnnotation | dict[str, Any]) -> dict[str, 
     row = {
         "record_id": provenance.get("record_id", ""),
         "corpus": provenance.get("corpus", ""),
+        "text_regime": provenance.get("text_regime", "") or "",
         "target_word": provenance.get("target_word", ""),
         "context_text": provenance.get("context_text", ""),
         "date": provenance.get("date", ""),
@@ -298,6 +372,8 @@ def row_to_annotation(row: dict[str, Any]) -> GoldAnnotation | None:
         context_text=str(row.get("context_text") or ""),
         date=None if _empty(row.get("date")) else str(row.get("date")),
         source_path=None if _empty(row.get("source_path")) else str(row.get("source_path")),
+        text_regime=_parse_text_regime(row.get("text_regime")),
+        title=None,
     )
 
     step_a: EntityValidation | None = None
@@ -422,7 +498,244 @@ def merge_labelling_rows(
                 rows.append(merged)
         else:
             rows.append(record)
+    seen = {str(row.get("record_id", "")) for row in rows}
+    for record_id, incoming in update_index.items():
+        if record_id not in seen:
+            rows.append({col: incoming.get(col, "") for col in GOLD_CSV_COLUMNS})
     return pd.DataFrame(rows, columns=GOLD_CSV_COLUMNS)
+
+
+def _excel_cell(value: object) -> str:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return ""
+    return str(value).strip()
+
+
+def _append_review_note(existing: object, review_notes: object) -> str:
+    note = _excel_cell(review_notes)
+    if not note:
+        return _excel_cell(existing)
+    base = _excel_cell(existing)
+    tagged = f"review: {note}"
+    return f"{base}; {tagged}".strip("; ").strip() if base else tagged
+
+
+def prediction_to_labelling_row(
+    prediction: dict[str, Any],
+    *,
+    review_notes: str = "",
+) -> dict[str, Any]:
+    """Convert a pipeline prediction dict into an importable gold CSV row."""
+    row = annotation_to_labelling_row(
+        TrifectaAnnotation.model_validate(prediction),
+        labelled=True,
+    )
+    if review_notes:
+        row["notes"] = _append_review_note(row.get("notes"), review_notes)
+    return row
+
+
+def build_gold_fixes_rows(disagreement_rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    """Deduplicate disagreement rows into a ``gold_fixes`` review sheet."""
+    by_id: dict[str, dict[str, object]] = {}
+    for row in disagreement_rows:
+        record_id = _excel_cell(row.get("record_id"))
+        if not record_id:
+            continue
+        issue = _excel_cell(row.get("issue"))
+        if record_id in by_id:
+            prior = _excel_cell(by_id[record_id].get("issue"))
+            if issue and issue not in prior:
+                by_id[record_id]["issue"] = f"{prior}; {issue}".strip("; ")
+            continue
+        by_id[record_id] = {
+            "record_id": record_id,
+            "target_word": row.get("target_word", ""),
+            "issue": issue,
+            "context_snippet": row.get("context_snippet", ""),
+            "gold_frame": row.get("gold_frame", ""),
+            "pred_frame": row.get("pred_frame", ""),
+            "gold_dropped": row.get("gold_dropped", ""),
+            "pred_dropped": row.get("pred_dropped", ""),
+            "verdict": "",
+            "review_notes": "",
+            **{col: "" for col in GOLD_FIX_OVERRIDE_COLUMNS},
+        }
+    return [by_id[record_id] for record_id in sorted(by_id)]
+
+
+def carry_forward_gold_fixes(
+    fresh: list[dict[str, object]],
+    existing: pd.DataFrame,
+) -> list[dict[str, object]]:
+    """Keep reviewer edits when re-exporting disagreements."""
+    if existing.empty or "record_id" not in existing.columns:
+        return fresh
+    saved = {
+        _excel_cell(row["record_id"]): row
+        for row in existing.to_dict(orient="records")
+        if _excel_cell(row.get("record_id"))
+    }
+    merged: list[dict[str, object]] = []
+    for row in fresh:
+        out = dict(row)
+        prior = saved.get(_excel_cell(row.get("record_id")))
+        if prior is None:
+            merged.append(out)
+            continue
+        for col in ("verdict", "review_notes", *GOLD_FIX_OVERRIDE_COLUMNS):
+            val = _excel_cell(prior.get(col))
+            if val:
+                out[col] = prior[col] if col in ("gold_dropped", "pred_dropped") else val
+        merged.append(out)
+    return merged
+
+
+def apply_gold_fix_row(
+    gold_row: dict[str, Any],
+    fix_row: dict[str, Any],
+    *,
+    prediction: dict[str, Any] | None = None,
+) -> dict[str, Any] | None:
+    """
+    Apply one ``gold_fixes`` row onto a gold labelling row.
+
+    Returns ``None`` when the fix row has no verdict (skip).
+    """
+    verdict = normalize_gold_fix_verdict(fix_row.get("verdict"))
+    if not verdict:
+        return None
+    if verdict not in GOLD_FIX_VERDICTS:
+        raise ValueError(
+            f"Row {fix_row.get('record_id')}: verdict must be one of {sorted(GOLD_FIX_VERDICTS)} "
+            f"(got {fix_row.get('verdict')!r})",
+        )
+
+    if verdict == "keep_gold":
+        out = dict(gold_row)
+        out["notes"] = _append_review_note(out.get("notes"), fix_row.get("review_notes"))
+        return out
+
+    if verdict == "adopt_pred":
+        if prediction is None:
+            raise ValueError(f"Row {fix_row.get('record_id')}: adopt_pred requires predictions")
+        out = prediction_to_labelling_row(
+            prediction,
+            review_notes=_excel_cell(fix_row.get("review_notes")),
+        )
+        for col in ("record_id", "corpus", "target_word", "context_text", "date", "source_path"):
+            if _excel_cell(gold_row.get(col)):
+                out[col] = gold_row[col]
+        return out
+
+    out = dict(gold_row)
+    for col in GOLD_FIX_OVERRIDE_COLUMNS:
+        val = fix_row.get(col)
+        if not _empty(val):
+            out[col] = val
+    out["labelled"] = True
+    out["notes"] = _append_review_note(out.get("notes"), fix_row.get("review_notes"))
+    return out
+
+
+def apply_gold_fixes_dataframe(
+    gold_frame: pd.DataFrame,
+    fixes_frame: pd.DataFrame,
+    *,
+    predictions: list[dict[str, Any]] | None = None,
+) -> tuple[pd.DataFrame, list[str]]:
+    """Merge ``gold_fixes`` sheet rows into a gold labelling CSV frame."""
+    pred_index = {
+        str((row.get("provenance") or {}).get("record_id")): row
+        for row in (predictions or [])
+        if (row.get("provenance") or {}).get("record_id")
+    }
+    gold_index = {
+        str(row.get("record_id", "")): row
+        for row in gold_frame.to_dict(orient="records")
+    }
+    updates: list[dict[str, Any]] = []
+    applied: list[str] = []
+    for fix_row in fixes_frame.to_dict(orient="records"):
+        record_id = _excel_cell(fix_row.get("record_id"))
+        if not record_id:
+            continue
+        if record_id not in gold_index:
+            raise ValueError(f"gold_fixes row not in gold CSV: {record_id}")
+        updated = apply_gold_fix_row(
+            gold_index[record_id],
+            fix_row,
+            prediction=pred_index.get(record_id),
+        )
+        if updated is None:
+            continue
+        updates.append(updated)
+        applied.append(record_id)
+    if not updates:
+        return gold_frame, applied
+    merged = merge_labelling_rows(gold_frame, updates, overwrite_labelled=True)
+    return merged, applied
+
+
+def load_gold_fixes_frame(path: str | Path, *, sheet_name: str = "gold_fixes") -> pd.DataFrame:
+    """Load a ``gold_fixes`` table from CSV (preferred) or Excel."""
+    resolved = Path(path).expanduser().resolve()
+    if resolved.suffix.lower() == ".csv":
+        return pd.read_csv(resolved, dtype=str, keep_default_na=False)
+    return load_gold_fixes_sheet(resolved, sheet_name=sheet_name)
+
+
+def load_gold_fixes_sheet(path: str | Path, *, sheet_name: str = "gold_fixes") -> pd.DataFrame:
+    frame = pd.read_excel(path, sheet_name=sheet_name, dtype=str)
+    frame = frame.fillna("")
+    return frame
+
+
+def merge_gold_csv_with_fixes(
+    *,
+    gold_csv_path: str | Path,
+    fixes_path: str | Path,
+    predictions_path: str | Path | None = None,
+    output_csv_path: str | Path | None = None,
+    sheet_name: str = "gold_fixes",
+) -> tuple[pd.DataFrame, list[str], Path]:
+    """Apply reviewed ``gold_fixes`` CSV or Excel sheet and write an updated gold CSV."""
+    gold_path = Path(gold_csv_path).expanduser().resolve()
+    fixes_file = Path(fixes_path).expanduser().resolve()
+    out_path = Path(output_csv_path).expanduser().resolve() if output_csv_path else gold_path
+
+    gold_frame = pd.read_csv(gold_path, dtype=str, keep_default_na=False)
+    fixes_frame = load_gold_fixes_frame(fixes_file, sheet_name=sheet_name)
+    predictions = None
+    if predictions_path is not None:
+        predictions = load_jsonl(Path(predictions_path).expanduser().resolve())
+
+    merged, applied = apply_gold_fixes_dataframe(
+        gold_frame,
+        fixes_frame,
+        predictions=predictions,
+    )
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    merged.reindex(columns=GOLD_CSV_COLUMNS, fill_value="").to_csv(out_path, index=False)
+    return merged, applied, out_path
+
+
+def merge_gold_csv_with_fixes_xlsx(
+    *,
+    gold_csv_path: str | Path,
+    fixes_xlsx_path: str | Path,
+    predictions_path: str | Path | None = None,
+    output_csv_path: str | Path | None = None,
+    sheet_name: str = "gold_fixes",
+) -> tuple[pd.DataFrame, list[str], Path]:
+    """Backward-compatible alias for Excel fixes workbooks."""
+    return merge_gold_csv_with_fixes(
+        gold_csv_path=gold_csv_path,
+        fixes_path=fixes_xlsx_path,
+        predictions_path=predictions_path,
+        output_csv_path=output_csv_path,
+        sheet_name=sheet_name,
+    )
 
 
 def kwic_input_to_candidate_row(
@@ -447,6 +760,11 @@ def kwic_input_to_candidate_row(
     return {
         "record_id": inp.record_id,
         "corpus": inp.corpus,
+        "text_regime": (inp.text_regime.value if inp.text_regime else infer_text_regime(
+            corpus=inp.corpus,
+            title=inp.title,
+            source_path=inp.source_path,
+        ).value),
         "target_word": inp.target_word,
         "context_text": inp.context_text,
         "date": inp.date or "",
@@ -628,6 +946,14 @@ def import_gold_csv(
     return annotations, parquet_path, jsonl_path
 
 
+def _records_from_gold_dataframe(df: pd.DataFrame) -> list[dict[str, Any]]:
+    if df.empty:
+        return []
+    if "annotation_json" in df.columns:
+        return [json.loads(text) for text in df["annotation_json"]]
+    return df.to_dict(orient="records")
+
+
 def load_gold_records(
     *,
     gold_logical: str = "trifecta_gold",
@@ -636,21 +962,22 @@ def load_gold_records(
     """Load gold annotations from parquet (annotation_json) or JSONL."""
     if gold_path is not None:
         path = Path(gold_path)
-        if path.suffix.lower() == ".csv":
+        suffix = path.suffix.lower()
+        if suffix == ".csv":
             frame = pd.read_csv(path, dtype=str, keep_default_na=False)
             return [
                 ann.model_dump(mode="json")
                 for row in frame.to_dict(orient="records")
                 if (ann := row_to_annotation(row)) is not None
             ]
+        if suffix == ".parquet":
+            from data_io.parquet_io import load_parquet
+
+            return _records_from_gold_dataframe(load_parquet(path=path))
         return load_jsonl(path)
 
     df = load_parquet(gold_logical)
-    if df.empty:
-        return []
-    if "annotation_json" in df.columns:
-        return [json.loads(text) for text in df["annotation_json"]]
-    return df.to_dict(orient="records")
+    return _records_from_gold_dataframe(df)
 
 
 def export_existing_gold_csv(

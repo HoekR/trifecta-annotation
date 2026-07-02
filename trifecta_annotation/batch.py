@@ -9,6 +9,11 @@ from typing import Any
 
 from data_io import load_jsonl, resolve, save_semi_structured
 
+from trifecta_annotation.client import make_instructor_client
+from trifecta_annotation.english_hint import (
+    default_review_hint_lookup,
+    review_hint_for_term,
+)
 from trifecta_annotation.pipeline import annotate_record
 from trifecta_annotation.schemas import KwicInput, TrifectaAnnotation
 
@@ -30,10 +35,21 @@ def _annotate_one(
     *,
     model: str | None,
     base_url: str | None,
+    client=None,
+    english_hint_lookup: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     inp = KwicInput.model_validate(record)
+    english_hint = None
+    if english_hint_lookup is not None:
+        english_hint = review_hint_for_term(inp.target_word, english_hint_lookup) or None
     try:
-        result = annotate_record(inp, model=model, base_url=base_url)
+        result = annotate_record(
+            inp,
+            model=model,
+            base_url=base_url,
+            client=client,
+            english_hint=english_hint,
+        )
         return result.model_dump(mode="json")
     except Exception as exc:  # noqa: BLE001 — per-record batch resilience
         return TrifectaAnnotation(
@@ -64,8 +80,12 @@ def run_batch(
     parent_sources: list[str] | None = None,
     description: str = "TRIFECTA batch annotation run",
     script: str | None = None,
+    english_hint: bool = False,
+    api_key: str | None = None,
 ) -> Path:
     """Annotate a list of KwicInput dicts and write JSONL output."""
+    hint_lookup = default_review_hint_lookup() if english_hint else None
+    instructor_client = make_instructor_client(base_url=base_url, api_key=api_key)
     if output_path is not None:
         path = Path(output_path).expanduser().resolve()
     else:
@@ -81,11 +101,26 @@ def run_batch(
     results: list[dict[str, Any]] = []
     if concurrency <= 1:
         for record in pending:
-            results.append(_annotate_one(record, model=model, base_url=base_url))
+            results.append(
+                _annotate_one(
+                    record,
+                    model=model,
+                    base_url=base_url,
+                    client=instructor_client,
+                    english_hint_lookup=hint_lookup,
+                )
+            )
     else:
         with ThreadPoolExecutor(max_workers=concurrency) as executor:
             futures = {
-                executor.submit(_annotate_one, record, model=model, base_url=base_url): record
+                executor.submit(
+                    _annotate_one,
+                    record,
+                    model=model,
+                    base_url=base_url,
+                    client=instructor_client,
+                    english_hint_lookup=hint_lookup,
+                ): record
                 for record in pending
             }
             for future in as_completed(futures):

@@ -19,6 +19,7 @@
   <div class="meta-grid">
     <div><span class="label">Record</span><code>{{ row.record_id }}</code></div>
     <div><span class="label">Corpus</span>{{ row.corpus }}</div>
+    <div><span class="label">Text regime</span>{{ row.text_regime or "—" }}</div>
     <div><span class="label">Date</span>{{ row.date or "—" }}</div>
     <div><span class="label">Target</span><strong>{{ row.target_word }}</strong>{% if english_hint %} <span class="english-hint">({{ english_hint }})</span>{% endif %}</div>
   </div>
@@ -40,6 +41,18 @@
       <span class="status-pill {{ 'done' if is_done else 'pending' }}">{{ 'Labelled' if is_done else 'Pending' }}</span>
     </div>
   </div>
+
+  <fieldset>
+    <legend>Source</legend>
+    <label>Text regime
+      <select name="text_regime">
+        <option value="">—</option>
+        {% for regime in options.text_regimes %}
+        <option value="{{ regime }}" {{ 'selected' if row.text_regime == regime else '' }}>{{ regime }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </fieldset>
 
   <fieldset>
     <legend>Step A — entity</legend>

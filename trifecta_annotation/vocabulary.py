@@ -13,7 +13,15 @@ from trifecta_annotation.thesaurus import alt_label_index as thesaurus_alt_index
 
 def load_food_terms() -> pd.DataFrame:
     """Load the TRIFECTA food ontology table."""
-    return pd.read_csv(resolve("food_terms"))
+    try:
+        return pd.read_csv(resolve("food_terms"))
+    except (DatasetNotFoundError, TierUnavailableError, KeyError, FileNotFoundError, OSError):
+        food_path = Path(
+            "/Users/rikhoekstra/develop/recepten-preservare-analysis/source_data/Food_terms.csv",
+        )
+        if food_path.exists():
+            return pd.read_csv(food_path)
+        raise
 
 
 def alt_label_index(df: pd.DataFrame) -> dict[str, str]:

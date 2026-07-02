@@ -56,6 +56,7 @@ def _cmd_batch(args: argparse.Namespace) -> None:
         parent_sources=args.parent_sources,
         description=args.description,
         script=__file__,
+        english_hint=args.english_hint,
     )
     print(path)
 
@@ -103,6 +104,7 @@ def build_parser() -> argparse.ArgumentParser:
     batch.add_argument("--base-url", default=None)
     batch.add_argument("--resume", action="store_true")
     batch.add_argument("--concurrency", type=int, default=1)
+    batch.add_argument("--english-hint", action="store_true")
     batch.add_argument("--parent-sources", nargs="*", default=None)
     batch.add_argument("--description", default="TRIFECTA batch annotation run")
     batch.set_defaults(func=_cmd_batch)

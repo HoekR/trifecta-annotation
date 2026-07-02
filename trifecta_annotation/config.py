@@ -15,3 +15,12 @@ def ollama_base_url() -> str:
 
 def trifecta_model() -> str:
     return os.environ.get("TRIFECTA_MODEL", DEFAULT_MODEL)
+
+
+def trifecta_api_key() -> str:
+    """API key for OpenAI-compatible endpoints (OpenRouter, vLLM, remote Ollama)."""
+    return (
+        os.environ.get("TRIFECTA_API_KEY")
+        or os.environ.get("OPENAI_API_KEY")
+        or DEFAULT_API_KEY
+    )

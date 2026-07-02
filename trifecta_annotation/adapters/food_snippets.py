@@ -11,6 +11,7 @@ import pandas as pd
 from data_io import resolve
 
 from trifecta_annotation.schemas import KwicInput
+from trifecta_annotation.text_regime import infer_text_regime
 
 
 @dataclass(frozen=True)
@@ -83,6 +84,11 @@ def adapt_food_snippet_row(row: pd.Series) -> FoodSnippetAdaptation:
         source_path=str(row.get("filename") or "") or None,
         title=str(row.get("title") or "") or None,
         candidate_terms=candidates or None,
+        text_regime=infer_text_regime(
+            corpus=_corpus_from_filename(str(row.get("filename", ""))),
+            title=str(row.get("title") or "") or None,
+            source_path=str(row.get("filename") or "") or None,
+        ),
     )
     return FoodSnippetAdaptation(record, candidates)
 

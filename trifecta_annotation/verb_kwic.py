@@ -19,6 +19,7 @@ from trifecta_annotation.frame_verbs import (
 )
 from trifecta_annotation.normalize import normalize_hist_dutch
 from trifecta_annotation.schemas import KwicInput, TrifectaFrame
+from trifecta_annotation.text_regime import infer_text_regime
 from trifecta_annotation.vocabulary import resolve_thesaurus_lookup
 
 
@@ -89,6 +90,11 @@ def verb_kwic_from_snippet_row(
         discovery_verb=hit.verb,
         frame_hint=hit.frame.value,
         kwic_mode=mode,
+        text_regime=infer_text_regime(
+            corpus=_corpus_from_filename(str(row.get("filename", ""))),
+            title=str(row.get("title") or "") or None,
+            source_path=str(row.get("filename") or "") or None,
+        ),
     )
 
 

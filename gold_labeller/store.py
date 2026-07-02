@@ -12,6 +12,7 @@ from data_io import resolve
 
 from trifecta_annotation.gold_io import GOLD_CSV_COLUMNS, _parse_bool
 from trifecta_annotation.schemas import FormalDimension, TrifectaFrame
+from trifecta_annotation.text_regime import TextRegime
 
 
 def csv_path(logical: str = "trifecta_gold_csv", path: str | Path | None = None) -> Path:
@@ -128,4 +129,5 @@ def choice_options() -> dict[str, list[str]]:
         "frames": [frame.value for frame in TrifectaFrame],
         "formal_dimensions": [dim.value for dim in FormalDimension],
         "drop_reasons": ["metaphor", "not_food_entity", "irrelevant", "ambiguous"],
+        "text_regimes": [regime.value for regime in TextRegime],
     }

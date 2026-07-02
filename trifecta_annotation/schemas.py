@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Annotated, Literal, Literal
+from typing import Annotated, Literal
+
+from trifecta_annotation.text_regime import TextRegime
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
@@ -204,6 +206,10 @@ class KwicInput(BaseModel):
         default="food",
         description="food = noun target; verb_food = verb found snippet, food highlighted.",
     )
+    text_regime: TextRegime | None = Field(
+        default=None,
+        description="Source document discourse type (genre layer).",
+    )
 
 
 class AnnotationProvenance(BaseModel):
@@ -218,6 +224,8 @@ class AnnotationProvenance(BaseModel):
     discovery_verb: str | None = None
     frame_hint: str | None = None
     kwic_mode: Literal["food", "verb_food", "verb"] = "food"
+    text_regime: TextRegime | None = None
+    title: str | None = None
 
 
 class TrifectaAnnotation(BaseModel):

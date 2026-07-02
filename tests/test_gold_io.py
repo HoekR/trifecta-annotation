@@ -1,6 +1,11 @@
 """Gold CSV roundtrip tests."""
 
-from trifecta_annotation.gold_io import annotation_to_row, row_to_annotation
+import json
+from pathlib import Path
+
+import pandas as pd
+
+from trifecta_annotation.gold_io import annotation_to_row, load_gold_records, row_to_annotation
 from trifecta_annotation.schemas import (
     AnnotationProvenance,
     EntityValidation,
@@ -174,3 +179,41 @@ def test_gold_csv_active_partial_step_a_defaults_false() -> None:
     assert parsed.step_a.is_metaphor is False
     assert parsed.step_b is not None
     assert parsed.step_b.selected_frame.value == "NONE"
+
+
+def test_load_gold_records_from_parquet_path(tmp_path: Path) -> None:
+    from data_io.parquet_io import save_parquet
+
+    ann = GoldAnnotation(
+        provenance=AnnotationProvenance(
+            record_id="g6",
+            corpus="voc_recipes",
+            target_word="zout",
+            context_text="een hand vol zout",
+        ),
+        dropped=False,
+    )
+    frame = pd.DataFrame(
+        [{"annotation_json": json.dumps(ann.model_dump(mode="json"))}],
+    )
+    parquet_path = tmp_path / "gold.parquet"
+    save_parquet(frame, out_path=parquet_path, description="test gold")
+
+    records = load_gold_records(gold_path=parquet_path)
+    assert len(records) == 1
+    assert records[0]["provenance"]["record_id"] == "g6"
+
+
+def test_merge_labelling_rows_appends_new_record_ids() -> None:
+    from trifecta_annotation.gold_io import GOLD_CSV_COLUMNS, merge_labelling_rows
+
+    existing = pd.DataFrame(
+        [{"record_id": "a", "corpus": "c", "target_word": "x", "context_text": "t", "labelled": "true"}],
+        columns=GOLD_CSV_COLUMNS,
+    )
+    merged = merge_labelling_rows(
+        existing,
+        [{"record_id": "b", "corpus": "c", "target_word": "y", "context_text": "u", "labelled": "false"}],
+    )
+    assert len(merged) == 2
+    assert set(merged["record_id"]) == {"a", "b"}

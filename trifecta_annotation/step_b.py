@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from trifecta_annotation.client import make_instructor_client
 from trifecta_annotation.config import trifecta_model
+from trifecta_annotation.english_hint import append_english_hint_block
 from trifecta_annotation.schemas import FrameClassification
 
 SYSTEM_PROMPT = (
@@ -22,10 +23,14 @@ def classify_context(
     *,
     model: str | None = None,
     base_url: str | None = None,
+    english_hint: str | None = None,
 ) -> FrameClassification:
     """Classify the TRIFECTA macro-frame for *target_word* in *context_text*."""
     client = make_instructor_client(base_url=base_url)
-    prompt = f"Target Word: {target_word}\nContext: {context_text}"
+    prompt = append_english_hint_block(
+        f"Target Word: {target_word}\nContext: {context_text}",
+        english_hint,
+    )
 
     return client.chat.completions.create(
         model=model or trifecta_model(),
