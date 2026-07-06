@@ -2,6 +2,30 @@
 
 Primary source for TRIFECTA manual annotation — **not** the preservare KWIC pool.
 
+Policy and eval rules: [ANNOTATION_STRATEGY.md](ANNOTATION_STRATEGY.md).
+
+## 0. Corpus text overview
+
+Export a catalogue of **source works** in the snippet pool (one row per `filename`):
+
+```bash
+uv run python scripts/export_corpus_overview.py --summary
+```
+
+Default output: `eval/corpus_texts_overview.csv` on scratch.
+
+| Column | Meaning |
+|--------|---------|
+| `filename` | cort_voc source file (e.g. `chom003huis01_01.xml`) |
+| `title` | Human-readable work title |
+| `text_regime` | Heuristic Layer-0 tag (`RECIPE_PRACTICE`, `MEDICAL`, …) |
+| `snippet_rows` | Rows in `food_snippets_for_annotation.csv` for this file |
+| `distinct_doc_ids` | Distinct snippet ids |
+| `gold_rows` | Hand-gold rows sourced from this file |
+| `in_gold` | Whether any gold row references this file |
+
+**Review the CSV** for `text_regime=UNKNOWN` and for works with many snippets but `gold_rows=0` (sampling gaps). Regime tags are heuristic — override in gold UI after picking rows.
+
 ## 1. Ingest sources to scratch
 
 Copies OneDrive CSVs + Downloads txt to scratch tier:

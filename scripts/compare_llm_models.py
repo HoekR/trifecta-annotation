@@ -156,6 +156,8 @@ def main(argv: list[str] | None = None) -> int:
         if key not in pred_map:
             if args.output_path is not None and len(models) == 1:
                 pred_map[key] = args.output_path.expanduser()
+            elif run_label and len(models) == 1:
+                pred_map[key] = root / f"gold_predictions_{run_label}.jsonl"
             else:
                 pred_map[key] = predictions_path_for_model(
                     root,

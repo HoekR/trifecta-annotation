@@ -104,6 +104,43 @@ def test_adopt_gold_verdict_alias_maps_to_keep_gold() -> None:
     assert "review: metaphor ok" in out["notes"]
 
 
+def test_carry_forward_preserves_reviewed_at() -> None:
+    from trifecta_annotation.gold_io import carry_forward_gold_fixes
+    import pandas as pd
+
+    fresh = [
+        {
+            "record_id": "a",
+            "target_word": "boter",
+            "issue": "gold=NONE; pred=INGESTION",
+            "context_snippet": "ctx",
+            "gold_frame": "NONE",
+            "pred_frame": "INGESTION",
+            "gold_dropped": "",
+            "pred_dropped": "",
+            "verdict": "",
+            "review_notes": "",
+            "reviewed_at": "",
+            "export_updated_at": "",
+        },
+    ]
+    existing = pd.DataFrame(
+        [
+            {
+                "record_id": "a",
+                "verdict": "keep_gold",
+                "review_notes": "done earlier",
+                "reviewed_at": "2026-07-01T14:00:00Z",
+                "export_updated_at": "2026-07-01T10:00:00Z",
+            },
+        ],
+    )
+    merged = carry_forward_gold_fixes(fresh, existing)
+    assert merged[0]["verdict"] == "keep_gold"
+    assert merged[0]["reviewed_at"] == "2026-07-01T14:00:00Z"
+    assert merged[0]["export_updated_at"] == "2026-07-01T10:00:00Z"
+
+
 def test_verdict_shorthand_prefixes() -> None:
     from trifecta_annotation.gold_io import normalize_gold_fix_verdict
 

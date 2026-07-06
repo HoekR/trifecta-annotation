@@ -154,3 +154,24 @@ path = "trifecta/eval"
 phase = "semi"
 description = "Evaluation reports"
 parent = "trifecta_gold"
+
+[datasets.inception_nl_export]
+tier = "scratch"
+path = "trifecta/inception_nl/export_20260703"
+phase = "semi"
+description = "Unzipped INCEpTION Dutch WebAnno export"
+parent = ""
+
+[datasets.inception_kwic_inputs]
+tier = "scratch"
+path = "trifecta/inception_kwic_inputs.jsonl"
+phase = "semi"
+description = "KwicInput records from INCEpTION WebAnno TSV"
+parent = "inception_nl_export"
+
+[datasets.inception_annotations]
+tier = "scratch"
+path = "trifecta/inception_annotations.jsonl"
+phase = "semi"
+description = "Silver TRIFECTA annotations from INCEpTION"
+parent = "inception_nl_export"

@@ -34,3 +34,7 @@ def test_title_medical_pattern() -> None:
         )
         == TextRegime.MEDICAL
     )
+
+
+def test_inception_corpus_regime() -> None:
+    assert infer_text_regime(corpus="inception_snippets") == TextRegime.UNKNOWN

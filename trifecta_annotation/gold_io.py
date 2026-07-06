@@ -134,6 +134,8 @@ GOLD_FIXES_SHEET_COLUMNS = [
     "pred_dropped",
     "verdict",
     "review_notes",
+    "reviewed_at",
+    "export_updated_at",
     *GOLD_FIX_OVERRIDE_COLUMNS,
 ]
 
@@ -559,6 +561,8 @@ def build_gold_fixes_rows(disagreement_rows: list[dict[str, object]]) -> list[di
             "pred_dropped": row.get("pred_dropped", ""),
             "verdict": "",
             "review_notes": "",
+            "reviewed_at": "",
+            "export_updated_at": "",
             **{col: "" for col in GOLD_FIX_OVERRIDE_COLUMNS},
         }
     return [by_id[record_id] for record_id in sorted(by_id)]
@@ -583,7 +587,13 @@ def carry_forward_gold_fixes(
         if prior is None:
             merged.append(out)
             continue
-        for col in ("verdict", "review_notes", *GOLD_FIX_OVERRIDE_COLUMNS):
+        for col in (
+            "verdict",
+            "review_notes",
+            "reviewed_at",
+            "export_updated_at",
+            *GOLD_FIX_OVERRIDE_COLUMNS,
+        ):
             val = _excel_cell(prior.get(col))
             if val:
                 out[col] = prior[col] if col in ("gold_dropped", "pred_dropped") else val

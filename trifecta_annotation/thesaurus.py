@@ -24,6 +24,7 @@ THESAURUS_COLUMNS = [
 ]
 
 # High-frequency false positives in embedding/regex snippet matching (not food targets).
+# Includes Dutch function words and colour/modifier stems that should never be KWIC targets.
 DEFAULT_DENYLIST = frozenset(
     {
         "mede",
@@ -42,8 +43,11 @@ DEFAULT_DENYLIST = frozenset(
         "goud",
         "ras",
         "e",
+        "een",
+        "van",
         "geel",
         "wit",
+        "witte",
     },
 )
 
@@ -407,8 +411,11 @@ def _assign_keep_flags(
         .transform("nunique")
         .gt(1)
     )
-    out.loc[conflict_labels, "keep_for_trifecta"] = "review"
-    out.loc[conflict_labels & out["drop_reason"].isna(), "drop_reason"] = "alias_conflict"
+    out.loc[conflict_labels & ~on_denylist, "keep_for_trifecta"] = "review"
+    out.loc[
+        conflict_labels & ~on_denylist & out["drop_reason"].isna(),
+        "drop_reason",
+    ] = "alias_conflict"
 
     modern_unlinked = out["era"].eq("modern") & out["alias_type"].eq("modern")
     out.loc[modern_unlinked & out["keep_for_trifecta"].isna(), "keep_for_trifecta"] = "review"
@@ -469,6 +476,19 @@ def _resolve_alias_conflicts(out: pd.DataFrame) -> pd.DataFrame:
     decomposed = frame["drop_reason"].eq("compound_decomposed")
     frame.loc[decomposed, "keep_for_trifecta"] = "no"
     return frame
+
+
+def _enforce_denylist(
+    frame: pd.DataFrame,
+    *,
+    denylist: frozenset[str] = DEFAULT_DENYLIST,
+) -> pd.DataFrame:
+    """Blocked surface forms must not re-enter via alias-conflict winners."""
+    out = frame.copy()
+    blocked = out["alias_norm"].isin(denylist)
+    out.loc[blocked, "keep_for_trifecta"] = "no"
+    out.loc[blocked, "drop_reason"] = "denylist"
+    return out
 
 
 def snippet_term_frequencies(
@@ -554,6 +574,7 @@ def build_thesaurus(
         frame = _decompose_compounds(frame)
     frame = _assign_keep_flags(frame, denylist=denylist)
     frame = _resolve_alias_conflicts(frame)
+    frame = _enforce_denylist(frame, denylist=denylist)
     frame = _attach_snippet_frequencies(frame, snippet_term_frequencies(snippets))
     frame = _apply_snippet_freq_filter(frame, min_snippet_freq=min_snippet_freq)
 

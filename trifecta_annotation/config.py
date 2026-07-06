@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 
 DEFAULT_OLLAMA_BASE_URL = "http://localhost:11434/v1"
-DEFAULT_MODEL = "qwen2.5-coder:32b-instruct"
+DEFAULT_MODEL = "qwen2.5-coder:latest"
 DEFAULT_API_KEY = "ollama"
 
 

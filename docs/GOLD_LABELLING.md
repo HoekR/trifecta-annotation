@@ -1,6 +1,6 @@
 # Gold labelling CSV guide
 
-Use the CSV workflow to curate the ~50-record `trifecta_gold` eval set. Column definitions follow the [TRIFECTA annotation guidelines](Annotation_Guidelines_final.pdf) (English) and [Annotation_Guidelines_NL.pdf](Annotation_Guidelines_NL.pdf) (Dutch).
+> **Policy (sampling, regimes, eval, tracks):** [ANNOTATION_STRATEGY.md](ANNOTATION_STRATEGY.md) — canonical guide. This file is operational reference only (columns, UI, commands).
 
 ## Web UI (recommended)
 
@@ -31,6 +31,16 @@ Tag or refresh `text_regime` on existing rows:
 
 ```bash
 uv run python scripts/tag_text_regime.py --csv-path "/Volumes/Extreme SSD/scratch/trifecta/gold_labelling_all.csv"
+```
+
+### Regime review and stratified batch
+
+See [ANNOTATION_STRATEGY.md](ANNOTATION_STRATEGY.md) §4.1–4.2. Commands:
+
+```bash
+uv run python scripts/tag_text_regime.py --refresh-unknown --import-after
+uv run python scripts/export_regime_review.py --to-gold-ui   # optional hand review
+uv run python scripts/export_regime_stratified.py --summary
 ```
 
 ## Export candidates
@@ -93,36 +103,19 @@ uv run python scripts/export_gold_csv.py
 
 ## Evaluate
 
-Build eval inputs from imported gold (gold `record_id`s are not in `kwic_inputs`):
+See [ANNOTATION_STRATEGY.md](ANNOTATION_STRATEGY.md) §4.3 for the full eval loop. Quick path:
 
 ```bash
-uv run python -c "
-import json
-from pathlib import Path
-from trifecta_annotation.gold_io import load_gold_records
-records = load_gold_records(gold_path='/path/to/gold.parquet')
-out = Path('/path/to/gold_eval_inputs.jsonl')
-with out.open('w', encoding='utf-8') as f:
-    for r in records:
-        p = r['provenance']
-        f.write(json.dumps({
-            'record_id': p['record_id'], 'corpus': p['corpus'],
-            'target_word': p['target_word'], 'context_text': p['context_text'],
-            'date': p.get('date'), 'source_path': p.get('source_path'),
-        }, ensure_ascii=False) + '\n')
-print(len(records), '→', out)
-"
-
-uv run trifecta-batch \
-  --input-path "/path/to/gold_eval_inputs.jsonl" \
-  --output-path "/path/to/gold_predictions.jsonl"
-
+uv run python scripts/rebuild_gold_eval_inputs.py
+uv run trifecta-batch --model qwen2.5-coder:latest \
+  --input-path "/Volumes/Extreme SSD/scratch/trifecta/gold_eval_inputs.jsonl" \
+  --output-path "/Volumes/Extreme SSD/scratch/trifecta/gold_predictions.jsonl"
 uv run trifecta-eval \
-  --gold-path "/path/to/gold.parquet" \
-  --predictions-path "/path/to/gold_predictions.jsonl"
+  --gold-path "/Volumes/Extreme SSD/scratch/trifecta/gold.parquet" \
+  --predictions-path "/Volumes/Extreme SSD/scratch/trifecta/gold_predictions.jsonl"
 ```
 
-Note: `trifecta-batch` and `trifecta-eval` are separate entry points — do not pass an extra `batch` or `eval` subcommand.
+Report: read **By text_regime** in `eval/report.md` first; pooled Step B is secondary.
 
 ## Review disagreements (CSV — edit this, not Excel)
 
@@ -157,6 +150,9 @@ Edit **`gold_fixes.csv`** in Cursor or any plain-text editor — same format as 
 |--------|-----------|---------|
 | `record_id` … `pred_dropped` | no | Context |
 | **`verdict`** | **yes** | Shorthand: `k` or `keep*` → keep hand gold; `a` / `adopt*` / `pred*` → adopt model; `w` / `wij*` / `custom` → manual override |
+| **`review_notes`** | no | Optional note appended to gold row on import |
+| **`reviewed_at`** | no | When you adjudicated (ISO UTC); preserved on re-export — **not** auto-set to today |
+| **`export_updated_at`** | no | When disagreement export last changed this row's issue text (system) |
 | **`review_notes`** | optional | Appended to gold `notes` |
 | `selected_frame`, `dropped`, … | if `custom` | Only columns you want to change |
 

@@ -7,6 +7,7 @@ import argparse
 import json
 import re
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pandas as pd
@@ -150,9 +151,64 @@ def load_predictions(path: Path) -> list[dict]:
     ]
 
 
-def _write_csv(frame: pd.DataFrame, path: Path) -> None:
+def _utc_now() -> str:
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def _cell(value: object) -> str:
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return ""
+    return str(value).strip()
+
+
+def _stamp_export_updated_at(
+    fixes: list[dict[str, object]],
+    existing: pd.DataFrame,
+) -> list[dict[str, object]]:
+    """Set export_updated_at only for new rows or changed disagreement text."""
+    if existing.empty or "record_id" not in existing.columns:
+        now = _utc_now()
+        for row in fixes:
+            if not _cell(row.get("export_updated_at")):
+                row["export_updated_at"] = now
+        return fixes
+
+    prior_by_id = {
+        _cell(row["record_id"]): row
+        for row in existing.to_dict(orient="records")
+        if _cell(row.get("record_id"))
+    }
+    now = _utc_now()
+    for row in fixes:
+        record_id = _cell(row.get("record_id"))
+        prior = prior_by_id.get(record_id)
+        if prior is None:
+            row["export_updated_at"] = now
+            continue
+        changed = (
+            _cell(row.get("issue")) != _cell(prior.get("issue"))
+            or _cell(row.get("context_snippet")) != _cell(prior.get("context_snippet"))
+            or _cell(row.get("gold_frame")) != _cell(prior.get("gold_frame"))
+            or _cell(row.get("pred_frame")) != _cell(prior.get("pred_frame"))
+        )
+        if changed:
+            row["export_updated_at"] = now
+        elif _cell(prior.get("export_updated_at")):
+            row["export_updated_at"] = prior.get("export_updated_at")
+    return fixes
+
+
+def _write_csv(frame: pd.DataFrame, path: Path) -> bool:
+    """Write CSV; return False when content unchanged (preserves file mtime)."""
     path.parent.mkdir(parents=True, exist_ok=True)
-    frame.to_csv(path, index=False)
+    cols = [col for col in GOLD_FIXES_SHEET_COLUMNS if col in frame.columns]
+    extra = [col for col in frame.columns if col not in cols]
+    ordered = frame.reindex(columns=[*cols, *extra], fill_value="")
+    text = ordered.to_csv(index=False)
+    if path.exists() and path.read_text(encoding="utf-8") == text:
+        return False
+    path.write_text(text, encoding="utf-8")
+    return True
 
 
 def write_disagreement_exports(
@@ -185,6 +241,7 @@ def write_disagreement_exports(
 
     fixes = build_gold_fixes_rows(all_disagreements)
     fixes = carry_forward_gold_fixes(fixes, existing_fixes)
+    fixes = _stamp_export_updated_at(fixes, existing_fixes)
     fixes_frame = pd.DataFrame(fixes, columns=GOLD_FIXES_SHEET_COLUMNS)
     _write_csv(fixes_frame, fixes_csv_path)
     counts["gold_fixes"] = len(fixes)

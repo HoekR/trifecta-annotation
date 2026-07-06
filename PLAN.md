@@ -4,6 +4,8 @@
 **Target architecture:** Local prototyping (Mac M4) → HPC scaling (SURF dual A10 GPUs)  
 **Repository:** `trifecta-annotation` (standalone; `hist-text-utils` stays general-purpose)
 
+> **Gold, sampling, evaluation, and track boundaries** are defined in **[docs/ANNOTATION_STRATEGY.md](docs/ANNOTATION_STRATEGY.md)** — the canonical guide. This file covers pipeline engineering only.
+
 ---
 
 ## 1. Objective
@@ -30,7 +32,7 @@ Automate semantic annotation of **historical food-related texts** per TRIFECTA g
 | Infrastructure | Apple Silicon, 32GB+ RAM | Dual NVIDIA A10 (48GB VRAM) |
 | LLM engine | Ollama (offline) | vLLM (tensor parallelism) |
 | Structured output | instructor via Ollama API | instructor or outlines via vLLM |
-| Model | `qwen2.5-coder:32b-instruct` (quantized) | same, FP16 |
+| Model | `qwen2.5-coder:latest` (local default) | `qwen2.5-coder:32b-instruct` FP16 optional |
 
 **Data layer:** `data_io` + `data_manifest.toml` — logical paths, tier mounts, provenance sidecars.
 
@@ -127,7 +129,6 @@ Legacy preservare `kwic_gold_review` is **not** used for TRIFECTA gold.
 | `food_terms` | Ontology / Step A lexicon |
 | `voc_recipes` | 17th–19th c. corpus |
 | `recipe_web` | 20th c. corpus |
-| `kwic_gold_review` | Calibration pool (~249 KWIC rows) |
 | `kwic_inputs` | Normalized `KwicInput` JSONL (scratch) |
 | `trifecta_gold_csv` | Gold labelling spreadsheet (scratch) |
 | `trifecta_gold_jsonl` | Gold set JSONL mirror (scratch) |
@@ -135,6 +136,8 @@ Legacy preservare `kwic_gold_review` is **not** used for TRIFECTA gold.
 | `frame_classifications` | Step B JSONL output (scratch) |
 | `trifecta_annotations` | Full A→B→C JSONL output (scratch) |
 | `eval_reports` | Eval metrics JSON + markdown (scratch) |
+
+`kwic_gold_review` (preservare) remains in manifest for ontology legacy only — **not** TRIFECTA hand gold. See [ANNOTATION_STRATEGY.md](docs/ANNOTATION_STRATEGY.md).
 
 ```bash
 uv run python -m data_io.check
@@ -206,11 +209,11 @@ scripts/build_kwic_inputs.py
 | m2 | `Food_terms` vocabulary loader | done |
 | m3 | Step A: entity validation + formal layer | done |
 | m4 | Step C: per-frame qualia schemas | done |
-| m5 | Gold eval + era-stratified metrics | done |
+| m5 | Gold eval + per-regime metrics | done |
 | m6 | Batch runner (JSONL in → annotated JSONL out) | done |
 | m7 | vLLM / SURF backend (`--concurrency`, manifest override) | done |
 
-**Remaining human work:** curate ~50 hand-labelled gold records in `trifecta_gold`; refine few-shots after first eval.
+**Remaining (see [ANNOTATION_STRATEGY.md](docs/ANNOTATION_STRATEGY.md)):** regime backfill on gold; regime-stratified batch (+50); preservare adapter; Step C coverage; GijsBERT fine-tune.
 
 ---
 
@@ -232,8 +235,9 @@ scripts/build_kwic_inputs.py
 |--------|-------|
 | Step A accuracy / dropout precision | entity + metaphor |
 | Step B macro-frame accuracy + per-class F1 | `TrifectaFrame` |
+| Step B **by text_regime** | primary reporting bucket |
 | Step C field match | per-frame qualia fields |
-| Era breakdown | group by century from `date` |
+| Era breakdown | group by century from `date` (secondary) |
 
 Calibration loop: refine `prompts/` few-shots for lowest-F1 frames; re-run on gold only.
 

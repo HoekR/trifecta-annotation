@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>RESEARCH_STRATEGY_SUMMARY</title>
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
+  </style>
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<h1 id="trifecta-research-strategy-summary-for-team-discussion">TRIFECTA research strategy — summary for team discussion</h1>
+<p><em>Short overview for colleagues working on the English annotation track. Dutch pipeline details live in <a href="ANNOTATION_STRATEGY.md">ANNOTATION_STRATEGY.md</a>; label alignment in <a href="LABEL_MAPPING_EN_NL.md">LABEL_MAPPING_EN_NL.md</a>.</em></p>
+<hr />
+<h2 id="what-we-are-building">What we are building</h2>
+<p><strong>TRIFECTA</strong> annotates historic food-related text in three steps:</p>
+<table>
+<colgroup>
+<col style="width: 37%" />
+<col style="width: 62%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Step</th>
+<th>Question</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>A</strong></td>
+<td>Is the target word a <strong>food entity</strong> in context (or metaphor / out of scope)?</td>
+</tr>
+<tr class="even">
+<td><strong>B</strong></td>
+<td>Which <strong>macro-frame</strong> applies: COOKING_CREATION, CURE, INGESTION, PRESERVING, or NONE?</td>
+</tr>
+<tr class="odd">
+<td><strong>C</strong></td>
+<td>Which <strong>qualia roles</strong> fill the frame (technique, patient, affliction, etc.)?</td>
+</tr>
+</tbody>
+</table>
+<p>The <strong>Dutch track</strong> works on KWIC snippets (concordance windows around a target word) from VOC/recipe corpora, with LLM-assisted batch annotation and a hand-curated <strong>gold</strong> set for evaluation.</p>
+<p>The <strong>English track</strong> (INCEpTION / WebAnno) annotates full documents with token spans. We share the <strong>same frame vocabulary</strong> and Step A/B/C semantics, but not the same snippets or <code>record_id</code>s.</p>
+<hr />
+<h2 id="what-the-first-evaluation-cycle-taught-us">What the first evaluation cycle taught us</h2>
+<p>After ~100 hand-labelled Dutch gold rows and LLM comparison:</p>
+<table>
+<colgroup>
+<col style="width: 40%" />
+<col style="width: 59%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Finding</th>
+<th>Implication</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Step B frame accuracy ~<strong>76%</strong> (best model: qwen2.5-coder / 14B instruct)</td>
+<td>LLM is usable as silver labeler, not yet gold-quality</td>
+</tr>
+<tr class="even">
+<td>~<strong>49</strong> disagreement rows vs model</td>
+<td>Useful for <strong>error analysis</strong>, not as the only sampling plan</td>
+</tr>
+<tr class="odd">
+<td><strong>PRESERVING</strong> almost absent in gold (1 row)</td>
+<td>Per-frame F1 for rare frames is meaningless until we sample for them</td>
+</tr>
+<tr class="even">
+<td>Effort clustered on polysemous lemmas (<em>water</em>, <em>brood</em>, <em>boter</em>)</td>
+<td>Lemma-driven gold expansion <strong>loops</strong> without improving practice coverage</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Main insight:</strong> the bottleneck is not “more labels on disputed words” but <strong>what kind of text we annotate</strong> and <strong>whether the passage is in scope at all</strong>.</p>
+<hr />
+<h2 id="agreed-direction-layered-annotation">Agreed direction: layered annotation</h2>
+<p>Instead of one flat TRIFECTA pass on every snippet, we use a <strong>stack</strong>:</p>
+<pre class="text"><code>Layer 0 — text_regime     What kind of text is this?
+                          RECIPE_PRACTICE | MEDICAL | TRAVEL | LITERARY | ADMIN_TRADE | SCIENTIFIC
+
+Layer 1 — Step A          Is this snippet in scope for food-practice annotation in this regime?
+
+Layer 2 — Step B          Macro-frame, interpreted in light of regime
+                          (e.g. PRESERVING mainly in recipes; NONE common in travel/literary)
+
+Layer 3 — Step C          Qualia / semantic roles (technique, medium, affliction, …)</code></pre>
+<p><strong>Why:</strong> A recipe and a travelogue use the same target word differently. Mixing genres in one gold pool produces arguments that look like frame errors but are really <strong>genre mismatch</strong>. Evaluation should be <strong>stratified by regime</strong>, not one headline F1.</p>
+<p><strong>Future simplification (under discussion):</strong> a <strong>coarse frame</strong> phase first (FOOD_TRANSFORM / MEDICAL_CURE / CONSUMPTION / OUT_OF_SCOPE), then split COOKING vs PRESERVING only when justified.</p>
+<hr />
+<h2 id="gold-labelling-strategy-dutch-track">Gold labelling strategy (Dutch track)</h2>
+<h3 id="purpose">Purpose</h3>
+<p>Gold is a <strong>small, deliberate</strong> reference set for:</p>
+<ul>
+<li>Measuring LLM and (later) GijsBERT performance</li>
+<li>Documenting hard cases in an <strong>edge bank</strong></li>
+<li>Driving sampling policy — not unlimited growth from the disagreement queue</li>
+</ul>
+<h3 id="how-rows-enter-gold">How rows enter gold</h3>
+<ol type="1">
+<li><strong>Export candidates</strong> — stratified by source (food terms, frame verbs) and phenomenon (e.g. preservation scenes), not only by model disagreement.</li>
+<li><strong>Hand-label</strong> in CSV or <code>trifecta-gold-ui</code> (Step A + B + optional notes; <code>text_regime</code> dropdown).</li>
+<li><strong>Merge batches</strong> into a master CSV; <strong>import</strong> only rows with <code>labelled=true</code>.</li>
+<li><strong>Run LLM batch</strong> on the same eval inputs; <strong>compare</strong> with <code>trifecta-eval</code>.</li>
+</ol>
+<h3 id="rules-we-are-adopting">Rules we are adopting</h3>
+<table>
+<colgroup>
+<col style="width: 35%" />
+<col style="width: 64%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Rule</th>
+<th>Rationale</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><strong>Cap per lemma</strong> (e.g. max 2 rows per target word)</td>
+<td>Stops <em>water</em>-style spirals</td>
+</tr>
+<tr class="even">
+<td><strong>Sample by phenomenon and regime</strong></td>
+<td>Grow PRESERVING, medical cure, etc. on purpose</td>
+</tr>
+<tr class="odd">
+<td><strong>Core gold vs edge bank</strong></td>
+<td>Headline metrics on clear cases; ambiguous rows held separately</td>
+</tr>
+<tr class="even">
+<td><strong>Disagreement CSV for adjudication</strong></td>
+<td><code>keep_gold</code> / <code>adopt_pred</code> / manual override — not automatic relabelling</td>
+</tr>
+</tbody>
+</table>
+<p>Current scale: <strong>~123</strong> labelled Dutch rows; eval batch still aligned to <strong>100</strong> inputs until rebuilt.</p>
+<hr />
+<h2 id="english-track-how-it-fits">English track: how it fits</h2>
+<p><strong>Do not merge</strong> English and Dutch gold by snippet — there is no shared <code>record_id</code>. Run a <strong>parallel English eval track</strong> with the same schema and reporting.</p>
+<table>
+<colgroup>
+<col style="width: 20%" />
+<col style="width: 42%" />
+<col style="width: 37%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Topic</th>
+<th>English track</th>
+<th>Dutch track</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Tool</td>
+<td>INCEpTION / WebAnno</td>
+<td>CSV + gold UI</td>
+</tr>
+<tr class="even">
+<td>Unit</td>
+<td>Full document, token spans</td>
+<td>KWIC snippet + <code>target_word</code></td>
+</tr>
+<tr class="odd">
+<td>Guidelines</td>
+<td><code>Annotation_Guidelines_final.pdf</code> (primary)</td>
+<td>Dutch PDF + same frames</td>
+</tr>
+<tr class="even">
+<td>Labels</td>
+<td>WebAnno <code>*_LU</code> spans</td>
+<td>JSON / CSV fields (<a href="LABEL_MAPPING_EN_NL.md">mapping doc</a>)</td>
+</tr>
+<tr class="odd">
+<td>Regime</td>
+<td>Tag EN documents separately (same regime enum)</td>
+<td><code>text_regime</code> on gold CSV</td>
+</tr>
+<tr class="even">
+<td>Eval</td>
+<td><code>en_gold</code> + metrics per regime</td>
+<td><code>gold.parquet</code> + <code>trifecta-eval</code></td>
+</tr>
+</tbody>
+</table>
+<h3 id="where-english-colleagues-add-most-value">Where English colleagues add most value</h3>
+<ol type="1">
+<li><strong>Schema calibration</strong> — WebAnno exports as reference gold/silver for frame and qualia boundaries.</li>
+<li><strong>Regime-aware sampling</strong> — English recipe books, medical texts, travel writing as separate pools.</li>
+<li><strong>Closed phenomena</strong> — e.g. preservation techniques (parallel to Dutch <em>preservare</em> work: salting, smoking, drying).</li>
+<li><strong>Guidelines stress-testing</strong> — cases where COOKING vs PRESERVING vs CURE is genuinely unclear across genres.</li>
+</ol>
+<h3 id="what-we-tried-for-cross-lingual-help">What we tried for cross-lingual help</h3>
+<p><strong>English glossary hints</strong> in Dutch LLM prompts (Dutch target → English gloss) showed <strong>little gain</strong> on the disagreement slice. Real English <strong>corpus</strong> annotation is more informative than hint injection alone.</p>
+<hr />
+<h2 id="llm-model-comparison-july-2026-100-row-dutch-eval">LLM model comparison (July 2026, 100-row Dutch eval)</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Model</th>
+<th>Step B accuracy</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>qwen2.5:14b-instruct</td>
+<td>76.3%</td>
+</tr>
+<tr class="even">
+<td>qwen2.5-coder (8B, baseline)</td>
+<td>76.1%</td>
+</tr>
+<tr class="odd">
+<td>mistral 7B</td>
+<td>60.9%</td>
+</tr>
+<tr class="even">
+<td>llama3.1 8B</td>
+<td>55.6%</td>
+</tr>
+<tr class="odd">
+<td>cogito 8B</td>
+<td>44.7%</td>
+</tr>
+</tbody>
+</table>
+<p>Larger Qwen ≈ same as 8B coder on this slice; the gap is between Qwen and other 8B models. Both Qwen variants still score <strong>0 on PRESERVING</strong> (too few gold rows).</p>
+<hr />
+<h2 id="preservation-side-project-preservare">Preservation side project (<em>preservare</em>)</h2>
+<p>Sibling work on VOC <strong>preservation techniques</strong> (salting, smoking, pickling, …) offers a <strong>scene-defined</strong> gold path: anchor on technique + recipe practice, not on disputed food lemmas. Planned as a separate eval slice (<code>RECIPE_PRACTICE</code> + PRESERVING + <code>PR_Technique</code>), then bridged into main TRIFECTA gold. Relevant for <strong>both</strong> languages if English recipe corpora are available.</p>
+<hr />
+<h2 id="questions-for-joint-discussion">Questions for joint discussion</h2>
+<ol type="1">
+<li><strong>Regime taxonomy</strong> — Is the six-way <code>text_regime</code> list right for English corpora? What title/metadata do you have for auto-tagging?</li>
+<li><strong>Coarse frames first?</strong> — Should both tracks adopt FOOD_TRANSFORM / OUT_OF_SCOPE before fine COOKING vs PRESERVING splits?</li>
+<li><strong>English gold size and focus</strong> — Match Dutch (~50–125 core rows) with the same stratification (regime × frame × phenomenon)?</li>
+<li><strong>WebAnno → pipeline import</strong> — Priority EN exports to import as silver/gold (which genres, which frames)?</li>
+<li><strong>Shared edge bank</strong> — Can we align ambiguous <strong>phenomenon types</strong> (e.g. “water as ingredient vs reference”) across languages without shared snippets?</li>
+<li><strong>Evaluation reporting</strong> — Agree to report Step B (and later Step C) <strong>per regime</strong>, plus a pooled number only as secondary?</li>
+</ol>
+<hr />
+<h2 id="near-term-priorities-both-tracks">Near-term priorities (both tracks)</h2>
+<table>
+<colgroup>
+<col style="width: 26%" />
+<col style="width: 18%" />
+<col style="width: 55%" />
+</colgroup>
+<thead>
+<tr class="header">
+<th>Priority</th>
+<th>Dutch</th>
+<th>English (proposed)</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1</td>
+<td>Finish frame-stratified gold batch (grow PRESERVING/COOKING)</td>
+<td>Define EN gold slice + regime tags</td>
+</tr>
+<tr class="even">
+<td>2</td>
+<td>Review / fix <code>text_regime</code> on existing rows</td>
+<td>Apply same regime layer to EN documents</td>
+</tr>
+<tr class="odd">
+<td>3</td>
+<td>Preservare KWIC bridge</td>
+<td>EN preservation corpus or WebAnno export, if available</td>
+</tr>
+<tr class="even">
+<td>4</td>
+<td>Rebuild eval for 123-row gold; per-regime metrics</td>
+<td>Parallel <code>en_gold</code> eval when slice exists</td>
+</tr>
+<tr class="odd">
+<td>5</td>
+<td>GijsBERT fine-tune on LLM silver (Dutch)</td>
+<td>EN model or cross-lingual use of guidelines/silver TBD</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="references-in-repo">References in repo</h2>
+<table>
+<thead>
+<tr class="header">
+<th>Document</th>
+<th>Content</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td><a href="ANNOTATION_STRATEGY.md">ANNOTATION_STRATEGY.md</a></td>
+<td>Full rationale, tooling, commands</td>
+</tr>
+<tr class="even">
+<td><a href="GOLD_LABELLING.md">GOLD_LABELLING.md</a></td>
+<td>CSV columns, UI workflow</td>
+</tr>
+<tr class="odd">
+<td><a href="LABEL_MAPPING_EN_NL.md">LABEL_MAPPING_EN_NL.md</a></td>
+<td>WebAnno ↔︎ JSON field mapping</td>
+</tr>
+<tr class="even">
+<td><a href="TRIFECTA.md">TRIFECTA.md</a></td>
+<td>Pipeline architecture</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<p><em>July 2026 — for circulation with English annotation colleagues. Feedback welcome on regime taxonomy, coarse frames, and EN gold sampling.</em></p>
+</body>
+</html>

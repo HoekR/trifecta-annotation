@@ -22,6 +22,7 @@ class EvalMetrics:
     step_b_accuracy: float | None = None
     step_b_per_frame_f1: dict[str, float] = field(default_factory=dict)
     dropout_agreement: float | None = None
+    by_text_regime: dict[str, dict[str, float]] = field(default_factory=dict)
     by_century: dict[str, dict[str, float]] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
@@ -32,8 +33,16 @@ class EvalMetrics:
             "step_b_accuracy": self.step_b_accuracy,
             "step_b_per_frame_f1": self.step_b_per_frame_f1,
             "dropout_agreement": self.dropout_agreement,
+            "by_text_regime": self.by_text_regime,
             "by_century": self.by_century,
         }
+
+
+def _text_regime_label(provenance: dict[str, Any]) -> str:
+    raw = provenance.get("text_regime")
+    if raw is None or str(raw).strip() == "":
+        return "UNKNOWN"
+    return str(raw).strip()
 
 
 def _century(date: str | None) -> str:
@@ -95,6 +104,7 @@ def evaluate(
     gold_frames: list[str] = []
     pred_frames: list[str] = []
     century_frames: dict[str, list[tuple[str, str]]] = defaultdict(list)
+    regime_frames: dict[str, list[tuple[str, str]]] = defaultdict(list)
 
     for record_id in shared_ids:
         gold = TrifectaAnnotation.model_validate(gold_index[record_id])
@@ -113,6 +123,8 @@ def evaluate(
             pred_frames.append(pred_frame)
             century = _century(gold.provenance.date)
             century_frames[century].append((gold_frame, pred_frame))
+            regime = _text_regime_label(gold.provenance.model_dump(mode="json"))
+            regime_frames[regime].append((gold_frame, pred_frame))
 
     metrics.step_a_entity_accuracy = entity_correct / len(shared_ids)
     metrics.step_a_metaphor_accuracy = metaphor_correct / len(shared_ids)
@@ -128,6 +140,15 @@ def evaluate(
             "accuracy": sum(int(g == p) for g, p in pairs) / len(pairs),
             "count": float(len(pairs)),
             "per_frame_f1": _per_class_f1(gold_c, pred_c),
+        }
+
+    for regime, pairs in regime_frames.items():
+        gold_r = [g for g, _ in pairs]
+        pred_r = [p for _, p in pairs]
+        metrics.by_text_regime[regime] = {
+            "accuracy": sum(int(g == p) for g, p in pairs) / len(pairs),
+            "count": float(len(pairs)),
+            "per_frame_f1": _per_class_f1(gold_r, pred_r),
         }
     return metrics
 
@@ -146,6 +167,12 @@ def render_report(metrics: EvalMetrics) -> str:
     ]
     for frame, score in sorted(metrics.step_b_per_frame_f1.items()):
         lines.append(f"- {frame}: {score:.3f}")
+    if metrics.by_text_regime:
+        lines.extend(["", "## By text_regime (primary)"])
+        for regime, stats in sorted(metrics.by_text_regime.items()):
+            lines.append(
+                f"- {regime}: accuracy={stats['accuracy']:.3f}, n={int(stats['count'])}",
+            )
     if metrics.by_century:
         lines.extend(["", "## By century"])
         for century, stats in sorted(metrics.by_century.items()):

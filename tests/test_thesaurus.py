@@ -1,6 +1,7 @@
 """Thesaurus build tests (vectorized, no manifest)."""
 
 import pandas as pd
+import pytest
 
 from trifecta_annotation.normalize import normalize_hist_dutch
 from trifecta_annotation.thesaurus import (
@@ -29,18 +30,20 @@ def test_build_thesaurus_explodes_alt_labels() -> None:
     assert "suiker" in norms
 
 
-def test_build_thesaurus_denylist() -> None:
+@pytest.mark.parametrize("term", ["mede", "witte", "van", "een"])
+def test_build_thesaurus_denylist(term: str) -> None:
     food = pd.DataFrame(
         {
-            "Pref_label": ["mede", "brood"],
+            "Pref_label": [term, "brood"],
             "Alt_label": [None, None],
             "Type": [None, "grain"],
         },
     )
     frame = build_thesaurus(food_terms=food)
-    mede = frame[frame["alias_norm"] == "mede"].iloc[0]
+    blocked = frame[frame["alias_norm"] == term].iloc[0]
     brood = frame[frame["alias_norm"] == "brood"].iloc[0]
-    assert mede["keep_for_trifecta"] == "no"
+    assert blocked["keep_for_trifecta"] == "no"
+    assert blocked["drop_reason"] == "denylist"
     assert brood["keep_for_trifecta"] == "yes"
 
 
