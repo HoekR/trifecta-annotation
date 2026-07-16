@@ -13,15 +13,27 @@ from trifecta_annotation.thesaurus import alt_label_index as thesaurus_alt_index
 
 def load_food_terms() -> pd.DataFrame:
     """Load the TRIFECTA food ontology table."""
-    try:
-        return pd.read_csv(resolve("food_terms"))
-    except (DatasetNotFoundError, TierUnavailableError, KeyError, FileNotFoundError, OSError):
-        food_path = Path(
+    fallback_paths = (
+        Path("/Volumes/Extreme SSD/scratch/reference/Food_terms.csv"),
+        Path("/Volumes/2tb disk/reference/Food_terms.csv"),
+        Path("/Users/rikhoekstra/Downloads/recepten_preservare/Food_terms.csv"),
+        Path(
             "/Users/rikhoekstra/develop/recepten-preservare-analysis/source_data/Food_terms.csv",
-        )
-        if food_path.exists():
-            return pd.read_csv(food_path)
-        raise
+        ),
+    )
+    try:
+        path = resolve("food_terms")
+        if path.is_file():
+            return pd.read_csv(path)
+    except (DatasetNotFoundError, TierUnavailableError, KeyError, FileNotFoundError, OSError):
+        pass
+    for fallback_path in fallback_paths:
+        if fallback_path.exists():
+            return pd.read_csv(fallback_path)
+    raise FileNotFoundError(
+        "Food_terms.csv not found — copy to scratch/reference/Food_terms.csv "
+        "or set [datasets.food_terms] in data_manifest.toml",
+    )
 
 
 def alt_label_index(df: pd.DataFrame) -> dict[str, str]:
@@ -77,10 +89,15 @@ def resolve_thesaurus_lookup(
     if fallback_food_terms:
         try:
             return alt_label_index(load_food_terms())
-        except (DatasetNotFoundError, TierUnavailableError, KeyError, FileNotFoundError):
-            food_path = Path(
-                "/Users/rikhoekstra/develop/recepten-preservare-analysis/source_data/Food_terms.csv",
-            )
-            if food_path.exists():
-                return alt_label_index(pd.read_csv(food_path))
+        except (DatasetNotFoundError, TierUnavailableError, KeyError, FileNotFoundError, OSError):
+            for food_path in (
+                Path("/Volumes/Extreme SSD/scratch/reference/Food_terms.csv"),
+                Path("/Volumes/2tb disk/reference/Food_terms.csv"),
+                Path("/Users/rikhoekstra/Downloads/recepten_preservare/Food_terms.csv"),
+                Path(
+                    "/Users/rikhoekstra/develop/recepten-preservare-analysis/source_data/Food_terms.csv",
+                ),
+            ):
+                if food_path.exists():
+                    return alt_label_index(pd.read_csv(food_path))
     return {}

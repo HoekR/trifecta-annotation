@@ -61,6 +61,13 @@ GOLD_CSV_COLUMNS = [
     "notes",
 ]
 
+SILVER_CSV_COLUMNS = [
+    *GOLD_CSV_COLUMNS,
+    "annotation_type",
+    "coarse_frame",
+    "annotator",
+]
+
 STEP_C_COLUMNS = [
     "COOKING_CREATION_Method",
     "COOKING_CREATION_Process",
@@ -465,6 +472,32 @@ def annotation_to_labelling_row(
         existing = str(row.get("notes") or "").strip()
         row["notes"] = f"{existing}; {notes}".strip("; ").strip()
     return row
+
+
+def annotation_to_silver_row(
+    annotation: TrifectaAnnotation,
+    *,
+    notes: str = "inception_import; snippet_view; silver/unreconciled",
+    labelled: bool = True,
+) -> dict[str, Any]:
+    """Flatten an INCEpTION silver annotation with track metadata."""
+    row = annotation_to_labelling_row(annotation, notes=notes, labelled=labelled)
+    row["annotation_type"] = str(annotation.annotation_type or "")
+    row["coarse_frame"] = str(annotation.coarse_frame or "")
+    row["annotator"] = str(annotation.annotator or "")
+    return row
+
+
+def export_silver_csv(
+    rows: list[dict[str, Any]],
+    *,
+    output_path: str | Path,
+) -> Path:
+    path = Path(output_path).expanduser().resolve()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    frame = pd.DataFrame(rows, columns=SILVER_CSV_COLUMNS)
+    frame.to_csv(path, index=False)
+    return path
 
 
 def bootstrap_gold_rows_from_annotations(
@@ -981,8 +1014,6 @@ def load_gold_records(
                 if (ann := row_to_annotation(row)) is not None
             ]
         if suffix == ".parquet":
-            from data_io.parquet_io import load_parquet
-
             return _records_from_gold_dataframe(load_parquet(path=path))
         return load_jsonl(path)
 

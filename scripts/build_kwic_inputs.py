@@ -9,7 +9,9 @@ from pathlib import Path
 from data_io import save_semi_structured
 
 from trifecta_annotation.adapters.food_snippets import (
+    DEFAULT_KWIC_CONTEXT_RADIUS,
     load_kwic_inputs_from_food_snippets,
+    load_kwic_inputs_from_food_snippets_kwic,
     load_kwic_inputs_from_food_snippets_long,
 )
 from trifecta_annotation.adapters.inception_tsv import load_inception_kwic_inputs
@@ -28,9 +30,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Build kwic_inputs from food snippets.")
     parser.add_argument(
         "--source",
-        choices=["manual", "wide", "long", "verb", "inception"],
+        choices=["manual", "wide", "long", "kwic", "verb", "inception"],
         default="long",
-        help="manual = curated txt; wide/long = food keyword; verb = frame-verb; inception = INCEpTION TSV",
+        help="manual = curated txt; wide/long = legacy CSV; kwic = xlsx ingest with kwic_batch",
     )
     parser.add_argument(
         "--inception-export-root",
@@ -44,7 +46,27 @@ def main() -> None:
         default=[],
         help="Limit INCEpTION import to annotator username(s)",
     )
+    parser.add_argument(
+        "--kwic-batch",
+        action="append",
+        default=[],
+        help="For --source kwic: keep rows matching batch tag(s): recept, reizen, inmaken, medicijn",
+    )
     parser.add_argument("--limit", type=int, default=None)
+    parser.add_argument(
+        "--context-radius",
+        type=int,
+        default=None,
+        help=(
+            "Chars each side of matched_term (target-centered window). "
+            f"Default {DEFAULT_KWIC_CONTEXT_RADIUS} for --source kwic; off for long/wide unless set."
+        ),
+    )
+    parser.add_argument(
+        "--full-context",
+        action="store_true",
+        help="Keep passage-length snippets (no target-centered clip)",
+    )
     parser.add_argument(
         "--no-thesaurus-filter",
         action="store_true",
@@ -55,6 +77,16 @@ def main() -> None:
 
     thesaurus_filter = not args.no_thesaurus_filter
     thesaurus_path = args.thesaurus_path
+    kwic_batches = args.kwic_batch or None
+
+    if args.full_context:
+        context_radius = None
+    elif args.context_radius is not None:
+        context_radius = args.context_radius
+    elif args.source == "kwic":
+        context_radius = DEFAULT_KWIC_CONTEXT_RADIUS
+    else:
+        context_radius = None
 
     if args.source == "manual":
         records, skipped = load_kwic_inputs_from_food_snippets(
@@ -85,11 +117,21 @@ def main() -> None:
         if args.limit is not None:
             records = records[: args.limit]
         parent = str(export_root)
+    elif args.source == "kwic":
+        records, skipped = load_kwic_inputs_from_food_snippets_kwic(
+            limit=args.limit,
+            kwic_batches=kwic_batches,
+            thesaurus_filter=thesaurus_filter,
+            thesaurus_path=thesaurus_path,
+            context_radius=context_radius,
+        )
+        parent = "food_snippets_long_kwic"
     else:
         records, skipped = load_kwic_inputs_from_food_snippets_long(
             limit=args.limit,
             thesaurus_filter=thesaurus_filter,
             thesaurus_path=thesaurus_path,
+            context_radius=context_radius,
         )
         parent = "food_snippets_long"
 
@@ -100,7 +142,19 @@ def main() -> None:
         description=f"Normalized KwicInput records (source={args.source})",
         script=__file__,
     )
-    print(f"Wrote {len(records)} inputs ({len(skipped)} skipped, source={args.source})")
+    batch_note = f", kwic_batch={kwic_batches}" if kwic_batches else ""
+    radius_note = (
+        ", full_context"
+        if context_radius is None
+        else f", context_radius={context_radius}"
+    )
+    if records and context_radius is not None:
+        lengths = [len(record.context_text) for record in records]
+        radius_note += f", context_len_p50={sorted(lengths)[len(lengths) // 2]}"
+    print(
+        f"Wrote {len(records)} inputs ({len(skipped)} skipped, source={args.source}"
+        f"{batch_note}{radius_note})",
+    )
 
 
 if __name__ == "__main__":

@@ -54,6 +54,11 @@ FRAME_VERB_LEXICON: dict[TrifectaFrame, tuple[str, ...]] = {
         "medicineren",
     ),
     TrifectaFrame.COOKING_CREATION: (
+        # ``brouwen``: food prep (bier uit koren) or industrial brouwerij discourse —
+        # still a COOKING_CREATION *trigger* for mining; annotate NONE when only trade/
+        # factory description with no transformation scenario (Layer 2 review).
+        "brouwen",
+        "malen",
         "zeven",
     ),
     TrifectaFrame.INGESTION: (

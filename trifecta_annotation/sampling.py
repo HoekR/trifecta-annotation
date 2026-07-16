@@ -18,7 +18,6 @@ from trifecta_annotation.adapters.food_snippets import (
 )
 from trifecta_annotation.schemas import KwicInput
 from trifecta_annotation.thesaurus import filter_long_snippets_frame
-from trifecta_annotation.verb_kwic import sample_verb_kwic_for_gold
 from trifecta_annotation.vocabulary import resolve_thesaurus_lookup
 
 
@@ -116,7 +115,6 @@ def sample_kwic_inputs_for_gold(
     seed: int = 0,
     include_manual: bool = True,
     manual_share: float = 0.5,
-    verb_share: float = 0.0,
     max_per_work: int = 3,
     logical_name: str = "food_snippets_long",
     path: str | None = None,
@@ -128,74 +126,8 @@ def sample_kwic_inputs_for_gold(
     Build a diverse annotation set across works and target words.
 
     1. Optionally seed from manual txt subset (curated snippets).
-    2. Optionally seed from verb-discovered snippets (``verb_share``).
-    3. Fill remaining slots via stratified sample from long/wide CSV.
+    2. Fill remaining slots via stratified sample from long/wide CSV.
     """
-    if verb_share > 0:
-        verb_limit = int(limit * verb_share)
-        food_limit = limit - verb_limit
-        verb_records = sample_verb_kwic_for_gold(
-            limit=verb_limit,
-            seed=seed,
-            thesaurus_path=thesaurus_path,
-        ) if verb_limit > 0 else []
-        food_records = _sample_food_kwic_for_gold(
-            limit=food_limit,
-            seed=seed,
-            include_manual=include_manual,
-            manual_share=manual_share,
-            max_per_work=max_per_work,
-            logical_name=logical_name,
-            path=path,
-            snippet_format=snippet_format,
-            thesaurus_filter=thesaurus_filter,
-            thesaurus_path=thesaurus_path,
-            exclude_ids={r.record_id for r in verb_records},
-        )
-        return _merge_kwic_samples(verb_records + food_records, limit=limit)
-
-    return _sample_food_kwic_for_gold(
-        limit=limit,
-        seed=seed,
-        include_manual=include_manual,
-        manual_share=manual_share,
-        max_per_work=max_per_work,
-        logical_name=logical_name,
-        path=path,
-        snippet_format=snippet_format,
-        thesaurus_filter=thesaurus_filter,
-        thesaurus_path=thesaurus_path,
-        exclude_ids=set(),
-    )
-
-
-def _merge_kwic_samples(records: list[KwicInput], *, limit: int) -> list[KwicInput]:
-    seen: set[str] = set()
-    out: list[KwicInput] = []
-    for record in records:
-        if record.record_id in seen:
-            continue
-        seen.add(record.record_id)
-        out.append(record)
-        if len(out) >= limit:
-            break
-    return out
-
-
-def _sample_food_kwic_for_gold(
-    *,
-    limit: int,
-    seed: int,
-    include_manual: bool,
-    manual_share: float,
-    max_per_work: int,
-    logical_name: str,
-    path: str | None,
-    snippet_format: str,
-    thesaurus_filter: bool,
-    thesaurus_path: str | None,
-    exclude_ids: set[str],
-) -> list[KwicInput]:
     selected: list[KwicInput] = []
     seen_ids: set[str] = set()
 
@@ -235,9 +167,6 @@ def _sample_food_kwic_for_gold(
     if seen_ids:
         frame = frame[~frame["doc_id"].astype(str).isin(seen_ids)]
 
-    if exclude_ids and "doc_id" in frame.columns:
-        pass  # record_ids differ; filter after adapt
-
     # Oversample indices then adapt (cheaper than adapting all ~31k rows).
     oversample = min(len(frame), remaining * 8)
     indices = stratified_row_indices(
@@ -248,7 +177,7 @@ def _sample_food_kwic_for_gold(
     )
     pool = _adapt_indices(frame, indices)
     for record in _dedupe_by_target(pool, remaining):
-        if record.record_id in seen_ids or record.record_id in exclude_ids:
+        if record.record_id in seen_ids:
             continue
         selected.append(record)
         seen_ids.add(record.record_id)

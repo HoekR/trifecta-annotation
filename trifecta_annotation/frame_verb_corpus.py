@@ -104,6 +104,12 @@ VERB_DENYLIST: frozenset[str] = frozenset(
         "voeden",
         "vangen",
         "eenen",
+        # Function words / auxiliaries that can look infinitive-like in historical
+        # spelling but are not frame triggers.
+        "sullen",
+        # Prepositions / generic quantifiers that end in "-en" historically.
+        "binnen",
+        "dingen",
     )
 )
 

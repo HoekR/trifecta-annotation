@@ -74,6 +74,27 @@ phase = "semi"
 description = "Working copy of manual annotation snippets txt"
 parent = "food_snippets_manual_source"
 
+[datasets.food_snippets_kwic_xlsx_source]
+tier = "hot"
+path = "/path/to/Downloads/food_snippets_for_annotation.xlsx"
+phase = "frozen"
+description = "KWIC batch xlsx with manual_labels"
+parent = ""
+
+[datasets.food_snippets_kwic]
+tier = "scratch"
+path = "trifecta/food_snippets_kwic.csv"
+phase = "frozen"
+description = "KWIC wide CSV with manual_labels"
+parent = "food_snippets_kwic_xlsx_source"
+
+[datasets.food_snippets_long_kwic]
+tier = "scratch"
+path = "trifecta/food_snippets_long_kwic.csv"
+phase = "frozen"
+description = "Deduped exploded KWIC snippets (kwic_batch column)"
+parent = "food_snippets_kwic"
+
 # --- other corpora (optional sibling repos) ---
 
 [datasets.recipe_web]
@@ -105,6 +126,20 @@ path = "trifecta/gijsbert"
 phase = "semi"
 description = "GijsBERT frame-classification export (train/dev JSONL)"
 parent = "trifecta_annotations"
+
+[datasets.trifecta_hf_hub]
+tier = "scratch"
+path = "trifecta/models/hub"
+phase = "frozen"
+description = "HuggingFace hub cache (GysBERT, GysBERT-v2, historic-dutch BERT)"
+parent = ""
+
+[datasets.trifecta_gijsbert_models]
+tier = "scratch"
+path = "trifecta/gijsbert/models"
+phase = "semi"
+description = "Fine-tuned frame classifiers + comparison logs"
+parent = "trifecta_gijsbert"
 
 [datasets.kwic_inputs]
 tier = "scratch"
@@ -154,6 +189,13 @@ path = "trifecta/eval"
 phase = "semi"
 description = "Evaluation reports"
 parent = "trifecta_gold"
+
+[datasets.trifecta_analysis]
+tier = "scratch"
+path = "trifecta/analysis/annotations.parquet"
+phase = "frozen"
+description = "Flat A→B→C analysis table (LLM hypotheses)"
+parent = "trifecta_annotations"
 
 [datasets.inception_nl_export]
 tier = "scratch"

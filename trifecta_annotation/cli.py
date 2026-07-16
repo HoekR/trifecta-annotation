@@ -6,6 +6,8 @@ import argparse
 import json
 import sys
 
+from data_io import load_jsonl
+
 from trifecta_annotation.batch import load_inputs, run_batch
 from trifecta_annotation.eval import run_eval
 from trifecta_annotation.pipeline import annotate_record
@@ -58,7 +60,10 @@ def _cmd_batch(args: argparse.Namespace) -> None:
         script=__file__,
         english_hint=args.english_hint,
     )
-    print(path)
+    records = load_jsonl(path)
+    ok = sum(1 for record in records if not record.get("error"))
+    step_c = sum(1 for record in records if record.get("step_c"))
+    print(f"Done: {path} ({len(records)} rows, {ok} ok, {step_c} with step_c)")
 
 
 def _cmd_eval(args: argparse.Namespace) -> None:

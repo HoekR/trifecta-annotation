@@ -21,6 +21,8 @@ dependencies = [
     "openai>=1.0",
     "openpyxl>=3.1",
     "tomli-w>=1.0",
+    "tqdm>=4.68.3",
+    "nbformat>=5.10.4",
 ]
 
 [project.optional-dependencies]
@@ -29,11 +31,8 @@ kwic = [
 ]
 parquet = ["pyarrow>=14.0"]
 gold-ui = ["flask>=3.0"]
-gijsbert = ["torch>=2.0", "transformers>=4.40", "scikit-learn>=1.4"]
-dev = [
-    "pytest>=7.0",
-    "ruff>=0.1.0",
-]
+gijsbert = ["torch>=2.0", "transformers>=4.40", "scikit-learn>=1.4", "datasets>=2.19", "accelerate>=1.1.0"]
+collocations = ["gensim>=4.0"]
 
 [project.scripts]
 trifecta-classify = "trifecta_annotation.cli:main_classify"
@@ -55,4 +54,7 @@ testpaths = ["tests"]
 dev = [
     "pytest>=7.0",
     "ruff>=0.1.0",
+    "ipykernel>=6.0",
+    "ipywidgets>=8.0",
+    "itables>=2.0",
 ]

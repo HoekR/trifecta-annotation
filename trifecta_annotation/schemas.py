@@ -5,9 +5,9 @@ from __future__ import annotations
 from enum import Enum
 from typing import Annotated, Literal
 
-from trifecta_annotation.text_regime import TextRegime
-
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
+
+from trifecta_annotation.text_regime import TextRegime
 
 
 class TrifectaFrame(str, Enum):
@@ -194,22 +194,14 @@ class KwicInput(BaseModel):
     source_path: str | None = None
     title: str | None = None
     candidate_terms: list[str] | None = None
-    discovery_verb: str | None = Field(
+    text_regime: TextRegime | None = None
+    kwic_mode: str | None = None
+    kwic_batch: str | None = Field(
         default=None,
-        description="Frame verb that discovered this snippet (verb-seeded KWIC).",
+        description="KWIC search batch tag(s), pipe-joined: recept, reizen, inmaken, medicijn",
     )
-    frame_hint: str | None = Field(
-        default=None,
-        description="Expected macro-frame from discovery_verb lexicon.",
-    )
-    kwic_mode: Literal["food", "verb_food", "verb"] = Field(
-        default="food",
-        description="food = noun target; verb_food = verb found snippet, food highlighted.",
-    )
-    text_regime: TextRegime | None = Field(
-        default=None,
-        description="Source document discourse type (genre layer).",
-    )
+    discovery_verb: str | None = None
+    frame_hint: str | None = None
 
 
 class AnnotationProvenance(BaseModel):
@@ -221,11 +213,12 @@ class AnnotationProvenance(BaseModel):
     source_path: str | None = None
     record_id: str | None = None
     date: str | None = None
+    title: str | None = None
+    text_regime: TextRegime | None = None
+    kwic_mode: str | None = None
+    kwic_batch: str | None = None
     discovery_verb: str | None = None
     frame_hint: str | None = None
-    kwic_mode: Literal["food", "verb_food", "verb"] = "food"
-    text_regime: TextRegime | None = None
-    title: str | None = None
 
 
 class TrifectaAnnotation(BaseModel):
@@ -239,6 +232,9 @@ class TrifectaAnnotation(BaseModel):
     drop_reason: str | None = None
     error: str | None = None
     model: str | None = None
+    annotation_type: str | None = None
+    coarse_frame: str | None = None
+    annotator: str | None = None
 
 
 class GoldAnnotation(TrifectaAnnotation):

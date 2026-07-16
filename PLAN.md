@@ -8,6 +8,58 @@
 
 ---
 
+## State of affairs (13 Jul 2026)
+
+**Primary goal:** qualia for analysis (Step C) — **[ANNOTATION_STRATEGY.md §5 Step 5](docs/ANNOTATION_STRATEGY.md#step-5--qualia-for-analysis-m10--current)** / milestone **m10**. Not bulk NONE silver or GijsBERT-as-replacement for qwen.
+
+### What works today
+
+| Capability | Status |
+|------------|--------|
+| Full pipeline A→B→C (`trifecta-annotate`, `trifecta-batch`) | **Production-ready** (LLM) |
+| Step B eval on frozen 157-row gold | **75%** qwen baseline; per-regime reporting |
+| Step A NONE silver loop (`reizen` KWIC pilot) | **Validated** — 200 Step A → 59 accepted → `gysbert-v2-reizen-none` |
+| GijsBERT macro-frame classifier | **Trained** — 61.8% pooled dev, NONE F1 0.82; frames-only weak (~35%) |
+| INCEpTION silver with Step C | ~2,752 LLM-filled `step_c` rows (exploration silver, unvalidated) |
+
+### Gaps for qualia-for-analysis
+
+| Gap | Current |
+|-----|---------|
+| Hand gold with Step C | **~27** rows with Step C (187 total gold after COOKING pilot) |
+| Step C in `trifecta-eval` | **Done** — field-match + joint/micro by frame |
+| Step C few-shots / prompt calibration | **COOKING wired** — `prompts/step_c_cooking_fewshots.json` |
+| Soft Step C metric | **Done** — containment in `trifecta-eval` report § soft |
+| Analysis export | **Done** — `trifecta_analysis` parquet via `export_analysis_parquet.py` |
+| GijsBERT qualia head | **Not planned** — Step C stays LLM |
+
+### Usable for analysis?
+
+- **Exploratory qualia on a corpus:** yes — run `trifecta-batch` on a KWIC slice; treat `step_c` as **LLM hypotheses**, spot-check by frame.
+- **Analytic claims (counts, trends, cross-era):** not yet — need quota hand gold on qualia fields + Step C eval before trusting aggregates.
+- **Cheap NONE pre-filter:** GijsBERT ready offline; **not wired** into batch CLI.
+
+### Next — Step 5 / m10 (qualia track)
+
+**Operator runbook:** [docs/GOLD_LABELLING.md § Step 5](docs/GOLD_LABELLING.md#step-5-runbook--cooking_creation-qualia-m10) — export → notebook lab (overview + row editor) → merge/import.
+
+Canonical policy and time budget: [ANNOTATION_STRATEGY.md §5 Step 5](docs/ANNOTATION_STRATEGY.md#step-5--qualia-for-analysis-m10--current).
+
+**Aim:** Trustworthy qualia for analysis — quota hand gold, Step C eval, LLM prompt calibration (not a qualia classifier).
+
+| # | Engineering task | Status |
+|---|------------------|--------|
+| 1 | Pilot frame: **COOKING_CREATION** | decided — most numerous in frozen gold |
+| 2 | Export quota batch + label 30 rows (Step C fields) | done — imported into gold |
+| 3 | Gold lab notebook (`cooking_stepc_gold_lab`) — overview + row editor | done |
+| 4 | Add Step C field-match metrics to `trifecta-eval` | done — exact + **soft containment** |
+| 5 | LLM baseline on gold slice + prompt/few-shot pass | re-batched after COOKING few-shots |
+| 6 | Analysis export (bounded batch → parquet) | done — `export_analysis_parquet.py` → `trifecta_analysis` |
+
+**Defer:** more NONE silver tranches, GijsBERT hybrid wiring, collocation→GijsBERT export (blocked per [COLLOCATION.md §6](docs/COLLOCATION.md#6-gijsbert-export-audit-9-jul-2026)).
+
+---
+
 ## 1. Objective
 
 Automate semantic annotation of **historical food-related texts** per TRIFECTA guidelines (inspired by FrameNet Brasil Qualia structures). Replace a single overloaded prompt with a **multi-stage LLM pipeline** using **Structured Outputs** (Pydantic / instructor) to:
@@ -136,6 +188,11 @@ Legacy preservare `kwic_gold_review` is **not** used for TRIFECTA gold.
 | `frame_classifications` | Step B JSONL output (scratch) |
 | `trifecta_annotations` | Full A→B→C JSONL output (scratch) |
 | `eval_reports` | Eval metrics JSON + markdown (scratch) |
+| `trifecta_analysis` | Flat A→B→C analysis parquet (scratch; LLM hypotheses) |
+| `trifecta_gijsbert` | GijsBERT train/dev JSONL + `label_manifest.json` (scratch) |
+| `trifecta_gijsbert_models` | Fine-tuned GijsBERT runs + `model_comparison.md` (scratch) |
+| `food_snippets_kwic` | KWIC wide CSV with `manual_labels` (scratch) |
+| `food_snippets_long_kwic` | Deduped exploded KWIC long CSV + `kwic_batch` (scratch) |
 
 `kwic_gold_review` (preservare) remains in manifest for ontology legacy only — **not** TRIFECTA hand gold. See [ANNOTATION_STRATEGY.md](docs/ANNOTATION_STRATEGY.md).
 
@@ -169,6 +226,11 @@ uv run python scripts/export_gold_csv.py   # re-export for editing
 
 # Eval against gold set
 uv run trifecta-eval --gold trifecta_gold --predictions trifecta_annotations
+
+# GijsBERT export (silver train, gold dev/test)
+uv run python scripts/export_gijsbert.py \
+  --silver-path "/Volumes/Extreme SSD/scratch/trifecta/inception_annotations.jsonl" \
+  --gold-path "/Volumes/Extreme SSD/scratch/trifecta/gold.parquet"
 ```
 
 Guidelines: [docs/Annotation_Guidelines_final.pdf](docs/Annotation_Guidelines_final.pdf) (EN), [docs/Annotation_Guidelines_NL.pdf](docs/Annotation_Guidelines_NL.pdf) (NL). See [docs/GOLD_LABELLING.md](docs/GOLD_LABELLING.md).
@@ -212,8 +274,39 @@ scripts/build_kwic_inputs.py
 | m5 | Gold eval + per-regime metrics | done |
 | m6 | Batch runner (JSONL in → annotated JSONL out) | done |
 | m7 | vLLM / SURF backend (`--concurrency`, manifest override) | done |
+| m8 | GijsBERT export (`export_gijsbert.py`, silver train + gold dev) | done |
+| m9 | GijsBERT fine-tune + dev eval vs LLM baseline | done (`gysbert-v2-reizen-none`: 61.8% dev, NONE F1 0.82) |
+| m10 | Step C gold quota + field eval + analysis export | **next** — [ANNOTATION_STRATEGY Step 5](docs/ANNOTATION_STRATEGY.md#step-5--qualia-for-analysis-m10--current) |
 
-**Remaining (see [ANNOTATION_STRATEGY.md](docs/ANNOTATION_STRATEGY.md)):** regime backfill on gold; regime-stratified batch (+50); preservare adapter; Step C coverage; GijsBERT fine-tune.
+### Evolution — Step 4 (6 Jul 2026) — GijsBERT / baseline freeze
+
+Baseline freeze and training pivot. Steps are **iterative** — expect to loop back (e.g. quota gold growth, re-export silver, re-eval) without reopening the full disagreement cycle unless deliberate. Full detail: [ANNOTATION_STRATEGY.md §5](docs/ANNOTATION_STRATEGY.md#5-evolution-steps).
+
+| Deliverable | Status |
+|-------------|--------|
+| Gold cleanup → 157 eval rows | done |
+| qwen baseline v2 (`gold_predictions.jsonl`, 75% Step B) | done — `eval/baseline_v2_157rows_2026-07.md` |
+| INCEpTION coarse import (`--granularity both`, 3,175 silver) | done |
+| GijsBERT splits (`gijsbert/train.jsonl`, 3,220 train / 157 dev; +59 NONE from `reizen`) | done |
+| `train_gijsbert.py` + comparison to qwen | done — `gysbert-v2-reizen-none` |
+
+**Time budget (Step 4 — completed):** see [ANNOTATION_STRATEGY.md §5 Step 4](docs/ANNOTATION_STRATEGY.md#step-4--baseline-freeze--training-pivot-6-jul-2026).
+
+**Current (Step 5 / m10):** quota Step C gold ~40% · eval/tooling ~25% · prompt calibration ~20% · analysis export ~10% · buffer ~5%. Full table: [ANNOTATION_STRATEGY §5 Step 5](docs/ANNOTATION_STRATEGY.md#step-5--qualia-for-analysis-m10--current).
+
+**Remaining:** Step C gold + eval (m10); optional Step B quota on weak frames (secondary); preservare adapter; collocation review (GijsBERT export **blocked** — [COLLOCATION.md §6](docs/COLLOCATION.md#6-gijsbert-export-audit-9-jul-2026)).
+
+**Deferred (GijsBERT maintenance):** hybrid batch wiring, frames-only / NONE-boost tuning — revisit only if Step B pre-filter becomes a blocker.
+
+### Backlog (not Step 5)
+
+| Item | Notes |
+|------|-------|
+| GijsBERT hybrid in `trifecta-batch` | Deferred — 62% dev < 75% qwen; see Step 4 results in ANNOTATION_STRATEGY |
+| GijsBERT frames-only / NONE-boost tuning | Maintenance only |
+| Inner tqdm on collocation miner | Per-snippet progress in `mine_collocation_verb_candidates` |
+| Snippet-local skeleton → GijsBERT | Gate: ≥60% ALL_FRAMED hint alignment ([COLLOCATION.md §6](docs/COLLOCATION.md#6-gijsbert-export-audit-9-jul-2026)) |
+| NONE silver from KWIC `reizen` batch | done — `notebooks/gijsbert_none_silver_training.ipynb` |
 
 ---
 

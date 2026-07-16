@@ -28,23 +28,27 @@ Default output: `eval/corpus_texts_overview.csv` on scratch.
 
 ## 1. Ingest sources to scratch
 
-Copies OneDrive CSVs + Downloads txt to scratch tier:
+Copies OneDrive CSVs + Downloads txt to scratch tier. When `food_snippets_kwic_xlsx_source` exists in the manifest, also builds `food_snippets_kwic` (wide + `manual_labels`) and `food_snippets_long_kwic` (deduped long + `kwic_batch`):
 
 ```bash
 uv run python scripts/ingest_food_snippets.py
+```
+
+Skip legacy CSV copies when refreshing KWIC data only:
+
+```bash
+uv run python scripts/ingest_food_snippets.py --skip-csv --skip-long-csv --skip-txt
 ```
 
 | Manifest key | Scratch path |
 |--------------|--------------|
 | `food_snippets` | `trifecta/food_snippets_for_annotation.csv` (~31k rows, legacy wide format) |
 | `food_snippets_long` | `trifecta/food_snippets_long.csv` (~172k rows, **one keyword per row**) |
+| `food_snippets_kwic` | `trifecta/food_snippets_kwic.csv` (KWIC xlsx wide + `manual_labels`) |
+| `food_snippets_long_kwic` | `trifecta/food_snippets_long_kwic.csv` (~107k deduped + `kwic_batch`) |
 | `food_snippets_manual` | `trifecta/snippets_for_annotation.txt` (~106 curated snippets) |
 
-Canonical paths (absolute, in manifest):
-
-- `food_snippets_source` — wide OneDrive CSV
-- `food_snippets_long_source` — exploded long CSV (`matched_term` column)
-- `food_snippets_manual_source` — `~/Downloads/snippets_for_annotation.txt`
+Explodes `matched_terms`, dedupes redundant KWIC hits (snippet+term), merges `kwic_batch` on collapse. Multiple targets per snippet are kept; `doc_id` is not unique per window — use `--dedupe-long-by doc_term` only for legacy `kwic_inputs` parity.
 
 ## 2. Build kwic_inputs
 
@@ -53,6 +57,50 @@ Default: **long CSV** (explicit `matched_term` per row — avoids noisy leftmost
 ```bash
 uv run python scripts/build_kwic_inputs.py
 ```
+
+**KWIC xlsx** (after ingest; preserves `kwic_batch` on each `KwicInput`). Source rows are often **passage-length** (median ~2.2k chars); `--source kwic` clips ±180 chars around `matched_term` by default (fits GijsBERT `max_length=256`). Full text stays in `food_snippets_long_kwic` for collocation mining.
+
+```bash
+uv run python scripts/build_kwic_inputs.py --source kwic
+uv run python scripts/build_kwic_inputs.py --source kwic --kwic-batch reizen --limit 500
+uv run python scripts/build_kwic_inputs.py --source kwic --full-context   # no clip
+uv run python scripts/build_kwic_inputs.py --source kwic --context-radius 120
+```
+
+Batch tags: `recept`, `reizen`, `inmaken`, `medicijn`.
+
+**NONE silver tranche** (small `reizen` sample → Step A dropout → merge with INCEpTION silver):
+
+```bash
+# 1. Pool (~500 rows, clipped context)
+uv run python scripts/build_kwic_inputs.py --source kwic --kwic-batch reizen --limit 500
+
+# 2. Step A only (no Step B framing on travel text); ~15–30s/row sequential
+uv run python scripts/batch_step_a.py \
+  --input-logical kwic_inputs \
+  --output-path "/Volumes/Extreme SSD/scratch/trifecta/reizen_step_a.jsonl" \
+  --concurrency 2 --resume
+
+# 3. Merge dropouts into INCEpTION silver (cap new rows at 200)
+uv run python scripts/export_step_a_dropout_review.py
+# → eval/step_a_dropout_review.csv — fill verdict: accept | reject
+#    Sort recipe_context=true + homonym_risk=high first; batch ~50 rows/session
+uv run python scripts/merge_silver_jsonl.py \
+  --base "/Volumes/Extreme SSD/scratch/trifecta/inception_annotations.jsonl" \
+  --append "/Volumes/Extreme SSD/scratch/trifecta/reizen_step_a.jsonl" \
+  --review-csv "/Volumes/Extreme SSD/scratch/trifecta/eval/step_a_dropout_review.csv" \
+  --append-limit 200 \
+  --output "/Volumes/Extreme SSD/scratch/trifecta/inception_silver_with_reizen_none.jsonl" \
+  --summary
+
+# 4. Re-export GijsBERT train split
+uv run python scripts/export_gijsbert.py \
+  --silver-path "/Volumes/Extreme SSD/scratch/trifecta/inception_silver_with_reizen_none.jsonl"
+```
+
+Then re-train (`train_gijsbert.py`) and compare vs `gysbert-v2-balanced-none`.
+
+**Notebook walkthrough** (checks after each step): regenerate `notebooks/gijsbert_none_silver_training.ipynb` via `uv run python scripts/generate_notebooks.py --name gijsbert_none_silver_training`.
 
 Other sources:
 
@@ -132,3 +180,12 @@ uv run python scripts/export_gijsbert.py --mark-mode both
 | `food` | Noun-centred KWIC (first gold tranche) |
 | `verb` | Verb trigger only |
 | `both` | Verb-seeded rows: model sees food + frame verb |
+
+## 6. Collocation skeleton and frame verbs
+
+Target-centred collocations from `food_snippets_long` (PMI, optional FastText) and automatic frame-verb promotion. Full workflow: [COLLOCATION.md](COLLOCATION.md).
+
+```bash
+uv run python scripts/export_collocation_skeleton.py --summary
+uv run python scripts/build_frame_verb_lexicon.py --collocation-miner --summary
+```

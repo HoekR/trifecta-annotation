@@ -52,6 +52,8 @@ def _metrics_block(metrics: EvalMetrics) -> dict[str, Any]:
         "step_a_metaphor_accuracy": metrics.step_a_metaphor_accuracy,
         "dropout_agreement": metrics.dropout_agreement,
         "step_b_accuracy": metrics.step_b_accuracy,
+        "step_b_per_frame_precision": metrics.step_b_per_frame_precision,
+        "step_b_per_frame_recall": metrics.step_b_per_frame_recall,
         "step_b_per_frame_f1": metrics.step_b_per_frame_f1,
     }
 

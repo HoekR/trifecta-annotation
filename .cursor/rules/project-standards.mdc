@@ -37,6 +37,20 @@ alwaysApply: true
 - Frozen eval sets: `save_parquet(..., logical_name=..., script=__file__)`.
 - Preserve provenance (`record_id`, `corpus`, `date`, `source_path`) on all annotation records.
 
+## No path fallbacks (STRICT)
+
+- **One source of truth**: `data_io.resolve("logical_name")` or `save_* / load_*` with `logical_name=`. No alternate paths when resolve fails.
+- **Missing manifest key**: add `[datasets.*]` to `data_manifest.toml`, sync `PLAN.md`, run `uv run python -m data_io.check` — do **not** hardcode scratch/repo paths as a workaround.
+- **Forbidden patterns**:
+  - `Path(resolve("trifecta_gold")).parent / "gijsbert"` (derive sibling paths from another key)
+  - `if not path.exists(): path = REPO_ROOT / "trifecta/..."` (repo/scratch fallbacks)
+  - `/Volumes/...` or other absolute scratch paths in scripts/notebooks
+  - `resolve("key")` for a key that exists only in `data_manifest.toml.example` but not the user's manifest
+- **Notebooks**: path setup via manifest keys in `scripts/generate_notebooks.py`; regenerate with `uv run python scripts/generate_notebooks.py` — do not hand-edit `.ipynb` JSON for paths.
+- **Examples** (good):
+  - `DEV_JSONL = Path(resolve("trifecta_gijsbert")) / "dev.jsonl"`
+  - `SKELETON_CSV = Path(resolve("eval_reports")) / "collocation_skeleton.csv"`
+
 # TRIFECTA pipeline
 
 - Steps A → B → C; early dropout on Step A (not food / metaphor).

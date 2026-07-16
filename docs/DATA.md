@@ -23,12 +23,14 @@ This project uses the **DH data template**: `data_manifest.toml` + `data_io/` fo
 
 | Logical name | Phase | Description |
 |--------------|-------|-------------|
-| `food_terms` | frozen | `Food_terms.csv` on warm tier (`/Volumes/2tb disk/reference/`) |
+| `food_terms` | frozen | `Food_terms.csv` from preservare |
 | `voc_recipes` | frozen | VOC recipe corpus |
 | `recipe_web` | frozen | 20th-c. newspaper recipes |
 | `kwic_gold_review` | semi | KWIC calibration pool |
 | `food_snippets_source` | frozen | OneDrive CSV (canonical, ~31k rows) |
 | `food_snippets` | frozen | Scratch copy of food snippets CSV |
+| `food_snippets_kwic` | frozen | KWIC xlsx wide copy (`manual_labels`) |
+| `food_snippets_long_kwic` | frozen | Deduped KWIC long CSV (`kwic_batch`) |
 | `food_snippets_manual` | semi | Scratch copy of manual annotation txt (~106) |
 | `kwic_inputs` | semi | Normalized `KwicInput` JSONL (write) |
 | `trifecta_gold_csv` | semi | Gold labelling spreadsheet (CSV) |

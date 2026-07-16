@@ -7,6 +7,7 @@ import re
 from pathlib import Path
 from typing import Any, Literal
 
+from trifecta_annotation.coarse_frames import CoarseFrame
 from trifecta_annotation.schemas import TrifectaAnnotation, TrifectaFrame
 
 FRAME_LABELS: list[str] = [frame.value for frame in TrifectaFrame]
@@ -103,11 +104,19 @@ def mark_kwic_context(
 def frame_label_from_record(record: dict[str, Any]) -> str | None:
     """Return macro-frame label for training, or None if row should be skipped."""
     ann = TrifectaAnnotation.model_validate(record)
-    if ann.dropped or ann.error:
-        return TrifectaFrame.NONE.value
-    if ann.step_b is None:
+    if ann.error:
         return None
-    return ann.step_b.selected_frame.value
+    if ann.dropped:
+        return TrifectaFrame.NONE.value
+    if ann.step_b is not None:
+        return ann.step_b.selected_frame.value
+    if ann.coarse_frame == CoarseFrame.OUT_OF_SCOPE.value:
+        return TrifectaFrame.NONE.value
+    if ann.step_a is not None and (
+        ann.step_a.is_metaphor or not ann.step_a.is_food_entity
+    ):
+        return TrifectaFrame.NONE.value
+    return None
 
 
 def annotation_to_gijsbert_row(
@@ -148,6 +157,7 @@ def annotation_to_gijsbert_row(
         "discovery_verb": provenance.discovery_verb,
         "frame_hint": provenance.frame_hint,
         "kwic_mode": provenance.kwic_mode,
+        "kwic_batch": provenance.kwic_batch,
         "mark_mode": mark_mode,
     }
 

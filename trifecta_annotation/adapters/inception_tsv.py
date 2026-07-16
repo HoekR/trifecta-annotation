@@ -6,6 +6,7 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from trifecta_annotation.coarse_frames import CoarseFrame, coarse_frame_from_fine
 from trifecta_annotation.schemas import (
     AnnotationProvenance,
     CookingCreationQualia,
@@ -291,6 +292,42 @@ def _record_id(doc_name: str, annotator: str, sentence: AnnotatedSentence, token
     )
 
 
+def _is_food_related_layer(layer: str) -> bool:
+    return (
+        layer == "FOOD_LU"
+        or layer.startswith("FOOD_")
+        or layer.startswith("INGR_")
+        or layer in _FORMAL_LAYER_MAP
+    )
+
+
+def _token_has_food_related_layers(layers: list[str]) -> bool:
+    return any(_is_food_related_layer(layer) for layer in layers)
+
+
+def sentence_coarse_targets(sentence: AnnotatedSentence) -> list[AnnotatedToken]:
+    """Food mentions for coarse silver: FOOD_LU, formal spans, or frame-first labels."""
+    fine = sentence_food_targets(sentence)
+    if fine:
+        return fine
+
+    formal = [token for token in sentence.tokens if _formal_dimension(token.layers) is not None]
+    if formal:
+        return formal
+
+    foodish = [token for token in sentence.tokens if _token_has_food_related_layers(token.layers)]
+    if foodish:
+        return foodish
+
+    if any(_frame_from_layers(token.layers) is not None for token in sentence.tokens):
+        return [
+            token
+            for token in sentence.tokens
+            if _frame_from_layers(token.layers) is not None
+        ]
+    return []
+
+
 def sentence_food_targets(sentence: AnnotatedSentence) -> list[AnnotatedToken]:
     return [token for token in sentence.tokens if _is_food_target(token.layers)]
 
@@ -389,6 +426,88 @@ def sentence_to_annotation(
     )
 
 
+def sentence_to_coarse_annotation(
+    sentence: AnnotatedSentence,
+    food_token: AnnotatedToken,
+    *,
+    doc_name: str,
+    annotator: str,
+    export_root: str | Path | None = None,
+    text_regime: TextRegime | None = None,
+) -> TrifectaAnnotation:
+    """Import frame-first / simplified WebAnno spans as coarse silver."""
+    kwic = sentence_to_kwic_input(
+        sentence,
+        food_token,
+        doc_name=doc_name,
+        annotator=annotator,
+        export_root=export_root,
+        text_regime=text_regime,
+    )
+    metaphor = _is_metaphor(food_token.layers)
+    frame = _infer_frame(sentence, food_token)
+    lexical_unit = _frame_lu_surface(sentence, frame) or ""
+    formal = _formal_dimension(food_token.layers)
+    is_food = not metaphor and (
+        _is_food_target(food_token.layers)
+        or formal is not None
+        or _token_has_food_related_layers(food_token.layers)
+        or _frame_from_layers(food_token.layers) is not None
+    )
+
+    step_a = EntityValidation(
+        is_food_entity=is_food,
+        is_metaphor=metaphor,
+        formal_dimension=formal,
+        reasoning=f"Coarse INCEpTION import ({annotator})",
+    )
+    step_b: FrameClassification | None = None
+    dropped = metaphor or not is_food
+    drop_reason = "metaphor" if metaphor else ("not_food_entity" if not is_food else None)
+
+    if not dropped and frame != TrifectaFrame.NONE:
+        step_b = FrameClassification(
+            selected_frame=frame,
+            lexical_unit=lexical_unit or food_token.surface,
+            reasoning=f"Coarse INCEpTION import ({annotator})",
+        )
+
+    coarse = coarse_frame_from_fine(
+        frame if step_b else None,
+        dropped=dropped,
+    )
+    return TrifectaAnnotation(
+        provenance=AnnotationProvenance(
+            corpus=kwic.corpus,
+            target_word=kwic.target_word,
+            context_text=kwic.context_text,
+            source_path=kwic.source_path,
+            record_id=kwic.record_id,
+            date=kwic.date,
+            text_regime=kwic.text_regime,
+            title=kwic.title,
+            kwic_mode=kwic.kwic_mode,
+        ),
+        step_a=step_a,
+        step_b=step_b,
+        step_c=None,
+        dropped=dropped,
+        drop_reason=drop_reason,
+        model=f"inception:{annotator}",
+        annotation_type="coarse_inception",
+        coarse_frame=coarse.value,
+        annotator=annotator,
+    )
+
+
+def _tag_fine_annotation(ann: TrifectaAnnotation, *, annotator: str) -> TrifectaAnnotation:
+    frame = ann.step_b.selected_frame if ann.step_b else None
+    ann.annotator = annotator
+    ann.annotation_type = "fine_inception"
+    ann.coarse_frame = coarse_frame_from_fine(frame, dropped=ann.dropped).value
+    return ann
+
+
 def iter_inception_tsv_files(
     export_root: str | Path,
     *,
@@ -462,13 +581,12 @@ def load_inception_kwic_inputs(
     return records, skipped
 
 
-def load_inception_annotations(
+def _load_fine_annotations(
     export_root: str | Path,
     *,
-    layer: str = "annotation",
-    annotators: set[str] | None = None,
+    layer: str,
+    annotators: set[str] | None,
 ) -> tuple[list[TrifectaAnnotation], list[dict[str, object]]]:
-    """Build silver TrifectaAnnotation records from INCEpTION exports."""
     records: list[TrifectaAnnotation] = []
     skipped: list[dict[str, object]] = []
     seen_ids: set[str] = set()
@@ -491,7 +609,53 @@ def load_inception_annotations(
                 )
                 continue
             for food_token in targets:
-                ann = sentence_to_annotation(
+                ann = _tag_fine_annotation(
+                    sentence_to_annotation(
+                        sentence,
+                        food_token,
+                        doc_name=doc_name,
+                        annotator=annotator,
+                        export_root=export_root,
+                    ),
+                    annotator=annotator,
+                )
+                rid = ann.provenance.record_id or ""
+                if rid in seen_ids:
+                    continue
+                seen_ids.add(rid)
+                records.append(ann)
+    return records, skipped
+
+
+def _load_coarse_annotations(
+    export_root: str | Path,
+    *,
+    layer: str,
+    annotators: set[str] | None,
+) -> tuple[list[TrifectaAnnotation], list[dict[str, object]]]:
+    records: list[TrifectaAnnotation] = []
+    skipped: list[dict[str, object]] = []
+    seen_ids: set[str] = set()
+
+    for doc_name, annotator, tsv_path in iter_inception_tsv_files(
+        export_root,
+        layer=layer,
+        annotators=annotators,
+    ):
+        for sentence in parse_webanno_tsv(tsv_path):
+            targets = sentence_coarse_targets(sentence)
+            if not targets:
+                skipped.append(
+                    {
+                        "doc": doc_name,
+                        "annotator": annotator,
+                        "sentence_id": sentence.sentence_id,
+                        "reason": "no_coarse_target",
+                    },
+                )
+                continue
+            for food_token in targets:
+                ann = sentence_to_coarse_annotation(
                     sentence,
                     food_token,
                     doc_name=doc_name,
@@ -504,3 +668,45 @@ def load_inception_annotations(
                 seen_ids.add(rid)
                 records.append(ann)
     return records, skipped
+
+
+def load_inception_annotations(
+    export_root: str | Path,
+    *,
+    layer: str = "annotation",
+    annotators: set[str] | None = None,
+    granularity: str = "both",
+) -> tuple[list[TrifectaAnnotation], list[dict[str, object]]]:
+    """Build silver TrifectaAnnotation records from INCEpTION exports."""
+    granularity = granularity.lower()
+    if granularity not in {"fine", "coarse", "both"}:
+        raise ValueError("granularity must be fine, coarse, or both")
+
+    skipped: list[dict[str, object]] = []
+    by_id: dict[str, TrifectaAnnotation] = {}
+
+    if granularity in {"coarse", "both"}:
+        coarse_records, coarse_skipped = _load_coarse_annotations(
+            export_root,
+            layer=layer,
+            annotators=annotators,
+        )
+        skipped.extend(coarse_skipped)
+        for ann in coarse_records:
+            rid = ann.provenance.record_id or ""
+            if rid:
+                by_id[rid] = ann
+
+    if granularity in {"fine", "both"}:
+        fine_records, fine_skipped = _load_fine_annotations(
+            export_root,
+            layer=layer,
+            annotators=annotators,
+        )
+        skipped.extend(fine_skipped)
+        for ann in fine_records:
+            rid = ann.provenance.record_id or ""
+            if rid:
+                by_id[rid] = ann
+
+    return list(by_id.values()), skipped

@@ -14,7 +14,12 @@ from trifecta_annotation.adapters.inception_tsv import (
     load_inception_annotations,
     load_inception_kwic_inputs,
 )
-from trifecta_annotation.gold_io import annotation_to_labelling_row, export_gold_csv
+from trifecta_annotation.gold_io import (
+    annotation_to_labelling_row,
+    annotation_to_silver_row,
+    export_gold_csv,
+    export_silver_csv,
+)
 
 
 def _scratch_root() -> Path:
@@ -54,6 +59,12 @@ def main() -> None:
         choices=("kwic", "annotations", "gold_csv", "all"),
         default="all",
     )
+    parser.add_argument(
+        "--granularity",
+        choices=("fine", "coarse", "both"),
+        default="both",
+        help="fine=FOOD_LU gate; coarse=frame/formal spans; both=merge (fine wins)",
+    )
     parser.add_argument("--limit", type=int, default=None)
     args = parser.parse_args()
 
@@ -92,6 +103,7 @@ def main() -> None:
             export_root,
             layer=layer,
             annotators=annotators,
+            granularity=args.granularity,
         )
         if args.limit is not None:
             annotations = annotations[: args.limit]
@@ -108,19 +120,12 @@ def main() -> None:
             print(f"Annotations: {len(annotations)} records -> {ann_path}")
 
         if args.output in {"gold_csv", "all"}:
-            rows = []
-            for ann in annotations:
-                row = annotation_to_labelling_row(
-                    ann,
-                    notes="inception_import; snippet_view; silver/unreconciled",
-                    labelled=True,
-                )
-                rows.append(row)
-            gold_csv = export_gold_csv(
+            rows = [annotation_to_silver_row(ann) for ann in annotations]
+            gold_csv = export_silver_csv(
                 rows,
                 output_path=scratch / "inception_silver_labelling.csv",
             )
-            print(f"Gold CSV (silver, unreviewed): {len(rows)} rows -> {gold_csv}")
+            print(f"Silver CSV: {len(rows)} rows -> {gold_csv}")
 
         print(f"Skipped: {len(ann_skipped)}", file=sys.stderr)
 

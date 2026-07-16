@@ -69,12 +69,6 @@ body {
   color: var(--muted);
 }
 
-.english-hint {
-  color: var(--muted);
-  font-weight: normal;
-  font-style: italic;
-}
-
 .context-text {
   font-size: 1.08rem;
   line-height: 1.65;

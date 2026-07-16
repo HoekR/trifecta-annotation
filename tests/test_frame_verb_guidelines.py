@@ -27,6 +27,10 @@ def test_runtime_lexicon_matches_sieden() -> None:
     assert frame_for_verb("koken") == TrifectaFrame.COOKING_CREATION
 
 
+def test_manual_brouwen_cooking_trigger() -> None:
+    assert frame_for_verb("brouwen") == TrifectaFrame.COOKING_CREATION
+
+
 def test_collapse_recipe_variants() -> None:
     raw = [
         CorpusCandidate("sieden", "sieden", TrifectaFrame.COOKING_CREATION, 31, 1.0, "gloss:koken"),

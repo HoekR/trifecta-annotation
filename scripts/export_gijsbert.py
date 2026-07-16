@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
-"""Export GijsBERT train/dev JSONL from silver + gold annotations."""
+"""Export GijsBERT train/dev JSONL from silver + gold annotations.
+
+Use LLM-backfilled silver (``inception_annotations_llm.jsonl``) — not raw
+``inception_annotations.jsonl`` — so rows without INCEpTION frame LUs get Step B
+from ``scripts/backfill_silver_step_b.py`` instead of blind OUT_OF_SCOPE → NONE.
+"""
 
 from __future__ import annotations
 
