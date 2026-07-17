@@ -8,7 +8,13 @@
 
 ---
 
-## State of affairs (13 Jul 2026)
+## State of affairs (17 Jul 2026)
+
+> **Paused for holidays (17 Jul 2026).** Resume here.
+>
+> **Done in this stretch:** COOKING Step C pilot gold (~27 rows in ~187 gold) · soft Step C eval · COOKING few-shots + re-batch · `trifecta_analysis` parquet · EN brief (`docs/RESEARCH_STRATEGY_SUMMARY.md` + docx/rtf/html).
+>
+> **Next when back:** (1) more Step C hand gold beyond COOKING (PRESERVING / INGESTION / CURE quotas) via [GOLD_LABELLING.md § Step 5](docs/GOLD_LABELLING.md#step-5-runbook--cooking_creation-qualia-m10); (2) analysis notebooks on `resolve("trifecta_analysis")` (always show `uncertainty_note`). Optional: GijsBERT hybrid, more NONE silver, collocation export.
 
 **Primary goal:** qualia for analysis (Step C) — **[ANNOTATION_STRATEGY.md §5 Step 5](docs/ANNOTATION_STRATEGY.md#step-5--qualia-for-analysis-m10--current)** / milestone **m10**. Not bulk NONE silver or GijsBERT-as-replacement for qwen.
 
