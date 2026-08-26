@@ -42,8 +42,8 @@ def rows_as_dicts(frame: pd.DataFrame) -> list[dict[str, str]]:
 
 def is_labelled(row: dict[str, Any]) -> bool:
     parsed = _parse_bool(row.get("labelled"))
-    if parsed is True:
-        return True
+    if parsed is not None:
+        return parsed
     has_a = str(row.get("is_food_entity", "")).strip() != ""
     dropped = str(row.get("dropped", "")).strip().lower() in {"true", "1", "yes"}
     return has_a or dropped

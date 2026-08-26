@@ -49,3 +49,13 @@ def test_update_row_marks_labelled(tmp_path: Path) -> None:
     assert row["selected_frame"] == "PRESERVING"
     assert is_labelled(row)
     assert stats(updated)["labelled"] == 1
+
+
+def test_explicit_unlabelled_row_stays_pending() -> None:
+    row = {
+        "labelled": "false",
+        "is_food_entity": "true",
+        "is_metaphor": "false",
+        "dropped": "false",
+    }
+    assert not is_labelled(row)
