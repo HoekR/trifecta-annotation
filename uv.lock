@@ -3223,6 +3223,7 @@ name = "trifecta-annotation"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "flask" },
     { name = "instructor" },
     { name = "nbformat" },
     { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
@@ -3270,6 +3271,7 @@ dev = [
 requires-dist = [
     { name = "accelerate", marker = "extra == 'gijsbert'", specifier = ">=1.1.0" },
     { name = "datasets", marker = "extra == 'gijsbert'", specifier = ">=2.19" },
+    { name = "flask", specifier = ">=3.0" },
     { name = "flask", marker = "extra == 'gold-ui'", specifier = ">=3.0" },
     { name = "gensim", marker = "extra == 'collocations'", specifier = ">=4.0" },
     { name = "hist-text-utils", extras = ["llm"], marker = "extra == 'kwic'", git = "https://github.com/HoekR/hist-text-utils.git" },

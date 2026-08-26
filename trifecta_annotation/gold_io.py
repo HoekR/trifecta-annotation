@@ -54,6 +54,8 @@ GOLD_CSV_COLUMNS = [
     "INGESTION_Context",
     "INGESTION_Ingestor",
     "INGESTION_Manner",
+    "INGESTION_Food_Patient",
+    "INGESTION_Purpose",
     "PR_Technique",
     "PR_Medium",
     "PR_Food_Patient",
@@ -77,6 +79,8 @@ STEP_C_COLUMNS = [
     "INGESTION_Context",
     "INGESTION_Ingestor",
     "INGESTION_Manner",
+    "INGESTION_Food_Patient",
+    "INGESTION_Purpose",
     "PR_Technique",
     "PR_Medium",
     "PR_Food_Patient",
@@ -156,9 +160,13 @@ _CSV_LEGACY_ALIASES = {
     "consumption_context": "INGESTION_Context",
     "consumer": "INGESTION_Ingestor",
     "manner": "INGESTION_Manner",
+    "food_patient": "INGESTION_Food_Patient",
+    "target_food": "PR_Food_Patient",
+    "purpose": "INGESTION_Purpose",
+    "occasion": "INGESTION_Purpose",
+    "consumption_purpose": "INGESTION_Purpose",
     "preservation_technique": "PR_Technique",
     "preserving_agent": "PR_Medium",
-    "target_food": "PR_Food_Patient",
 }
 
 BOOL_COLUMNS = {"dropped", "is_food_entity", "is_metaphor", "ontology_match", "labelled"}
@@ -229,7 +237,8 @@ def _normalize_csv_row(row: dict[str, Any]) -> dict[str, Any]:
 def _step_c_from_row(row: dict[str, Any], frame: TrifectaFrame) -> FrameQualia | None:
     lu = str(row.get("lexical_unit") or "")
     if frame == TrifectaFrame.COOKING_CREATION:
-        if all(_empty(row.get(c)) for c in STEP_C_COLUMNS[:3]):
+        fields = ("COOKING_CREATION_Method", "COOKING_CREATION_Process", "COOKING_CREATION_Food_Product")
+        if all(_empty(row.get(c)) for c in fields):
             return None
         return CookingCreationQualia(
             COOKING_CREATION_Method=str(row.get("COOKING_CREATION_Method") or ""),
@@ -238,7 +247,8 @@ def _step_c_from_row(row: dict[str, Any], frame: TrifectaFrame) -> FrameQualia |
             lexical_unit=lu,
         )
     if frame == TrifectaFrame.CURE:
-        if all(_empty(row.get(c)) for c in STEP_C_COLUMNS[3:5]):
+        fields = ("CURE_Affliction", "CURE_Food_Treatment")
+        if all(_empty(row.get(c)) for c in fields):
             return None
         return UsingCureQualia(
             CURE_Affliction=str(row.get("CURE_Affliction") or ""),
@@ -246,16 +256,26 @@ def _step_c_from_row(row: dict[str, Any], frame: TrifectaFrame) -> FrameQualia |
             lexical_unit=lu,
         )
     if frame == TrifectaFrame.INGESTION:
-        if all(_empty(row.get(c)) for c in STEP_C_COLUMNS[5:8]):
+        fields = (
+            "INGESTION_Context",
+            "INGESTION_Ingestor",
+            "INGESTION_Manner",
+            "INGESTION_Food_Patient",
+            "INGESTION_Purpose",
+        )
+        if all(_empty(row.get(c)) for c in fields):
             return None
         return UsingIngestionQualia(
             INGESTION_Context=str(row.get("INGESTION_Context") or ""),
             INGESTION_Ingestor=str(row.get("INGESTION_Ingestor") or ""),
             INGESTION_Manner=str(row.get("INGESTION_Manner") or ""),
+            INGESTION_Food_Patient=str(row.get("INGESTION_Food_Patient") or ""),
+            INGESTION_Purpose=str(row.get("INGESTION_Purpose") or ""),
             lexical_unit=lu,
         )
     if frame == TrifectaFrame.PRESERVING:
-        if all(_empty(row.get(c)) for c in STEP_C_COLUMNS[8:]):
+        fields = ("PR_Technique", "PR_Medium", "PR_Food_Patient")
+        if all(_empty(row.get(c)) for c in fields):
             return None
         return PreservingQualia(
             PR_Technique=str(row.get("PR_Technique") or ""),
@@ -284,6 +304,18 @@ def _step_c_to_row(step_c: dict[str, Any] | None) -> dict[str, str]:
         empty["INGESTION_Context"] = str(step_c.get("INGESTION_Context", step_c.get("consumption_context", "")))
         empty["INGESTION_Ingestor"] = str(step_c.get("INGESTION_Ingestor", step_c.get("consumer", "")))
         empty["INGESTION_Manner"] = str(step_c.get("INGESTION_Manner", step_c.get("manner", "")))
+        empty["INGESTION_Food_Patient"] = str(
+            step_c.get(
+                "INGESTION_Food_Patient",
+                step_c.get("food_patient", step_c.get("target_food", "")),
+            )
+        )
+        empty["INGESTION_Purpose"] = str(
+            step_c.get(
+                "INGESTION_Purpose",
+                step_c.get("purpose", step_c.get("occasion", "")),
+            )
+        )
     elif frame == TrifectaFrame.PRESERVING.value:
         empty["PR_Technique"] = str(step_c.get("PR_Technique", step_c.get("preservation_technique", "")))
         empty["PR_Medium"] = str(step_c.get("PR_Medium", step_c.get("preserving_agent", "")))

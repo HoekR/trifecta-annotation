@@ -30,6 +30,8 @@ STEP_C_FIELDS: dict[TrifectaFrame, tuple[str, ...]] = {
         "INGESTION_Context",
         "INGESTION_Ingestor",
         "INGESTION_Manner",
+        "INGESTION_Food_Patient",
+        "INGESTION_Purpose",
     ),
     TrifectaFrame.PRESERVING: ("PR_Technique", "PR_Medium", "PR_Food_Patient"),
 }

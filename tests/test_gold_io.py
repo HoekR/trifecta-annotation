@@ -198,10 +198,63 @@ def test_load_gold_records_from_parquet_path(tmp_path: Path) -> None:
     )
     parquet_path = tmp_path / "gold.parquet"
     save_parquet(frame, out_path=parquet_path, description="test gold")
+    loaded = load_gold_records(gold_path=parquet_path)
+    assert len(loaded) == 1
+    assert loaded[0]["provenance"]["record_id"] == "g6"
 
-    records = load_gold_records(gold_path=parquet_path)
-    assert len(records) == 1
-    assert records[0]["provenance"]["record_id"] == "g6"
+
+def test_convert_phase2a_to_gold_rows() -> None:
+    from scripts.merge_verb_phase2a_gold import convert_phase2a_to_gold_rows
+
+    df = pd.DataFrame(
+        [
+            {
+                "record_id": "test_rec__ch1__mostacciolen",
+                "corpus": "cort_voc_db",
+                "target_word": "mostacciolen",
+                "context_text": "siedt dit t'samen in eenen pot",
+                "source_path": "test.xml",
+                "text_regime": "UNKNOWN",
+                "reviewed_frame": "COOKING_CREATION",
+                "reviewed_lexical_unit": "siedt",
+                "COOKING_CREATION_Method": "sieden",
+                "COOKING_CREATION_Process": "koken",
+                "COOKING_CREATION_Food_Product": "",
+                "uncertainty_note": "",
+                "reviewed": "true",
+            },
+            {
+                "record_id": "chom003huis01_01.xml__ch20__amandelen",
+                "corpus": "cort_voc_db",
+                "target_word": "Amandelen",
+                "context_text": "Ontsteking der Amandelen, of der Keelklieren",
+                "source_path": "chom003huis01_01.xml",
+                "text_regime": "MEDICAL",
+                "reviewed_frame": "CURE",
+                "reviewed_lexical_unit": "",
+                "CURE_Affliction": "ontsteking",
+                "uncertainty_note": "tonsils, not food",
+                "reviewed": "true",
+            },
+        ],
+    )
+
+    rows = convert_phase2a_to_gold_rows(df)
+    assert len(rows) == 2
+
+    # Standard row
+    assert rows[0]["record_id"] == "test_rec__ch1__mostacciolen"
+    assert rows[0]["selected_frame"] == "COOKING_CREATION"
+    assert rows[0]["lexical_unit"] == "siedt"
+    assert rows[0]["COOKING_CREATION_Method"] == "sieden"
+    assert rows[0]["dropped"] == "False"
+    assert rows[0]["is_food_entity"] == "True"
+
+    # Tonsils anatomical outlier -> dropped
+    assert rows[1]["record_id"] == "chom003huis01_01.xml__ch20__amandelen"
+    assert rows[1]["dropped"] == "True"
+    assert rows[1]["drop_reason"] == "not_food_entity"
+    assert rows[1]["is_food_entity"] == "False"
 
 
 def test_merge_labelling_rows_appends_new_record_ids() -> None:

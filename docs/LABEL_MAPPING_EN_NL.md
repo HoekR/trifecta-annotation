@@ -55,6 +55,8 @@ Also in WebAnno: `COOKING_CREATION_Food_Material`, `COOKING_CREATION_Cook`.
 | `INGESTION_Context` | (extension) |
 | `INGESTION_Ingestor` | `INGESTION_Ingestor` |
 | `INGESTION_Manner` | (extension) |
+| `INGESTION_Food_Patient` | `INGR_Food_Product` / `INGR_Material_LU` |
+| `INGESTION_Purpose` | (extension: occasion, toast, intent) |
 | `lexical_unit` | `INGESTION_LU` |
 
 Also in WebAnno: `INGR_Material_LU`, `INGR_Food_Product`.

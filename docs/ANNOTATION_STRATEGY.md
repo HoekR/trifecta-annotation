@@ -102,11 +102,31 @@ Related FrameNet-style work on historical Dutch smell and taste used mBERT, mono
 
 | Prior work (smell/taste) | TRIFECTA layer | Current gold / eval |
 |--------------------------|----------------|---------------------|
-| Smell/Taste_Word (F1 ≈ 0.87–0.93) | Step A — food entity | ~82% entity accuracy (qwen baseline) |
-| Source / LU (F1 ≈ 0.57–0.59) | Step B — `lexical_unit` + macro-frame | Step B ~75% accuracy; COOKING_CREATION F1 weakest (0.67) |
-| Quality, Carrier, … (F1 ≈ 0.28–0.79) | Step C — qualia roles | **13 / 157** hand gold; Step 5 (m10) quota growth + eval |
+| Smell/Taste_Word (F1 ≈ 0.87–0.93) | Step A — food entity | ~82–85% entity accuracy |
+| Source / LU (F1 ≈ 0.57–0.59) | Step B — `lexical_unit` + macro-frame | Step B ~60–75% accuracy across regimes |
+| Quality, Carrier, … (F1 ≈ 0.28–0.79) | Step C — qualia roles | **93 / 308** hand gold; field-match + soft containment eval |
 
 **Metric preference:** In archetypical framing, **precision outweighs recall** — a false positive frame (e.g. COOKING on a homograph or DROPPED row) pollutes silver and training more than a missed marginal instance. Gold should stay conservative; eval should report **per-frame precision and recall** (not F1 alone) and prioritise reducing false positives on COOKING_CREATION and INGESTION in LITERARY / homograph slices. Jul 2026 literary spot-check (36 disagreements) confirmed systematic **over-framing** by qwen, not systematic gold failure — no import to gold.
+
+### 2.3 Layered Evaluation: Rough-to-Refinement vs. Strict Joint Accuracy
+
+TRIFECTA follows a **coarse-to-fine (rough $\to$ refinement)** architecture:
+```text
+[Step A: Entity Gate]  ──►  [Step B: Macro-Frame]  ──►  [Step C: Qualia Roles]
+   (Rough food filter)        (Coarse categorization)      (Granular, open-ended slots)
+```
+
+**Why strict joint accuracy clashes with refinement:**
+1. **Granularity and Variation in Historical Dutch:** In Step C, human annotators and LLM prompts often extract the same semantic role at slightly different granularities (e.g. human writes `pekel`, model extracts `dekt ze met pekel en olie`). Requiring exact string matches across all 3–5 fields simultaneously treats a 90% correct granular extraction as a total failure ($0\%$).
+2. **Refinement is Additive:** Discovering *that* cinnamon was used for `CURE` (Step B) and *that* the affliction was `de tering` (Step C: `Affliction`) is already a high-value extraction, even if an incidental `Manner` or `Dosage` slot is worded differently.
+
+**Evaluation layers in TRIFECTA:**
+- **Step A:** Entity & Metaphor Accuracy (~82–86%) — evaluates filtering of non-food items, livestock, and metaphors.
+- **Step B:** Per-Frame Precision & Recall — evaluates semantic domain classification (`COOKING_CREATION`, `PRESERVING`, `CURE`, `INGESTION`, `NONE`).
+- **Step C:** Per-Field Accuracy & Soft Containment — evaluates reliability of individual semantic slots (e.g. `PR_Food_Patient` or `CURE_Affliction`).
+- **Composite Micro-Accuracy:** Field-level hit rate across all slot opportunities ($\frac{\sum \text{Correct Field Hits}}{\sum \text{Total Field Opportunities}}$), tracking overall extraction density without penalizing valid partial extractions.
+
+**Grounding analytic claims:** Corpus analysis should not wait for perfect joint row accuracy. Instead, researchers can query specific fields whose individual field accuracy and soft precision meet domain reliability thresholds.
 
 ---
 
@@ -337,29 +357,30 @@ Reports per run: `gijsbert/models/<run>/dev_metrics.json` + `report.md`. Compare
 
 ### Step 5 — Qualia for analysis (m10) — **current**
 
-**Decision (10 Jul 2026):** Step B is **frozen** at 75% on 157 rows — sufficient to pivot. Primary effort shifts from GijsBERT Step B tuning to **Step C qualia** for corpus analysis. Step C stays **LLM** (no GijsBERT qualia head). “Finetuning qualia” means **prompt / few-shot calibration** against hand gold, not classifier training.
+**Decision (10 Jul 2026, updated Aug 2026):** Primary effort focused on **Step C qualia** for corpus analysis. Step C stays **LLM** (no GijsBERT qualia head). “Finetuning qualia” means **prompt / few-shot calibration** against hand gold, not classifier training.
 
 **Aim:** Trustworthy qualia annotations for analysis — quota hand gold on Step C fields, field-level eval, calibrated LLM prompts, bounded export to parquet.
 
-| Gap today | Target |
-|-----------|--------|
-| Hand gold with Step C | **13 / 157** → **~30–50 COOKING_CREATION** rows, all qualia fields filled |
-| `trifecta-eval` | Step A/B only → **per-field Step C match** on gold slice |
-| Gold labeller UI | Step A/B only → **Step C fields** when frame ≠ NONE |
-| Prompt calibration | Deferred → **few-shot pass** on lowest-F1 qualia roles |
+| Gap | Status (Aug 2026) |
+|-----|-------------------|
+| Hand gold with Step C | **93 rows with Step C** in **308 total gold** (31 COOKING, 27 PRESERVING, 24 CURE, 11 INGESTION) |
+| `trifecta-eval` | **Done** — per-field exact match + soft containment metrics |
+| Gold labeller UI | **Done** — `trifecta-stepc-ui` dedicated browser UI on port 5051 |
+| Prompt calibration | **COOKING wired**; few-shots for PRESERVING, CURE, INGESTION ready |
+| Extended ontology | Added `tabak` (+ historical variants) with validated pilot tranche |
 
-**Steps (see [PLAN.md § State of affairs](../PLAN.md#state-of-affairs-10-jul-2026) for engineering detail):**
+**Steps (see [PLAN.md § State of affairs](../PLAN.md) for engineering detail):**
 
 | # | Task | Deliverable |
 |---|------|-------------|
-| 1 | Pick pilot frame | **COOKING_CREATION** (most numerous in frozen gold; qualia: Method, Process, Food_Product) |
-| 2 | **Export quota batch** | [GOLD_LABELLING.md § Step 5 runbook](GOLD_LABELLING.md#step-5-runbook--cooking_creation-qualia-m10) — `--frames COOKING_CREATION` |
-| 3 | **Gold labeller Step C** | UI fields for frame-specific qualia columns (CSV already supports them) |
-| 4 | **Label 30–50 rows** | Runbook steps 1–4: homonym screen → UI A/B → CSV Step C → merge/import |
-| 5 | **Step C eval** | `trifecta-eval` field-match metrics + per-regime report |
-| 6 | **LLM baseline** | `trifecta-batch` on gold slice → Step C baseline report |
-| 7 | **Prompt / few-shot pass** | Tune weakest qualia roles; re-run on gold only |
-| 8 | **Analysis export** | Bounded A→B→C batch → parquet; document uncertainty for notebooks |
+| 1 | Pick pilot frame | **COOKING_CREATION** (most numerous in frozen gold; qualia: Method, Process, Food_Product) — done |
+| 2 | **Export quota batches** | COOKING, PRESERVING, CURE, INGESTION, Tabak pilot — done |
+| 3 | **Gold labeller Step C** | Dedicated `trifecta-stepc-ui` web app on port 5051 — done |
+| 4 | **Label quota batches** | 308 validated gold rows imported into `gold.parquet` — done |
+| 5 | **Step C eval** | `trifecta-eval` field-match metrics + per-regime report — done |
+| 6 | **LLM baseline** | `trifecta-batch` on gold slice → Step C baseline report — done |
+| 7 | **Prompt / few-shot pass** | Few-shot injection for PRESERVING, CURE, INGESTION — **next** |
+| 8 | **Analysis export** | Bounded A→B→C batch → parquet; document uncertainty for notebooks — done |
 
 **Usable after Step 5 (partial):**
 

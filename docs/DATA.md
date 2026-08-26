@@ -23,7 +23,7 @@ This project uses the **DH data template**: `data_manifest.toml` + `data_io/` fo
 
 | Logical name | Phase | Description |
 |--------------|-------|-------------|
-| `food_terms` | frozen | `Food_terms.csv` from preservare |
+| `food_terms` | frozen | `Food_terms.csv` from preservare (+ `tabak` stimulant entry) |
 | `voc_recipes` | frozen | VOC recipe corpus |
 | `recipe_web` | frozen | 20th-c. newspaper recipes |
 | `kwic_gold_review` | semi | KWIC calibration pool |
@@ -39,6 +39,13 @@ This project uses the **DH data template**: `data_manifest.toml` + `data_io/` fo
 | `frame_classifications` | semi | Step B outputs (write) |
 | `trifecta_annotations` | semi | Full A→B→C outputs (write) |
 | `eval_reports` | semi | Eval metrics and markdown reports (write) |
+| `verb_spike_candidates` | semi | Verb-KWIC candidates for the verb-first spike (scratch) |
+| `verb_phase2a_gold` | semi | Phase 2a verb-KWIC gold worksheet (scratch) |
+| `verb_phase2a_inputs` | semi | Phase 2a verb-KWIC annotation inputs (scratch) |
+| `verb_phase2a_predictions` | semi | Phase 2a verb-first predictions (scratch) |
+| `verb_phase2a_eval` | semi | Phase 2a verb-versus-noun evaluation report (scratch) |
+
+The active Phase 2a worksheet is on scratch at `/Volumes/Extreme SSD/scratch/trifecta/verb_phase2a/gold.csv`; use `resolve("verb_phase2a_gold")` in code rather than hard-coding this path.
 
 ## Code usage
 

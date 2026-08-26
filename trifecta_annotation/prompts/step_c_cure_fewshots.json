@@ -1,0 +1,43 @@
+{
+  "examples": [
+    {
+      "target_word": "Melk",
+      "context_text": "Tegen de kinder-pokken en heete koortsen. Neemt versche Melk, kookt die met wat venkel-zaad en suiker, en laat de zieke daarvan lauwwarm drinken, hetwelk de hitte verzacht en de pokken uitdryft.",
+      "output": "{\"frame\": \"CURE\", \"CURE_Affliction\": \"kinder-pokken en heete koortsen\", \"CURE_Food_Treatment\": \"lauwwarm drinken\", \"lexical_unit\": \"drinken\"}"
+    },
+    {
+      "target_word": "Suiker",
+      "context_text": "Voor eene gezwollen en ontstoken tong. Neem een half pint roozen-water, los daarin op een stuk witte kandij-suiker met wat aluyn, en laat den lydende daarmede dikwyls den mond gorgelen en spoelen.",
+      "output": "{\"frame\": \"CURE\", \"CURE_Affliction\": \"gezwollen en ontstoken tong\", \"CURE_Food_Treatment\": \"gorgelen en spoelen\", \"lexical_unit\": \"spoelen\"}"
+    },
+    {
+      "target_word": "Kaneel",
+      "context_text": "Tegen de Tering, benaaude Borst, en andere Longeziekten. Neemt fyn gestooten Kaneel, mengt die onder verschen Honig of siroop, en neemt alle ochtenden een lepel nuchter in om de borst te verligten.",
+      "output": "{\"frame\": \"CURE\", \"CURE_Affliction\": \"de Tering, benaaude Borst, en andere Longeziekten\", \"CURE_Food_Treatment\": \"nuchter innemen\", \"lexical_unit\": \"innemen\"}"
+    },
+    {
+      "target_word": "Azyn",
+      "context_text": "Om heete zweren, brand en schurft te genezen: Neem Azyn, mengt dien met wat roozen-olie en zout, en wascht de wonde daar dagelyks mede af, hetwelk de hitte stilt.",
+      "output": "{\"frame\": \"CURE\", \"CURE_Affliction\": \"heete zweren, brand en schurft\", \"CURE_Food_Treatment\": \"op de wonde doen / wasschen\", \"lexical_unit\": \"genezen\"}"
+    },
+    {
+      "target_word": "Honing",
+      "context_text": "Tegen de roodheid, jeuking en brand der Oogen. Neem gezuiverden Honing met wat venkel-water, en druppelt een weinig in de oogen, want dit geneest de ontsteking.",
+      "output": "{\"frame\": \"CURE\", \"CURE_Affliction\": \"roodheid, jeuking en brand der Oogen\", \"CURE_Food_Treatment\": \"druppelen in de oogen\", \"lexical_unit\": \"geneest\"}"
+    },
+    {
+      "target_word": "Salie",
+      "context_text": "Voor losse tanden en bloedend tandvleesch: Kookt Salie en kruidnagelen in goeden wynazyn, en spoelt daarmede den mond warm, het hecht het tandvleesch en verdryft den stank.",
+      "output": "{\"frame\": \"CURE\", \"CURE_Affliction\": \"losse tanden en bloedend tandvleesch\", \"CURE_Food_Treatment\": \"warm spoelen\", \"lexical_unit\": \"spoelt\"}"
+    }
+  ],
+  "record_ids": [
+    "cure_stepc__vad003_melk",
+    "cure_stepc__chom003_suiker",
+    "chom003huis01_01.xml__ch15__kaneel",
+    "cure_stepc__chom003_azyn",
+    "cure_stepc__chom003_honing",
+    "cure_stepc__chom003_salie"
+  ],
+  "notes": "CURE Step C few-shots from validated gold records (2026-08-26)."
+}

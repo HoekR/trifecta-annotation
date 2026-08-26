@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 from trifecta_annotation.llm import structured_completion
+from trifecta_annotation.prompts import format_few_shots, load_prompt_asset
 from trifecta_annotation.schemas import FrameClassification, PreservingQualia
 
 SYSTEM_PROMPT = (
     "You are annotating historical Dutch food texts for the TRIFECTA PRESERVING frame. "
     "Extract PR_Technique, PR_Medium, and PR_Food_Patient. "
-    "Use empty string when a field is not stated in the context."
+    "Prefer concise spans or standardized technique descriptions (droogen, pekelen, rooken, inleggen). "
+    "Use empty string when a field is not stated in the context.\n\n"
+    "{few_shots}"
 )
 
 
@@ -22,6 +25,8 @@ def fill_preserving(
     client=None,
     technique_hint: str | None = None,
 ) -> PreservingQualia:
+    few_shots = format_few_shots(load_prompt_asset("step_c_preserving_fewshots.json")["examples"])
+    system = SYSTEM_PROMPT.format(few_shots=few_shots)
     hint = ""
     if technique_hint:
         hint = f"\nCalibration hint (weak prior): {technique_hint}"
@@ -33,7 +38,7 @@ def fill_preserving(
     )
     return structured_completion(
         PreservingQualia,
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=system,
         user_prompt=user_prompt,
         model=model,
         base_url=base_url,

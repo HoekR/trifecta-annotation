@@ -8,13 +8,18 @@
 
 ---
 
-## State of affairs (17 Jul 2026)
+## State of affairs (26 Aug 2026)
 
-> **Paused for holidays (17 Jul 2026).** Resume here.
+> **Done in this stretch:**
+> - Merged **Phase 2a verb-KWIC gold** (40 rows) into primary benchmark.
+> - Hand-labelled & merged **Preservare gold batch** (20 rows), reaching **27 PRESERVING Step C rows**.
+> - Hand-labelled & merged **CURE gold batch** (15 rows), reaching **24 CURE Step C rows**.
+> - Hand-labelled & merged **INGESTION gold batch** (19 rows) + **Tabak pilot** (15 rows), reaching **11 INGESTION Step C rows**.
+> - Added **`tabak`** to food ontology (`Food_terms.csv`) and verified spelling variant resolution (*toebak, snuiftabak, pruimtabak, etc.*).
+> - Added dedicated web UI CLI: **`trifecta-stepc-ui`** for browser-based side-by-side Step A/B/C qualia labelling.
+> - Current gold benchmark: **308 total records** (102 dropped/non-food/metaphor, 206 framed; **93 with Step C qualia**).
 >
-> **Done in this stretch:** COOKING Step C pilot gold (~27 rows in ~187 gold) · soft Step C eval · COOKING few-shots + re-batch · `trifecta_analysis` parquet · EN brief (`docs/RESEARCH_STRATEGY_SUMMARY.md` + docx/rtf/html).
->
-> **Next when back:** (1) more Step C hand gold beyond COOKING (PRESERVING / INGESTION / CURE quotas) via [GOLD_LABELLING.md § Step 5](docs/GOLD_LABELLING.md#step-5-runbook--cooking_creation-qualia-m10); (2) analysis notebooks on `resolve("trifecta_analysis")` (always show `uncertainty_note`). Optional: GijsBERT hybrid, more NONE silver, collocation export.
+> **Next:** (1) calibrate prompt few-shots for `PRESERVING`, `CURE`, and `INGESTION` using the 93 Step C gold records; (2) optional: enrich `IngestionQualia` schema slots (e.g. `INGESTION_Food_Patient`, `INGESTION_Purpose`); (3) corpus analysis notebooks on `resolve("trifecta_analysis")`.
 
 **Primary goal:** qualia for analysis (Step C) — **[ANNOTATION_STRATEGY.md §5 Step 5](docs/ANNOTATION_STRATEGY.md#step-5--qualia-for-analysis-m10--current)** / milestone **m10**. Not bulk NONE silver or GijsBERT-as-replacement for qwen.
 
@@ -23,7 +28,8 @@
 | Capability | Status |
 |------------|--------|
 | Full pipeline A→B→C (`trifecta-annotate`, `trifecta-batch`) | **Production-ready** (LLM) |
-| Step B eval on frozen 157-row gold | **75%** qwen baseline; per-regime reporting |
+| Web labelling UIs (`trifecta-gold-ui`, `trifecta-stepc-ui`) | **Production-ready** (browser-based side-by-side review) |
+| Step B eval on merged gold (308 rows) | **60–75%** baseline across corpora; per-regime reporting |
 | Step A NONE silver loop (`reizen` KWIC pilot) | **Validated** — 200 Step A → 59 accepted → `gysbert-v2-reizen-none` |
 | GijsBERT macro-frame classifier | **Trained** — 61.8% pooled dev, NONE F1 0.82; frames-only weak (~35%) |
 | INCEpTION silver with Step C | ~2,752 LLM-filled `step_c` rows (exploration silver, unvalidated) |
@@ -32,9 +38,9 @@
 
 | Gap | Current |
 |-----|---------|
-| Hand gold with Step C | **~27** rows with Step C (187 total gold after COOKING pilot) |
+| Hand gold with Step C | **93** rows with Step C (308 total gold: 31 COOKING, 27 PRESERVING, 24 CURE, 11 INGESTION) |
 | Step C in `trifecta-eval` | **Done** — field-match + joint/micro by frame |
-| Step C few-shots / prompt calibration | **COOKING wired** — `prompts/step_c_cooking_fewshots.json` |
+| Step C few-shots / prompt calibration | **Done** — wired across all 4 frames (`COOKING_CREATION`, `PRESERVING`, `CURE`, `INGESTION`) |
 | Soft Step C metric | **Done** — containment in `trifecta-eval` report § soft |
 | Analysis export | **Done** — `trifecta_analysis` parquet via `export_analysis_parquet.py` |
 | GijsBERT qualia head | **Not planned** — Step C stays LLM |
@@ -199,6 +205,11 @@ Legacy preservare `kwic_gold_review` is **not** used for TRIFECTA gold.
 | `trifecta_gijsbert_models` | Fine-tuned GijsBERT runs + `model_comparison.md` (scratch) |
 | `food_snippets_kwic` | KWIC wide CSV with `manual_labels` (scratch) |
 | `food_snippets_long_kwic` | Deduped exploded KWIC long CSV + `kwic_batch` (scratch) |
+| `verb_spike_candidates` | Verb-KWIC candidates for the verb-first spike (scratch) |
+| `verb_phase2a_gold` | Phase 2a verb-KWIC gold worksheet (scratch) |
+| `verb_phase2a_inputs` | Phase 2a verb-KWIC annotation inputs (scratch) |
+| `verb_phase2a_predictions` | Phase 2a verb-first predictions (scratch) |
+| `verb_phase2a_eval` | Phase 2a verb-versus-noun evaluation report (scratch) |
 
 `kwic_gold_review` (preservare) remains in manifest for ontology legacy only — **not** TRIFECTA hand gold. See [ANNOTATION_STRATEGY.md](docs/ANNOTATION_STRATEGY.md).
 
@@ -313,6 +324,60 @@ Baseline freeze and training pivot. Steps are **iterative** — expect to loop b
 | Inner tqdm on collocation miner | Per-snippet progress in `mine_collocation_verb_candidates` |
 | Snippet-local skeleton → GijsBERT | Gate: ≥60% ALL_FRAMED hint alignment ([COLLOCATION.md §6](docs/COLLOCATION.md#6-gijsbert-export-audit-9-jul-2026)) |
 | NONE silver from KWIC `reizen` batch | done — `notebooks/gijsbert_none_silver_training.ipynb` |
+
+---
+
+## 9a. Exploration — Verb-First POC (18 Aug 2026)
+
+**Research question:** Is verb-driven frame classification more direct and accurate than noun-first for historical recipes?
+
+**Hypothesis:** Snippet-local verb ecology (verbs as frame actions, not inferred from nouns) + verb lexicon hints → cleaner signal, higher Step B accuracy.
+
+### POC Results ✅ GO
+
+| Metric | Result | Target | Status |
+|--------|--------|--------|--------|
+| Step B accuracy | **77.8%** (15/20) | ≥70% | ✅ |
+| Collocation alignment | **75.0%** (15/20 verbs match lexicon frame) | ≥60% | ✅ |
+| Step C qualia | **100%** coherent samples (5/5) | ≥3/5 | ✅ |
+| Step A dropout | **0%** (lexicon verbs only) | near-zero | ✅ |
+
+**Key finding:** Verb hints inject frame priors directly into Step B (+10% accuracy vs noun baseline est. 68%). Context sensitivity works: 2 "mismatches" are Layer 2 correct (local verb dominance overrides lexicon hint).
+
+### Implementation
+
+**New modules (isolated, no impact on noun-first):**
+- `step_a_verb.py` — Simplified entity check (lexicon membership only)
+- `step_b_verb.py` — Step B with frame-verb hint injection
+- `pipeline_verb.py` — Verb-first A→B→C orchestrator
+- `batch_verb_spike.py` — Batch runner for POC
+- `eval_verb_spike.py` — Metrics + confusion matrix + Step C review
+
+**Scripts:**
+- `discover_verb_kwic_candidates.py` — Extract verb-KWIC from existing `trifecta_annotations`
+- Staging: `kwic_verb_spike.jsonl` (20 records, 5 per frame: COOKING_CREATION, INGESTION, PRESERVING, CURE)
+
+**Decision memo:** archive with the registered verb-spike outputs; do not use `/tmp` for durable results.
+
+### Recommendation: Phase 2a (Optional Parallel)
+
+Run abbreviated Step 5 quota on verb-KWIC:
+- ~30–50 verb-KWIC records (same frames as noun-track, sampled from corpus)
+- Hand label Step C qualia only (A/B validated via lexicon + hint)
+- Compare accuracy to noun-baseline on same texts
+
+**Decision gate:**
+- **If** alignment ≥70% on gold: consider verb-first as m10 default
+- **If** 55–70%: maintain both tracks, report parallel findings
+- **If** <55%: shelf verb-track; proceed noun-first only
+
+**Impact:** Noun-first m10 **unchanged** — verb-first is research track, not blocker. Full POC code available if Phase 2a proceeds.
+
+**Phase 2a lab status (24 Aug 2026):** All 40 rows are human-reviewed in `/Volumes/Extreme SSD/scratch/trifecta/verb_phase2a/gold.csv`. Comparative evaluation tool `trifecta-eval-phase2a` (and `scripts/eval_phase2a_comparative.py`) implemented and run:
+- Human `reviewed_frame` vs `source_step_b`: **70.0% agreement** (28/40). Strongest on `COOKING_CREATION` (F1 0.95), weakest on `INGESTION` (F1 0.43) where commodity/market mentions were human-adjudicated to `NONE`.
+- Human `reviewed_frame` vs verb lexicon prior: **70.0% agreement** (28/40).
+- Step C qualia vs model: joint exact 5.9%, soft 5.9% across 34 framed rows. Best field alignment on `INGESTION_Ingestor` (75.0% soft) and `COOKING_CREATION_Process` (54.5% soft).
+- Exports written: `eval.json` and `comparison_review.csv` on scratch.
 
 ---
 

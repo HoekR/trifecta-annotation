@@ -1,0 +1,43 @@
+{
+  "examples": [
+    {
+      "target_word": "brood",
+      "context_text": "Deze armoedige hutjes hebben een' ingang, welke met een rieten matje gesloten wordt. Hier wonen de Hottentotten; terwyl de runderbeesten en magere, hongerige honden het overgeblevene brood opaten dat op de grond lag.",
+      "output": "{\"frame\": \"INGESTION\", \"INGESTION_Context\": \"by de armoedige hutjes der Hottentotten\", \"INGESTION_Ingestor\": \"runderbeesten en magere, hongerige honden\", \"INGESTION_Manner\": \"opeten\", \"INGESTION_Food_Patient\": \"overgeblevene brood\", \"INGESTION_Purpose\": \"honger stillen\", \"lexical_unit\": \"opaten\"}"
+    },
+    {
+      "target_word": "wittebrood",
+      "context_text": "Echter moet ik ter eer der Kapenaars zeggen, dat het verlies, hetwelk ik door het vertrek mijner vrienden geleden had, door hunne vriendelijkheid werd vergoed. Men at er heerlijk versch wittebrood en boter aan den welvoorzienen disch.",
+      "output": "{\"frame\": \"INGESTION\", \"INGESTION_Context\": \"aan den welvoorzienen disch der Kapenaars\", \"INGESTION_Ingestor\": \"de reiziger en gasten\", \"INGESTION_Manner\": \"eten\", \"INGESTION_Food_Patient\": \"versch wittebrood en boter\", \"INGESTION_Purpose\": \"maaltijd en gastvryheid\", \"lexical_unit\": \"at\"}"
+    },
+    {
+      "target_word": "brandewijn",
+      "context_text": "In dese ongebondentheyt, drinken sy veel meer als na gewoonte: Dat is te seggen in een woord, dat sy haar dronken maken: De vrouwen self doen het uyt kluchtigheyt, drinkende wyn en brandewijn tot sy vrolyk sijn.",
+      "output": "{\"frame\": \"INGESTION\", \"INGESTION_Context\": \"in vrolyke feestelykheid en losbandigheid\", \"INGESTION_Ingestor\": \"de mannen en vrouwen\", \"INGESTION_Manner\": \"dronken drinken\", \"INGESTION_Food_Patient\": \"wyn en brandewijn\", \"INGESTION_Purpose\": \"vermaeck en vrolykheid\", \"lexical_unit\": \"drinken\"}"
+    },
+    {
+      "target_word": "groente",
+      "context_text": "Toen ging ik, terwyl Bregt in huis klungelde, de tafel dekken. Bregt eet met ons, want het is Zuster. Ik kreeg, à l'ordinaire, eeten op myn bord. Twee schepjes groente met wat aardappelen.",
+      "output": "{\"frame\": \"INGESTION\", \"INGESTION_Context\": \"aan tafel thuis\", \"INGESTION_Ingestor\": \"de verteller (ik) en zuster Bregt\", \"INGESTION_Manner\": \"van het bord eten\", \"INGESTION_Food_Patient\": \"twee schepjes groente en aardappelen\", \"INGESTION_Purpose\": \"gewone maaltijd (avondmaal)\", \"lexical_unit\": \"eet\"}"
+    },
+    {
+      "target_word": "thee",
+      "context_text": "De Heer L....., was zwaarder ongesteld dan ik, doch wy dronken 's namiddags te zamen een kop warme thee ter verkwikking in onze kamer te Paramaribo.",
+      "output": "{\"frame\": \"INGESTION\", \"INGESTION_Context\": \"in de kamer te Paramaribo\", \"INGESTION_Ingestor\": \"de Heer L. en ik\", \"INGESTION_Manner\": \"warm drinken\", \"INGESTION_Food_Patient\": \"een kop warme thee\", \"INGESTION_Purpose\": \"verkwikking\", \"lexical_unit\": \"dronken\"}"
+    },
+    {
+      "target_word": "toeback",
+      "context_text": "Na de maaltijd staken de schippers hunne pypen aan, en sy dronken toeback met groot behaegen, sittende rondom het vuur.",
+      "output": "{\"frame\": \"INGESTION\", \"INGESTION_Context\": \"na de maaltijd rondom het vuur\", \"INGESTION_Ingestor\": \"de schippers\", \"INGESTION_Manner\": \"drincken / rooken met pypen\", \"INGESTION_Food_Patient\": \"toeback\", \"INGESTION_Purpose\": \"tijdverdrijf en gezelligheid\", \"lexical_unit\": \"dronken\"}"
+    }
+  ],
+  "record_ids": [
+    "ingest_stepc__teen002_brood",
+    "ingest_stepc__teen002_wittebrood",
+    "roch007natu01_01.xml__ch50__brandewijn",
+    "wolf016hist01_01.xml__ch11__groente",
+    "breu012dagv01_01.xml__ch3__v_genezen__thee",
+    "tabak_pilot__joos025kley01_01.xml__ch6__toeback"
+  ],
+  "notes": "INGESTION Step C few-shots with enriched schema fields (2026-08-26)."
+}

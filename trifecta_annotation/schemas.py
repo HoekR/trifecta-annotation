@@ -140,18 +140,31 @@ class IngestionQualia(BaseModel):
 
     frame: Literal[TrifectaFrame.INGESTION] = TrifectaFrame.INGESTION
     INGESTION_Context: str = Field(
+        default="",
         validation_alias=AliasChoices("INGESTION_Context", "consumption_context"),
-        description="Situation or setting of consumption.",
+        description="Situation, setting, or social environment of consumption (e.g. maaltijd, aan tafel, taveerne).",
     )
     INGESTION_Ingestor: str = Field(
+        default="",
         validation_alias=AliasChoices("INGESTION_Ingestor", "consumer"),
-        description="Who consumes the food, if stated.",
+        description="Who consumes the food/drink/tobacco (e.g. gasten, reizigers, zieke, scheepsvolk).",
     )
     INGESTION_Manner: str = Field(
+        default="",
         validation_alias=AliasChoices("INGESTION_Manner", "manner"),
-        description="Manner of ingestion (eating, drinking, etc.).",
+        description="Manner or mode of ingestion (eating, drinking, smoking, warm, nuchter, gulzig).",
     )
-    lexical_unit: str = Field(description="Trigger word activating the frame (INGESTION_LU).")
+    INGESTION_Food_Patient: str = Field(
+        default="",
+        validation_alias=AliasChoices("INGESTION_Food_Patient", "food_patient", "target_food", "INGR_Food_Product"),
+        description="Specific dish, beverage, tobacco, or food entity consumed (e.g. glas wijn, pijp tabak, soep, brood).",
+    )
+    INGESTION_Purpose: str = Field(
+        default="",
+        validation_alias=AliasChoices("INGESTION_Purpose", "purpose", "occasion", "consumption_purpose"),
+        description="Purpose, occasion, or social intent of consumption (e.g. toasting health, feast, fasting, vermaeck, ontbijt).",
+    )
+    lexical_unit: str = Field(default="", description="Trigger word activating the frame (INGESTION_LU).")
 
 
 class PreservingQualia(BaseModel):

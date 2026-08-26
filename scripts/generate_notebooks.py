@@ -1113,6 +1113,68 @@ def build_cooking_stepc_gold_lab() -> nbf.NotebookNode:
     return nb
 
 
+def build_verb_phase2a_gold_lab() -> nbf.NotebookNode:
+    """Notebook: review source Step B predictions and label Phase 2a qualia."""
+    nb = nbf.v4.new_notebook()
+    nb["metadata"] = {
+        "kernelspec": {"display_name": "Python 3", "name": "python3"},
+        "language_info": {"name": "python", "version": "3.11"},
+    }
+    nb["cells"] = []
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(
+            [
+                "# Verb Phase 2a gold lab\n",
+                "\n",
+                "Regenerate this notebook; do not hand-edit its JSON:\n",
+                "\n",
+                "```bash\n",
+                "uv run python scripts/generate_notebooks.py --name verb_phase2a_gold_lab\n",
+                "```\n",
+                "\n",
+                "The source Step B prediction is read-only evidence, not gold. For every row, choose a human frame,\n",
+                "verify the frame verb, fill only the qualia for that frame, then mark it reviewed.\n",
+            ],
+        ),
+    )
+    nb["cells"].append(nbf.v4.new_markdown_cell(["## Setup"]))
+    nb["cells"].append(
+        nbf.v4.new_code_cell(
+            source=[
+                "from pathlib import Path\n",
+                "\n",
+                "from data_io import resolve\n",
+                "from trifecta_annotation.verb_phase2a_nb import VerbPhase2aLabeller\n",
+                "\n",
+                "BATCH_PATH = Path(resolve('verb_phase2a_gold'))\n",
+                "labeller = VerbPhase2aLabeller(BATCH_PATH)\n",
+                "labeller.summary()\n",
+            ],
+        ),
+    )
+    nb["cells"].append(nbf.v4.new_markdown_cell(["## Review rows"]))
+    nb["cells"].append(
+        nbf.v4.new_code_cell(
+            source=[
+                "# Save and Save & next write directly to the scratch worksheet.\n",
+                "labeller.display()\n",
+            ],
+        ),
+    )
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(
+            [
+                "## Completion\n",
+                "\n",
+                "The notebook stores `reviewed_frame`, `reviewed_lexical_unit`, frame-specific qualia,\n",
+                "`uncertainty_note`, and `reviewed=true`. It does not overwrite the source prediction.\n",
+            ],
+        ),
+    )
+    return nb
+
+
 def build_step_c_review() -> nbf.NotebookNode:
     """Notebook: Step C gold vs pred review — configurable for few-shot picking."""
     nb = nbf.v4.new_notebook()
@@ -1313,6 +1375,7 @@ NB_BUILDERS: dict[str, Callable[[], nbf.NotebookNode]] = {
     "inspect_lexicon_csvs": build_inspect_lexicon_csvs,
     "gijsbert_none_silver_training": build_gijsbert_none_silver_training,
     "cooking_stepc_gold_lab": build_cooking_stepc_gold_lab,
+    "verb_phase2a_gold_lab": build_verb_phase2a_gold_lab,
     "step_c_review": build_step_c_review,
 }
 

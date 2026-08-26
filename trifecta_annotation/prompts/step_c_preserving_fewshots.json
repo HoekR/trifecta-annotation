@@ -1,0 +1,43 @@
+{
+  "examples": [
+    {
+      "target_word": "artisjokken stoelen",
+      "context_text": "…t die een nacht in schoon water ververschen, dan zyn ze zo goed als of ze versch waren. men kan dezelve ook in de zon of in den oven zagjes droogen, dog dan zyn ze zo smaakelyk niet. 2. Hoe men Asperges voor den winter bewaren zal.",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"droogen in de zon of oven\", \"PR_Medium\": \"\", \"PR_Food_Patient\": \"artisjokken stoelen\", \"lexical_unit\": \"droogen\"}"
+    },
+    {
+      "target_word": "Komkommers",
+      "context_text": "ok rauw vyf of zes dagen laten leggen, dat ze verwelken; dan legt men ze, als boven, in de lengte, dekt ze met pekel, olie of boter, omze dus te bewaren. Men legt ook op deze wyze Komkommers in, twee of drie dagen na dat ze geplukt zyn.",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"inleggen\", \"PR_Medium\": \"pekel, olie of boter\", \"PR_Food_Patient\": \"Komkommers\", \"lexical_unit\": \"legt in\"}"
+    },
+    {
+      "target_word": "Aspersjes",
+      "context_text": "in schoon water ververschen, dan zyn ze zo goed als of ze versch waren. Men kan dezelve ook in de zon of in den oven zagjes droogen, dog dan zyn ze zo smaakelyk niet. 2. Hoe men Asperges voor den winter bewaren zal: Neemt Asperges, snijd ze van onderen af, en bestrooyt ze met zout.",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"bewaren voor den winter / besprengen met zout\", \"PR_Medium\": \"zout\", \"PR_Food_Patient\": \"Aspersjes\", \"lexical_unit\": \"bewaren\"}"
+    },
+    {
+      "target_word": "bloemen",
+      "context_text": "Gy sult nemen bloemen van wilde Druyven of van Hagen, als dien tijdt zijn sal, ende de selve doet drooge in de schaye, ende bewaertse dan in eenen drooghen pot oft busse, om het jaer door te gebruycken.",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"droogen in de schaduw en bewaren in eenen pot\", \"PR_Medium\": \"\", \"PR_Food_Patient\": \"bloemen van wilde Druyven\", \"lexical_unit\": \"drooge\"}"
+    },
+    {
+      "target_word": "ham",
+      "context_text": "10. Varkensvleesch, hoe men dat rooken en droogen zal. Neemt een Ham, wryft die wel met zout en salpeter, en hangtze in den schoorsteen in den rook om te droogen.",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"rooken en droogen in den schoorsteen\", \"PR_Medium\": \"rook, zout en salpeter\", \"PR_Food_Patient\": \"Ham\", \"lexical_unit\": \"rooken\"}"
+    },
+    {
+      "target_word": "tuinboon",
+      "context_text": "Tuinboonen te droogen. Men dopt de jonge boonen, spreid ze uit op horden in de zon of zachte oven, tot ze volkomen droog zyn, en bewaart ze in linnen zakken voor den winter.",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"droogen op horden in de zon of oven\", \"PR_Medium\": \"\", \"PR_Food_Patient\": \"tuinboon\", \"lexical_unit\": \"droogen\"}"
+    }
+  ],
+  "record_ids": [
+    "preservare_2373__drying__artisjokken stoelen",
+    "chom003huis01_01.xml__ch4__komkommers",
+    "_vol002volm01_01.xml__ch15__aspersjes",
+    "inception_nl__selected_texts_txt__dekker__s19__5453__bloemen",
+    "preservare_4313__salting__ham",
+    "preservare_1204__drying__tuinboon"
+  ],
+  "notes": "PRESERVING Step C few-shots from validated gold records (2026-08-26)."
+}

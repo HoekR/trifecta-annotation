@@ -16,60 +16,67 @@
 
 | What | Status |
 |------|--------|
-| Step 5 gold lab notebook | **`notebooks/cooking_stepc_gold_lab.ipynb`** — overview table + row editor (primary workflow) |
-| Gold UI Step A/B | Optional — Flask UI still works for snippet highlighting |
-| Gold UI Step C | **Deferred** — use notebook row editor |
-| `export_clear_frame_examples.py` default `--frames` | `COOKING_CREATION,INGESTION` — use `--frames COOKING_CREATION` for a COOKING-only batch |
+| Step 5 gold lab notebook | **`notebooks/cooking_stepc_gold_lab.ipynb`** — overview table + row editor |
+| Web UI for Step C batches | **`trifecta-stepc-ui`** (`gold_labeller/app.py`) — side-by-side browser UI on port 5051 (recommended) |
+| Gold UI Step A/B | `trifecta-gold-ui` on port 5050 for general gold spreadsheet |
+| `export_clear_frame_examples.py` default `--frames` | `COOKING_CREATION,INGESTION` — use `--frames` to filter by target frame |
 | `trifecta-eval` Step C metrics | **Implemented** — see `eval/report.md` § Step C after `trifecta-eval` |
 
-### Step 0 — Export batch (done once per batch)
+### Step 0 — Export candidate batch
 
+For `PRESERVING`:
 ```bash
-cd ~/develop/trifecta-annotation
-SCRATCH="/Volumes/Extreme SSD/scratch/trifecta"
-
-uv run python scripts/export_clear_frame_examples.py --summary --pool-summary \
-  --frames COOKING_CREATION \
-  --frame-quota "COOKING_CREATION:30" --limit 30 \
-  --output-path "$SCRATCH/eval/cooking_stepc_batch.csv"
+uv run python scripts/export_preservare_gold_candidates.py --summary --pool-summary --limit 20 \
+  --output-path "$SCRATCH/eval/preservare_gold_candidates.csv"
 ```
 
-Output: **`$SCRATCH/eval/cooking_stepc_batch.csv`** — candidate rows with `labelled=false`, miner hints in `selected_frame` / `lexical_unit` / `step_b_reasoning`.
-
-### Step 1 — Open the gold lab notebook (primary)
-
+For `CURE` / `INGESTION`:
 ```bash
-cd ~/develop/trifecta-annotation
-uv sync
+uv run python scripts/export_clear_frame_examples.py --frames CURE,INGESTION --summary \
+  --output-path "$SCRATCH/eval/cure_ingestion_stepc_batch.csv"
+```
+
+### Step 1 — Open the web UI (recommended) or notebook
+
+**Web UI (Fastest):**
+```bash
+uv run trifecta-stepc-ui --csv-path "$SCRATCH/eval/preservare_gold_candidates.csv"
+# Open http://127.0.0.1:5051 in browser
+```
+
+**Notebook Lab:**
+```bash
 uv run python scripts/generate_notebooks.py --name cooking_stepc_gold_lab
 # Open notebooks/cooking_stepc_gold_lab.ipynb in Jupyter / VS Code
 ```
-
-**Two-pane workflow:**
-
-1. **Overview table** (itables) — all rows; filter/sort to spot gaps.
-2. **Row editor** — **pending queue only** by default; highlighted snippet + fields.
-3. **Save & next** — marks row, auto-saves CSV, advances to next unlabelled row.
-
-Jump within the pending queue via dropdown or Prev/Next. Set `pending_only=False` on `RowLabeller` to revisit finished rows.
 
 ### Step 2 — Save, merge, import
 
 ```bash
 uv run python scripts/merge_gold_batch.py \
-  --batch-path "$SCRATCH/eval/cooking_stepc_batch.csv"
-
-uv run python scripts/import_gold_csv.py \
-  --input-path "$SCRATCH/gold_labelling_all.csv"
+  --batch-path "$SCRATCH/eval/preservare_gold_candidates.csv" \
+  --import-after
 ```
 
 Only rows with `labelled=true` import. Step C columns are read from CSV if present.
 
 ### Step 3 — What comes after (engineering / not manual)
 
-1. Step C metrics in `trifecta-eval` — **done** (exact + soft containment; joint / micro; by frame).
-2. Re-run `trifecta-eval` on `gold_predictions.jsonl` and read § Step C (exact + soft) in `eval/report.md`.
-3. Export / browse good matches + misses for few-shot picking:
+1. Rebuild eval inputs and run prediction batch:
+```bash
+uv run python scripts/rebuild_gold_eval_inputs.py
+uv run trifecta-batch --model qwen2.5-coder:latest \
+  --input-path "$SCRATCH/gold_eval_inputs.jsonl" \
+  --output-path "$SCRATCH/gold_predictions.jsonl" \
+  --resume
+```
+
+2. Step C metrics in `trifecta-eval` (exact + soft containment; joint / micro; by frame):
+```bash
+uv run trifecta-eval \
+  --gold-path "$SCRATCH/gold.parquet" \
+  --predictions-path "$SCRATCH/gold_predictions.jsonl"
+```
 
 ```bash
 # CLI
@@ -153,6 +160,25 @@ uv run python scripts/export_regime_stratified.py --summary
 ```
 
 ## Export candidates
+
+## Verb Phase 2a review
+
+The verb Phase 2a worksheet is managed by the `verb_phase2a_gold` dataset and currently resolves to:
+
+```text
+/Volumes/Extreme SSD/scratch/trifecta/verb_phase2a/gold.csv
+```
+
+Open the browser editor from the repository root:
+
+```bash
+uv sync --extra gold-ui
+uv run trifecta-verb-phase2a-ui --port 5051
+```
+
+Then open http://127.0.0.1:5051. The `source_step_b` and `frame_verb` columns are prior model/lexicon evidence, not gold. For each row, review the frame and verb, fill only the Step C roles supported by the snippet, add an `uncertainty_note` when needed, and mark the row reviewed. Human decisions are stored separately in `reviewed_frame`, `reviewed_lexical_unit`, and `reviewed`.
+
+The worksheet is a 40-row research-track batch. In particular, check generic or ambiguous verb hits such as measurement words (`pinten`, `ponden`) and broad instructions (`nemen`) rather than accepting the source hint automatically.
 
 ```bash
 uv run python scripts/build_kwic_inputs.py

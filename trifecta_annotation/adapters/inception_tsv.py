@@ -60,8 +60,10 @@ _STEP_C_FIELDS: dict[TrifectaFrame, dict[str, str]] = {
         "INGESTION_Context": "INGESTION_Context",
         "INGESTION_Ingestor": "INGESTION_Ingestor",
         "INGESTION_Manner": "INGESTION_Manner",
-        "INGR_Food_Product": "INGESTION_Context",
-        "INGESTION_Food_Ingestible": "INGESTION_Context",
+        "INGR_Food_Product": "INGESTION_Food_Patient",
+        "INGESTION_Food_Ingestible": "INGESTION_Food_Patient",
+        "INGESTION_Food_Patient": "INGESTION_Food_Patient",
+        "INGESTION_Purpose": "INGESTION_Purpose",
     },
     TrifectaFrame.PRESERVING: {
         "PR_Technique": "PR_Technique",
@@ -195,6 +197,8 @@ def _build_step_c(frame: TrifectaFrame, qualia: dict[str, str], lexical_unit: st
             INGESTION_Context=qualia.get("INGESTION_Context", ""),
             INGESTION_Ingestor=qualia.get("INGESTION_Ingestor", ""),
             INGESTION_Manner=qualia.get("INGESTION_Manner", ""),
+            INGESTION_Food_Patient=qualia.get("INGESTION_Food_Patient", ""),
+            INGESTION_Purpose=qualia.get("INGESTION_Purpose", ""),
             lexical_unit=lexical_unit,
         )
     if frame == TrifectaFrame.PRESERVING:

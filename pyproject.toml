@@ -23,6 +23,7 @@ dependencies = [
     "tomli-w>=1.0",
     "tqdm>=4.68.3",
     "nbformat>=5.10.4",
+    "flask>=3.0",
 ]
 
 [project.optional-dependencies]
@@ -39,7 +40,10 @@ trifecta-classify = "trifecta_annotation.cli:main_classify"
 trifecta-annotate = "trifecta_annotation.cli:main_annotate"
 trifecta-batch = "trifecta_annotation.cli:main_batch"
 trifecta-eval = "trifecta_annotation.cli:main_eval"
+trifecta-eval-phase2a = "trifecta_annotation.eval_phase2a:main"
 trifecta-gold-ui = "gold_labeller.app:main"
+trifecta-verb-phase2a-ui = "gold_labeller.app:main_verb_phase2a"
+trifecta-stepc-ui = "gold_labeller.app:main_step_c"
 
 [tool.hatch.build.targets.wheel]
 packages = ["trifecta_annotation", "data_io", "gold_labeller"]
