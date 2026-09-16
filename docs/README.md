@@ -13,6 +13,7 @@ Reference material for TRIFECTA annotation work in this repository.
 | [RESEARCH_STRATEGY_SUMMARY.md](RESEARCH_STRATEGY_SUMMARY.md) | English | English-track coordination brief only |
 | [DATA.md](DATA.md) | English | Data manifest bootstrap and dataset registry |
 | [../PLAN.md](../PLAN.md) | English | Pipeline engineering (schemas, CLIs, HPC) — not gold policy |
+| [../plans/steps/EMBEDDING_CANDIDATES.md](../plans/steps/EMBEDDING_CANDIDATES.md) | English | Embedding hybrid candidate pilot (E0–E5) — parallel to Step 5 |
 
 ## Gold labelling workflow
 

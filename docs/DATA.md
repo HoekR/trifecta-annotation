@@ -44,6 +44,11 @@ This project uses the **DH data template**: `data_manifest.toml` + `data_io/` fo
 | `verb_phase2a_inputs` | semi | Phase 2a verb-KWIC annotation inputs (scratch) |
 | `verb_phase2a_predictions` | semi | Phase 2a verb-first predictions (scratch) |
 | `verb_phase2a_eval` | semi | Phase 2a verb-versus-noun evaluation report (scratch) |
+| `embedding_exemplars` | semi | Per-frame gold exemplars for embedding retrieval (E2) |
+| `embedding_candidates` | semi | Hybrid embedding KwicInput candidates (E3) |
+| `embedding_candidates_semantic_only` | semi | Embedding hits without LU anchor (E3) |
+| `embedding_chunk_index` | semi | Chunk metadata for embedding pilot (E3) |
+| `embedding_kwic_reranked` | semi | KWIC re-ranked by embedding + NONE margin (E5a) |
 
 The active Phase 2a worksheet is on scratch at `/Volumes/Extreme SSD/scratch/trifecta/verb_phase2a/gold.csv`; use `resolve("verb_phase2a_gold")` in code rather than hard-coding this path.
 
