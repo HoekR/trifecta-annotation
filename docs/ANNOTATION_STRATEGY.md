@@ -197,13 +197,13 @@ uv run python scripts/export_preservare_gold_candidates.py --summary --pool-summ
 ```bash
 uv run python scripts/rebuild_gold_eval_inputs.py
 uv run trifecta-batch --model qwen2.5-coder:latest \
-  --input-path "/Volumes/Extreme SSD/scratch/trifecta/gold_eval_inputs.jsonl" \
-  --output-path "/Volumes/Extreme SSD/scratch/trifecta/gold_predictions.jsonl"
-uv run trifecta-eval \
-  --gold-path "/Volumes/Extreme SSD/scratch/trifecta/gold.parquet" \
-  --predictions-path "/Volumes/Extreme SSD/scratch/trifecta/gold_predictions.jsonl"
+  --input-logical gold_eval_inputs \
+  --output-logical gold_predictions \
+  --resume
+uv run trifecta-eval --gold trifecta_gold --predictions gold_predictions
 ```
 
+Or: `make eval-gold`.
 Read **per-regime** section in `eval/report.md` before pooled Step B.
 
 ### 4.4 Selective disagreement review
@@ -247,11 +247,9 @@ Steps are **iterative**, not a one-way gate. You may revisit eval (Track A), sil
 
 ```bash
 uv run trifecta-batch --model qwen2.5-coder:latest \
-  --input-path "/Volumes/Extreme SSD/scratch/trifecta/gold_eval_inputs.jsonl" \
-  --output-path "/Volumes/Extreme SSD/scratch/trifecta/gold_predictions.jsonl"
-uv run trifecta-eval \
-  --gold-path "/Volumes/Extreme SSD/scratch/trifecta/gold.parquet" \
-  --predictions-path "/Volumes/Extreme SSD/scratch/trifecta/gold_predictions.jsonl"
+  --input-logical gold_eval_inputs \
+  --output-logical gold_predictions
+uv run trifecta-eval --gold trifecta_gold --predictions gold_predictions
 ```
 
 | Metric | v2 (157 rows) | Prior (173 rows, stale) |
@@ -458,11 +456,11 @@ Reports: `eval/model_comparison.md`. English glossary hint pilot: little gain on
 | Regime-stratified batch | `uv run python scripts/export_regime_stratified.py --summary` |
 | Merge batch | `uv run python scripts/merge_gold_batch.py --batch-path …/gold_labelling_regime_batch.csv` |
 | Import gold | `uv run python scripts/import_gold_csv.py --input-path …/gold_labelling_all.csv` |
-| Rebuild eval inputs | `uv run python scripts/rebuild_gold_eval_inputs.py` |
+| Rebuild eval inputs | `uv run python scripts/rebuild_gold_eval_inputs.py` → `gold_eval_inputs` |
 | INCEpTION import | `uv run python scripts/import_inception_tsv.py --annotator rikh --annotator dekker` |
 | Disagreements | `uv run python scripts/eval_disagreements.py` |
 | Apply fixes | `uv run python scripts/import_gold_fixes.py --import-after` |
-| Eval | `uv run trifecta-eval --gold-path …/gold.parquet --predictions-path …/gold_predictions.jsonl` |
+| Eval | `uv run trifecta-eval --gold trifecta_gold --predictions gold_predictions` (or `make eval-gold`) |
 | GijsBERT export | `uv run python scripts/export_gijsbert.py --silver-path …/inception_annotations.jsonl --gold-path …/gold.parquet` |
 | LLM silver backfill | `uv run python scripts/backfill_silver_step_b.py --run-batch --silver-path …/inception_annotations.jsonl --output-path …/inception_annotations_llm.jsonl` |
 | GijsBERT train | `uv run python scripts/train_gijsbert.py --model emanjavacas/GysBERT-v2 --data-dir …/gijsbert --output-dir …/models/<run>` |
@@ -481,7 +479,7 @@ Scratch root: `/Volumes/Extreme SSD/scratch/trifecta/`.
 |------|-------|
 | `gold_labelling_all.csv` / `gold.parquet` | Hand gold (A) |
 | `gold_labelling_regime_batch.csv` | Next label queue |
-| `gold_eval_inputs.jsonl` / `gold_predictions.jsonl` | Eval batch |
+| `gold_eval_inputs` / `gold_predictions` (manifest) | Eval batch |
 | `eval/report.md` / `eval/metrics.json` | Metrics (**per-regime primary**) |
 | `eval/baseline_v2_157rows_2026-07.md` | Frozen qwen baseline (157 rows) |
 | `eval/gold_fixes.csv` | User-curated adjudication (do not auto re-export) |

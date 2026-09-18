@@ -63,10 +63,9 @@ def main() -> None:
     parser.add_argument("--frame", default="", help="Optional gold/pred frame filter substring")
     args = parser.parse_args()
 
-    scratch = Path(resolve("trifecta_gold")).parent
-    gold_path = args.gold_path or scratch / "gold.parquet"
-    pred_path = args.predictions_path or scratch / "gold_predictions.jsonl"
-    out = args.output_path or scratch / "eval" / "spotcheck_disagreements.csv"
+    gold_path = args.gold_path or Path(resolve("trifecta_gold"))
+    pred_path = args.predictions_path or Path(resolve("gold_predictions"))
+    out = args.output_path or Path(resolve("eval_reports")) / "spotcheck_disagreements.csv"
 
     gold = load_gold_records(gold_path=gold_path)
     preds = {

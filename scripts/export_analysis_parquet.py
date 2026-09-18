@@ -22,7 +22,7 @@ def main() -> None:
         "--input-path",
         type=Path,
         default=None,
-        help="Batch JSONL (default: scratch gold_predictions.jsonl)",
+        help="Batch JSONL (default: resolve gold_predictions)",
     )
     parser.add_argument("--input-logical", default=None)
     parser.add_argument(
@@ -45,7 +45,7 @@ def main() -> None:
 
     input_path = args.input_path
     if input_path is None and args.input_logical is None:
-        input_path = Path(resolve("trifecta_gold")).parent / "gold_predictions.jsonl"
+        input_path = Path(resolve("gold_predictions"))
 
     path = export_analysis_parquet(
         input_path=input_path,

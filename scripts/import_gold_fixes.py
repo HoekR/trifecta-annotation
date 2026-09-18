@@ -24,7 +24,7 @@ def _default_fixes_csv() -> Path:
 
 
 def _default_predictions() -> Path:
-    return Path(resolve("trifecta_gold")).parent / "gold_predictions.jsonl"
+    return Path(resolve("gold_predictions"))
 
 
 def main() -> None:

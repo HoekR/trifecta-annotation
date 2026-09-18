@@ -18,6 +18,7 @@ from trifecta_annotation.frame_verbs import (
     pick_food_near_verb,
     term_positions,
 )
+from trifecta_annotation.gold_target_filter import FilterStats, GoldTargetFilter
 from trifecta_annotation.homonym_context import (
     HomonymAssessment,
     assess_homonym_context,
@@ -293,6 +294,8 @@ def mine_clear_frame_candidates(
     near_window: int = DEFAULT_NEAR_WINDOW,
     conflict_window: int = DEFAULT_CONFLICT_WINDOW,
     require_homonym_clear: bool = False,
+    target_filter: GoldTargetFilter | None = None,
+    filter_stats: FilterStats | None = None,
 ) -> list[ClearFrameCandidate]:
     """Scan verb-seeded KWIC pool; keep rows that pass clarity filters."""
     lookup = resolve_thesaurus_lookup(thesaurus_path=thesaurus_path)
@@ -302,6 +305,8 @@ def mine_clear_frame_candidates(
     snippets = load_food_snippets_frame(logical_name=logical_name, path=path)
     pool = iter_verb_kwic_candidates(snippets, lookup=lookup, require_food=True)
     blocked = exclude_record_ids or set()
+    filt = target_filter or GoldTargetFilter(apply_lemma_priors=False)
+    stats = filter_stats if filter_stats is not None else FilterStats()
 
     found: list[ClearFrameCandidate] = []
     for record in pool:
@@ -317,8 +322,14 @@ def mine_clear_frame_candidates(
         if hit_frame not in frames:
             continue
 
+        decision = filt.decide(record.target_word)
+        if decision.hard_skip:
+            stats.record_decision(decision)
+            continue
+
         regime = _infer_regime(record)
         food_terms = list(record.candidate_terms or [record.target_word])
+        need_homonym = require_homonym_clear or decision.require_disambiguation
         scored = score_snippet_for_frame(
             record.context_text,
             food_terms,
@@ -327,18 +338,25 @@ def mine_clear_frame_candidates(
             near_window=near_window,
             conflict_window=conflict_window,
             guideline_only=guideline_only,
-            require_homonym_clear=require_homonym_clear,
+            require_homonym_clear=need_homonym,
         )
         if scored is None:
+            if decision.require_disambiguation and need_homonym:
+                stats.considered += 1
+                stats.skipped_disambiguation += 1
+                if decision.require_disambiguation:
+                    stats.require_disambiguation += 1
             continue
         if scored.confidence_score < min_score:
             continue
         if high_only and scored.confidence_tier != "high":
             continue
+        stats.record_decision(decision)
         found.append(_enrich_from_kwic(record, scored))
 
     found.sort(
         key=lambda item: (
+            filt.decide(item.record.target_word).soft_deprioritize,
             -item.confidence_score,
             item.confidence_tier != "high",
             item.verb_distance,
@@ -356,11 +374,16 @@ def sample_clear_frame_candidates(
     max_per_target: int = 2,
     max_per_work: int = 3,
     frame_quotas: dict[TrifectaFrame, int] | None = None,
+    target_filter: GoldTargetFilter | None = None,
 ) -> list[ClearFrameCandidate]:
-    """Stratified sample with per-lemma and per-work caps."""
+    """Stratified sample with per-lemma and per-work caps.
+
+    Soft-deprioritized lemmas are filled only after non-soft quota attempts.
+    """
     if not candidates:
         return []
 
+    filt = target_filter or GoldTargetFilter(apply_lemma_priors=False)
     by_frame: dict[str, list[ClearFrameCandidate]] = defaultdict(list)
     for item in candidates:
         by_frame[item.suggested_frame.value].append(item)
@@ -381,22 +404,37 @@ def sample_clear_frame_candidates(
     def work_key(record: KwicInput) -> str:
         return (record.title or record.source_path or record.corpus or "unknown")[:80]
 
-    for frame_name in frame_order:
-        quota = quotas.get(TrifectaFrame(frame_name), default_per_frame)
-        bucket = by_frame[frame_name]
-        picked = 0
-        while bucket and picked < quota and len(selected) < limit:
-            idx = rng.randrange(len(bucket))
-            item = bucket.pop(idx)
-            target = normalize_hist_dutch(item.record.target_word)
+    def try_pick(bucket: list[ClearFrameCandidate], *, allow_soft: bool) -> ClearFrameCandidate | None:
+        for idx in range(len(bucket)):
+            item = bucket[idx]
+            decision = filt.decide(item.record.target_word)
+            if decision.hard_skip:
+                continue
+            if decision.soft_deprioritize and not allow_soft:
+                continue
+            target = decision.target_norm or normalize_hist_dutch(item.record.target_word)
             work = work_key(item.record)
             if target_counts[target] >= max_per_target:
                 continue
             if work_counts[work] >= max_per_work:
                 continue
-            selected.append(item)
+            bucket.pop(idx)
             target_counts[target] += 1
             work_counts[work] += 1
+            return item
+        return None
+
+    for frame_name in frame_order:
+        quota = quotas.get(TrifectaFrame(frame_name), default_per_frame)
+        bucket = by_frame[frame_name]
+        picked = 0
+        while picked < quota and len(selected) < limit:
+            item = try_pick(bucket, allow_soft=False)
+            if item is None:
+                item = try_pick(bucket, allow_soft=True)
+            if item is None:
+                break
+            selected.append(item)
             picked += 1
 
     return selected[:limit]

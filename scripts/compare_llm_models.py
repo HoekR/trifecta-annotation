@@ -107,8 +107,8 @@ def main(argv: list[str] | None = None) -> int:
         metavar="NAME=PATH",
         help="Named prediction JSONL files (compare-only or override auto paths)",
     )
-    parser.add_argument("--inputs-path", type=Path, default=root / "gold_eval_inputs.jsonl")
-    parser.add_argument("--gold-path", type=Path, default=root / "gold.parquet")
+    parser.add_argument("--inputs-path", type=Path, default=Path(resolve("gold_eval_inputs")))
+    parser.add_argument("--gold-path", type=Path, default=Path(resolve("trifecta_gold")))
     parser.add_argument("--fixes-csv", type=Path, default=eval_dir / "gold_fixes.csv")
     parser.add_argument("--report-json", type=Path, default=eval_dir / "model_comparison.json")
     parser.add_argument("--report-md", type=Path, default=eval_dir / "model_comparison.md")

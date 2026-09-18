@@ -7,7 +7,7 @@ import argparse
 from pathlib import Path
 
 import pandas as pd
-from data_io import resolve
+from data_io import UnsetEnvPathError, resolve, resolve_cli_path
 
 from trifecta_annotation.gold_io import export_gold_csv, import_gold_csv, merge_labelling_rows
 
@@ -32,6 +32,11 @@ def main() -> None:
             "--overwrite-labelled."
         ),
     )
+    parser.add_argument(
+        "--batch-logical",
+        default=None,
+        help="Manifest logical name for the batch CSV (e.g. clear_frame_examples)",
+    )
     parser.add_argument("--batch-path", type=Path, default=None, help="New batch CSV")
     parser.add_argument("--into-path", type=Path, default=None, help="Merged gold CSV")
     parser.add_argument("--overwrite-labelled", action="store_true")
@@ -42,7 +47,18 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    batch_path = args.batch_path or _default_batch_csv()
+    try:
+        if args.batch_path is not None or args.batch_logical:
+            batch_path = resolve_cli_path(
+                logical=args.batch_logical,
+                path=args.batch_path,
+                what="batch path",
+            )
+        else:
+            batch_path = _default_batch_csv()
+    except UnsetEnvPathError as exc:
+        raise SystemExit(str(exc)) from exc
+
     into_path = args.into_path or _default_merged_csv()
     if not batch_path.exists():
         raise SystemExit(f"Batch CSV not found: {batch_path}")

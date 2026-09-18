@@ -13,6 +13,7 @@ from trifecta_annotation.adapters.food_snippets import (
     adapt_food_snippet_long_row,
     load_food_snippets_long_frame,
 )
+from trifecta_annotation.gold_target_filter import FilterStats, GoldTargetFilter, normalize_target
 from trifecta_annotation.schemas import KwicInput
 from trifecta_annotation.text_regime import TextRegime, infer_text_regime
 from trifecta_annotation.thesaurus import filter_long_snippets_frame
@@ -126,6 +127,8 @@ def sample_kwic_by_regime(
     include_inception: bool = True,
     thesaurus_filter: bool = True,
     thesaurus_path: str | None = None,
+    target_filter: GoldTargetFilter | None = None,
+    filter_stats: FilterStats | None = None,
 ) -> tuple[list[KwicInput], dict[str, int]]:
     """
     Sample KWIC rows stratified by ``text_regime``.
@@ -133,6 +136,8 @@ def sample_kwic_by_regime(
     Returns selected records and per-regime fill counts (may be below quota).
     """
     exclude = exclude_record_ids or set()
+    filt = target_filter or GoldTargetFilter(apply_lemma_priors=False)
+    stats = filter_stats if filter_stats is not None else FilterStats()
     pool = _load_candidate_pool(
         include_inception=include_inception,
         seed=seed,
@@ -144,6 +149,11 @@ def sample_kwic_by_regime(
     for record in pool:
         if record.record_id in exclude:
             continue
+        decision = filt.decide(record.target_word)
+        if decision.hard_skip:
+            stats.record_decision(decision)
+            continue
+        stats.record_decision(decision)
         regime = record.text_regime or TextRegime.UNKNOWN
         by_regime[regime].append(record)
 
@@ -152,6 +162,20 @@ def sample_kwic_by_regime(
     target_counts: dict[str, int] = defaultdict(int)
     filled: dict[str, int] = {}
 
+    def try_pick(bucket: list[KwicInput], *, allow_soft: bool) -> KwicInput | None:
+        for idx in range(len(bucket)):
+            record = bucket[idx]
+            decision = filt.decide(record.target_word)
+            if decision.soft_deprioritize and not allow_soft:
+                continue
+            key = decision.target_norm or normalize_target(record.target_word)
+            if target_counts[key] >= max_per_target:
+                continue
+            bucket.pop(idx)
+            target_counts[key] += 1
+            return record
+        return None
+
     for regime, quota in quotas.items():
         if quota <= 0:
             filled[regime.value] = 0
@@ -159,15 +183,14 @@ def sample_kwic_by_regime(
         bucket = list(by_regime.get(regime, []))
         rng.shuffle(bucket)
         picked = 0
-        for record in bucket:
-            key = record.target_word.lower()
-            if target_counts[key] >= max_per_target:
-                continue
-            selected.append(record)
-            target_counts[key] += 1
-            picked += 1
-            if picked >= quota:
+        while picked < quota:
+            record = try_pick(bucket, allow_soft=False)
+            if record is None:
+                record = try_pick(bucket, allow_soft=True)
+            if record is None:
                 break
+            selected.append(record)
+            picked += 1
         filled[regime.value] = picked
 
     rng.shuffle(selected)
@@ -228,6 +251,8 @@ def sample_inception_silver(
     refresh_regimes: bool = True,
     max_per_target: int = 3,
     labelled_only: bool = True,
+    target_filter: GoldTargetFilter | None = None,
+    filter_stats: FilterStats | None = None,
 ) -> tuple[list[dict[str, object]], dict[str, int]]:
     """
     Sample pre-labelled INCEpTION silver rows by ``text_regime`` quota.
@@ -238,6 +263,8 @@ def sample_inception_silver(
     if not path.exists():
         return [], {regime.value: 0 for regime in quotas}
 
+    filt = target_filter or GoldTargetFilter(apply_lemma_priors=False)
+    stats = filter_stats if filter_stats is not None else FilterStats()
     frame = pd.read_csv(path, dtype=str, keep_default_na=False)
     rows = frame.to_dict(orient="records")
     if refresh_regimes:
@@ -251,6 +278,11 @@ def sample_inception_silver(
             continue
         if labelled_only and str(row.get("labelled", "")).lower() != "true":
             continue
+        decision = filt.decide(str(row.get("target_word") or ""))
+        if decision.hard_skip:
+            stats.record_decision(decision)
+            continue
+        stats.record_decision(decision)
         eligible.append(row)
 
     by_regime: dict[TextRegime, list[dict[str, object]]] = defaultdict(list)
@@ -267,6 +299,21 @@ def sample_inception_silver(
     target_counts: dict[str, int] = defaultdict(int)
     filled: dict[str, int] = {}
 
+    def try_pick(bucket: list[dict[str, object]], *, allow_soft: bool) -> dict[str, object] | None:
+        for idx in range(len(bucket)):
+            row = bucket[idx]
+            decision = filt.decide(str(row.get("target_word") or ""))
+            if decision.soft_deprioritize and not allow_soft:
+                continue
+            key = decision.target_norm or normalize_target(str(row.get("target_word") or ""))
+            if key and target_counts[key] >= max_per_target:
+                continue
+            bucket.pop(idx)
+            if key:
+                target_counts[key] += 1
+            return row
+        return None
+
     for regime, quota in quotas.items():
         if quota <= 0:
             filled[regime.value] = 0
@@ -274,16 +321,14 @@ def sample_inception_silver(
         bucket = list(by_regime.get(regime, []))
         rng.shuffle(bucket)
         picked = 0
-        for row in bucket:
-            key = str(row.get("target_word") or "").lower()
-            if key and target_counts[key] >= max_per_target:
-                continue
-            selected.append(row)
-            if key:
-                target_counts[key] += 1
-            picked += 1
-            if picked >= quota:
+        while picked < quota:
+            row = try_pick(bucket, allow_soft=False)
+            if row is None:
+                row = try_pick(bucket, allow_soft=True)
+            if row is None:
                 break
+            selected.append(row)
+            picked += 1
         filled[regime.value] = picked
 
     rng.shuffle(selected)

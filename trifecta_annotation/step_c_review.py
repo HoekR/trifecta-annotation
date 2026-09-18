@@ -79,7 +79,7 @@ class StepCReviewConfig:
     def resolved_predictions_path(self) -> Path:
         if self.predictions_path:
             return Path(self.predictions_path)
-        return self.resolved_gold_path().parent / "gold_predictions.jsonl"
+        return Path(resolve("gold_predictions"))
 
     def resolved_output_path(self) -> Path:
         if self.output_path:

@@ -29,14 +29,15 @@ def _sample_rows(rows: list[dict], *, limit: int | None, seed: int) -> list[dict
     return rng.sample(rows, limit)
 
 
-def _score_rows(
+def _score_rows_per_frame(
     rows: list[dict],
     vectors: np.ndarray,
     centroids: dict[str, np.ndarray],
     *,
     none_margin: float,
     frames: tuple[str, ...] = FOOD_QUERY_FRAMES,
-) -> list[dict]:
+) -> dict[str, list[dict]]:
+    """Score every row against each food frame; keep those beating NONE+margin (or margin fallback)."""
     mat = l2_normalize(vectors)
     none_vec = centroids.get("NONE")
     none_scores = (
@@ -44,44 +45,51 @@ def _score_rows(
         if none_vec is not None
         else np.full(len(rows), np.nan)
     )
-    frame_mats = {
-        f: (mat @ l2_normalize(centroids[f].reshape(1, -1)).T).ravel()
-        for f in frames
-        if f in centroids
-    }
-    scored: list[dict] = []
-    for i, row in enumerate(rows):
-        best_frame = None
-        best_score = -1.0
-        for frame, scores in frame_mats.items():
-            s = float(scores[i])
-            if s > best_score:
-                best_score = s
-                best_frame = frame
-        none_score = float(none_scores[i]) if none_vec is not None else None
-        if none_score is not None and best_score < none_score + none_margin:
-            continue
-        out = dict(row)
-        out["frame_hint"] = best_frame
-        out["embedding_score"] = best_score
-        out["none_score"] = none_score
-        out["kwic_mode"] = "embedding_rerank"
-        scored.append(out)
-    scored.sort(key=lambda r: float(r.get("embedding_score") or 0.0), reverse=True)
-    return scored
-
-
-def _apply_frame_quota(rows: list[dict], *, keep: int, frames: tuple[str, ...] = FOOD_QUERY_FRAMES) -> list[dict]:
-    if keep <= 0 or not rows:
-        return []
     per_frame: dict[str, list[dict]] = {f: [] for f in frames}
-    other: list[dict] = []
-    for row in rows:
-        hint = str(row.get("frame_hint") or "")
-        if hint in per_frame:
-            per_frame[hint].append(row)
-        else:
-            other.append(row)
+    for frame in frames:
+        if frame not in centroids:
+            continue
+        scores = (mat @ l2_normalize(centroids[frame].reshape(1, -1)).T).ravel()
+        for i, row in enumerate(rows):
+            score = float(scores[i])
+            none_score = float(none_scores[i]) if none_vec is not None else None
+            if none_score is not None and score < none_score + none_margin:
+                continue
+            out = dict(row)
+            out["frame_hint"] = frame
+            out["embedding_score"] = score
+            out["none_score"] = none_score
+            out["kwic_mode"] = "embedding_rerank"
+            per_frame[frame].append(out)
+        per_frame[frame].sort(key=lambda r: float(r["embedding_score"]), reverse=True)
+
+    # Fallback for empty frames: rank by (score - none) without hard margin.
+    if none_vec is not None:
+        for frame in frames:
+            if per_frame.get(frame) or frame not in centroids:
+                continue
+            scores = (mat @ l2_normalize(centroids[frame].reshape(1, -1)).T).ravel()
+            margin = scores - none_scores
+            order = np.argsort(-margin)
+            filled: list[dict] = []
+            for i in order[: max(len(rows), 1)]:
+                idx = int(i)
+                out = dict(rows[idx])
+                out["frame_hint"] = frame
+                out["embedding_score"] = float(scores[idx])
+                out["none_score"] = float(none_scores[idx])
+                out["kwic_mode"] = "embedding_rerank"
+                filled.append(out)
+            per_frame[frame] = filled
+    return per_frame
+
+
+def _apply_frame_quota_from_buckets(
+    per_frame: dict[str, list[dict]],
+    *,
+    keep: int,
+    frames: tuple[str, ...] = FOOD_QUERY_FRAMES,
+) -> list[dict]:
     cursors = {f: 0 for f in frames}
     selected: list[dict] = []
     seen: set[str] = set()
@@ -90,7 +98,7 @@ def _apply_frame_quota(rows: list[dict], *, keep: int, frames: tuple[str, ...] =
         for frame in frames:
             if len(selected) >= keep:
                 break
-            bucket = per_frame[frame]
+            bucket = per_frame.get(frame) or []
             while cursors[frame] < len(bucket):
                 row = bucket[cursors[frame]]
                 cursors[frame] += 1
@@ -103,13 +111,6 @@ def _apply_frame_quota(rows: list[dict], *, keep: int, frames: tuple[str, ...] =
                 break
         if not progressed:
             break
-    for row in other:
-        if len(selected) >= keep:
-            break
-        rid = str(row.get("record_id") or id(row))
-        if rid in seen:
-            continue
-        selected.append(row)
     return selected
 
 
@@ -141,12 +142,25 @@ def main() -> None:
 
     centroids = frame_centroids_from_embeddings(exemplars, _encode)
     vectors = _encode([str(r.get("context_text") or "") for r in rows])
-    scored = _score_rows(rows, vectors, centroids, none_margin=args.none_margin)
-    kept = (
-        scored[: args.keep]
-        if args.no_frame_quota
-        else _apply_frame_quota(scored, keep=args.keep)
+    per_frame = _score_rows_per_frame(
+        rows, vectors, centroids, none_margin=args.none_margin
     )
+    passed = sum(len(v) for v in per_frame.values())
+    if args.no_frame_quota:
+        flat = [r for bucket in per_frame.values() for r in bucket]
+        flat.sort(key=lambda r: float(r.get("embedding_score") or 0.0), reverse=True)
+        seen: set[str] = set()
+        kept = []
+        for row in flat:
+            rid = str(row.get("record_id") or id(row))
+            if rid in seen:
+                continue
+            seen.add(rid)
+            kept.append(row)
+            if len(kept) >= args.keep:
+                break
+    else:
+        kept = _apply_frame_quota_from_buckets(per_frame, keep=args.keep)
 
     # Validate as KwicInput + keep scores
     out_rows: list[dict] = []
@@ -182,9 +196,9 @@ def main() -> None:
     report = {
         "input": str(in_path),
         "scored": len(rows),
-        "passed_none_margin": len(scored),
+        "passed_none_margin_assignments": passed,
         "kept": len(out_rows),
-        "pass_rate": round(len(scored) / max(len(rows), 1), 4),
+        "pass_rate": round(passed / max(len(rows) * max(len(FOOD_QUERY_FRAMES), 1), 1), 4),
         "frame_hint": dict(Counter(str(r.get("frame_hint")) for r in out_rows)),
         "none_margin": args.none_margin,
         "frame_quota": not args.no_frame_quota,

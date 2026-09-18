@@ -11,6 +11,12 @@ from pathlib import Path
 from data_io import resolve
 
 from trifecta_annotation.gold_io import GOLD_CSV_COLUMNS, export_gold_csv, kwic_input_to_candidate_row
+from trifecta_annotation.gold_target_filter import (
+    FilterStats,
+    add_lemma_prior_cli_args,
+    filter_from_cli_args,
+    format_filter_report,
+)
 from trifecta_annotation.regime_sampling import (
     parse_regime_quotas,
     sample_inception_silver,
@@ -57,9 +63,12 @@ def main() -> None:
         help="Output CSV (default: gold_labelling_regime_batch.csv on scratch)",
     )
     parser.add_argument("--summary", action="store_true")
+    add_lemma_prior_cli_args(parser)
     args = parser.parse_args()
 
     quotas = parse_regime_quotas(args.regime_quota)
+    target_filter = filter_from_cli_args(args)
+    filter_stats = FilterStats()
     records, filled = sample_kwic_by_regime(
         quotas,
         seed=args.seed,
@@ -68,6 +77,8 @@ def main() -> None:
         include_inception=not args.no_inception,
         thesaurus_filter=not args.no_thesaurus_filter,
         thesaurus_path=args.thesaurus_path,
+        target_filter=target_filter,
+        filter_stats=filter_stats,
     )
 
     rows = [kwic_input_to_candidate_row(record) for record in records]
@@ -80,6 +91,8 @@ def main() -> None:
             seed=args.seed + 1,
             exclude_record_ids=_existing_gold_ids(),
             max_per_target=args.max_per_target,
+            target_filter=target_filter,
+            filter_stats=filter_stats,
         )
         seen = {str(row.get("record_id")) for row in rows}
         for row in inception_rows:
@@ -87,6 +100,15 @@ def main() -> None:
             if record_id and record_id not in seen:
                 rows.append({col: row.get(col, "") for col in GOLD_CSV_COLUMNS})
                 seen.add(record_id)
+
+    report = format_filter_report(
+        filter_stats,
+        selected=records,
+        target_attr="target_word",
+        frame_attr="frame_hint",
+        label="regime_stratified",
+    )
+    print(json.dumps(report, indent=2), file=sys.stderr)
 
     if args.summary:
         by_regime: dict[str, int] = {}
@@ -134,7 +156,8 @@ def main() -> None:
     print(
         f"Exported {len(rows)} rows "
         f"({len(records)} KWIC candidates + {len(inception_rows)} INCEpTION silver; "
-        f"filled KWIC: {filled}, INCEpTION: {inception_filled})",
+        f"filled KWIC: {filled}, INCEpTION: {inception_filled}; "
+        f"lemma hard-skips={filter_stats.hard_skipped})",
         file=sys.stderr,
     )
 

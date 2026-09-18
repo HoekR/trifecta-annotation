@@ -36,13 +36,12 @@ def _scratch_eval_dir() -> Path:
 
 def _default_paths() -> dict[str, Path]:
     eval_dir = _scratch_eval_dir()
-    root = eval_dir.parent
     return {
         "fixes_csv": eval_dir / "gold_fixes.csv",
-        "inputs": root / "gold_eval_inputs.jsonl",
-        "baseline_preds": root / "gold_predictions.jsonl",
-        "en_preds": root / "gold_predictions_en_hint.jsonl",
-        "gold": root / "gold.parquet",
+        "inputs": Path(resolve("gold_eval_inputs")),
+        "baseline_preds": Path(resolve("gold_predictions")),
+        "en_preds": Path(resolve("gold_predictions")).with_name("gold_predictions_en_hint.jsonl"),
+        "gold": Path(resolve("trifecta_gold")),
         "report": eval_dir / "english_hint_pilot.json",
     }
 

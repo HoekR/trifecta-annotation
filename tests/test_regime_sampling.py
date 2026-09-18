@@ -59,6 +59,7 @@ def test_sample_kwic_by_regime_respects_target_cap(tmp_path: Path) -> None:
             {TextRegime.RECIPE_PRACTICE: 5},
             max_per_target=2,
             seed=0,
+            target_filter=None,
         )
     finally:
         mod._load_candidate_pool = original

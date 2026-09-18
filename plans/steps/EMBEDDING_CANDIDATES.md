@@ -1,6 +1,10 @@
 # Embedding hybrid candidate generation (pilot)
 
-**Status:** E0–E4 done · **Active step:** E5 (decision gate) · **Do not start E5 until `go`**
+**Status:** E0–E5a **adopted** · hybrid discovery deferred · harden LU later
+
+**Workflow:** After each E-step, stop and ask the operator for decisions. **Do not start the next step until the operator says `go`.**
+
+**SvZ:** mirrored in [`docs/state.json`](../../docs/state.json) / [`docs/STATE.md`](../../docs/STATE.md).
 
 **Workflow:** After each E-step, stop and ask the operator for decisions. **Do not start the next step until the operator says `go`.**
 
@@ -66,15 +70,25 @@ Report: `scratch/trifecta/embedding/e4_compare_report.json`
 
 **Read:** clear **noise win** (denylist / LU). Frame diversity **skewed to PRESERVING**; INGESTION missing — watch before adopting as sole discovery path.
 
-### E5 — Adopt or stop — **ACTIVE** (await decisions + `go`)
+### E5 — Adopt or stop — **ADOPTED E5a** (2026-09-16)
 
-| Outcome | Next |
-|---------|------|
-| Noise win only | **E5a** KWIC re-ranker |
-| Also finds KWIC-missed good spans | **E5b** fuller index |
-| No win / bad skew | **E5c** stop |
+**Decision:** Prefer KWIC **re-ranker** before batch; defer hybrid discovery.
 
-Optional: Step A on both pools before E5 (operator-run).
+**Ops**
+
+```bash
+make rerank-kwic
+make batch-kwic-reranked
+# docs: COMMANDS.md § Preferred embedding re-rank
+```
+
+**Done (evidence)**
+
+- Per-frame quotas + NONE-margin fallback (INGESTION present)
+- Step A n=100: hybrid **0.87**, re-ranked **0.86**, KWIC baseline **0.69**
+- Spot-check CSV reviewed — **all look good** (operator, 2026-09-16)
+
+**Follow-ups (not blocking adopt):** harden LU anchor (reject function words); optional larger `--sample-limit` / `--keep` for production batches.
 
 ---
 

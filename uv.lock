@@ -3234,6 +3234,7 @@ dependencies = [
     { name = "pyarrow" },
     { name = "pydantic" },
     { name = "tomli-w" },
+    { name = "torch" },
     { name = "tqdm" },
 ]
 
@@ -3286,6 +3287,7 @@ requires-dist = [
     { name = "pydantic", specifier = ">=2.0" },
     { name = "scikit-learn", marker = "extra == 'gijsbert'", specifier = ">=1.4" },
     { name = "tomli-w", specifier = ">=1.0" },
+    { name = "torch", specifier = ">=2.12.1" },
     { name = "torch", marker = "extra == 'gijsbert'", specifier = ">=2.0" },
     { name = "tqdm", specifier = ">=4.68.3" },
     { name = "transformers", marker = "extra == 'gijsbert'", specifier = ">=4.40" },

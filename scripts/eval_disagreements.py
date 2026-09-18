@@ -33,7 +33,7 @@ def _default_gold_path() -> Path:
 
 
 def _default_predictions_path() -> Path:
-    return _default_gold_path().parent / "gold_predictions.jsonl"
+    return Path(resolve("gold_predictions"))
 
 
 def _default_fixes_csv() -> Path:

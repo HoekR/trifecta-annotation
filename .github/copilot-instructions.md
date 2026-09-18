@@ -1,7 +1,5 @@
----
-description: Core project standards for DH data projects (shared with VS Code Copilot)
-alwaysApply: true
----
+<!-- Same body as .cursor/rules/project-standards.mdc.
+     Source: dighum_template/template/shared/agent-standards.md -->
 
 # Agent standards (Cursor + VS Code Copilot)
 

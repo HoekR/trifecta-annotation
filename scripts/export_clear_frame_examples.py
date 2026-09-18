@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 
 import pandas as pd
-from data_io import resolve
+from data_io import UnsetEnvPathError, resolve, resolve_cli_path
 
 from trifecta_annotation.clear_frame_examples import (
     clear_frame_summary,
@@ -18,6 +18,12 @@ from trifecta_annotation.clear_frame_examples import (
     target_centered_snippet,
 )
 from trifecta_annotation.gold_io import GOLD_CSV_COLUMNS, kwic_input_to_candidate_row
+from trifecta_annotation.gold_target_filter import (
+    FilterStats,
+    add_lemma_prior_cli_args,
+    filter_from_cli_args,
+    format_filter_report,
+)
 from trifecta_annotation.review_columns import (
     HOMONYM_REVIEW_COLUMNS,
     HOMONYM_REVIEW_HELP,
@@ -75,10 +81,15 @@ def main() -> None:
     )
     parser.add_argument("--include-gold", action="store_true", help="Do not exclude existing gold ids")
     parser.add_argument(
+        "--output-logical",
+        default="clear_frame_examples",
+        help="Manifest logical name for review CSV (default: clear_frame_examples). Prefer this over --output-path.",
+    )
+    parser.add_argument(
         "--output-path",
         type=Path,
         default=None,
-        help="Review CSV (default: scratch/eval/clear_frame_examples.csv)",
+        help="Override path (rare). Do not use $SCRATCH — unset expands to /eval/… and is refused.",
     )
     parser.add_argument("--summary", action="store_true")
     parser.add_argument("--pool-summary", action="store_true", help="Summarize full mined pool")
@@ -87,10 +98,22 @@ def main() -> None:
         action="store_true",
         help="Drop rows auto-flagged as high-risk homographs (default: export all, mark in CSV)",
     )
+    add_lemma_prior_cli_args(parser)
     args = parser.parse_args()
+
+    try:
+        out_path = resolve_cli_path(
+            logical=args.output_logical,
+            path=args.output_path,
+            what="output path",
+        )
+    except UnsetEnvPathError as exc:
+        raise SystemExit(str(exc)) from exc
 
     frames = _parse_frames(args.frames)
     exclude = set() if args.include_gold else _existing_gold_ids()
+    target_filter = filter_from_cli_args(args)
+    filter_stats = FilterStats()
 
     pool = mine_clear_frame_candidates(
         frames=frames,
@@ -99,6 +122,8 @@ def main() -> None:
         high_only=args.high_only,
         guideline_only=not args.allow_corpus_verbs,
         require_homonym_clear=args.homonym_filter,
+        target_filter=target_filter,
+        filter_stats=filter_stats,
     )
     if args.pool_summary:
         print(json.dumps(clear_frame_summary(pool), indent=2), file=sys.stderr)
@@ -113,7 +138,17 @@ def main() -> None:
         max_per_target=args.max_per_target,
         max_per_work=args.max_per_work,
         frame_quotas=_parse_quotas(args.frame_quota),
+        target_filter=target_filter,
     )
+
+    report = format_filter_report(
+        filter_stats,
+        selected=selected,
+        target_attr="record.target_word",
+        frame_attr="suggested_frame.value",
+        label="clear_frame",
+    )
+    print(json.dumps(report, indent=2), file=sys.stderr)
 
     if args.summary:
         print(json.dumps(clear_frame_summary(selected), indent=2), file=sys.stderr)
@@ -135,10 +170,12 @@ def main() -> None:
         )
         rows.append(row)
 
-    out_path = args.output_path
-    if out_path is None:
-        scratch = Path(resolve("trifecta_gold")).parent
-        out_path = scratch / "eval" / "clear_frame_examples.csv"
+    if not rows:
+        print(
+            f"No rows selected; nothing written (would have used {out_path})",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     extra_cols = ["review_snippet", "homonym_hint", *HOMONYM_REVIEW_COLUMNS]
@@ -150,7 +187,8 @@ def main() -> None:
     print(f"Homonym review: {HOMONYM_REVIEW_HELP}", file=sys.stderr)
     if pool:
         print(
-            f"Pool: {len(pool)} candidates (excluded {len(exclude)} gold ids)",
+            f"Pool: {len(pool)} candidates (excluded {len(exclude)} gold ids; "
+            f"lemma hard-skips={filter_stats.hard_skipped})",
             file=sys.stderr,
         )
 

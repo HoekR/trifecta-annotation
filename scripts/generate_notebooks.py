@@ -1015,8 +1015,7 @@ def build_cooking_stepc_gold_lab() -> nbf.NotebookNode:
                 "from data_io import resolve\n",
                 "from trifecta_annotation.gold_nb import GoldBatchEditor, RowLabeller\n",
                 "\n",
-                "SCRATCH = Path(resolve('trifecta_gold')).parent\n",
-                "BATCH_PATH = SCRATCH / 'eval' / 'cooking_stepc_batch.csv'\n",
+                "BATCH_PATH = Path(resolve('clear_frame_examples'))\n",
                 "\n",
                 "editor = GoldBatchEditor(BATCH_PATH)\n",
                 "editor.summary()\n",
@@ -1029,13 +1028,12 @@ def build_cooking_stepc_gold_lab() -> nbf.NotebookNode:
             [
                 "## Export batch (if missing)\n",
                 "\n",
-                "Run once in the terminal:\n",
+                "Run once in the terminal (writes `clear_frame_examples` — no `$SCRATCH`):\n",
                 "\n",
                 "```bash\n",
                 "uv run python scripts/export_clear_frame_examples.py --summary --pool-summary \\\n",
                 "  --frames COOKING_CREATION \\\n",
-                "  --frame-quota \"COOKING_CREATION:30\" --limit 30 \\\n",
-                "  --output-path \"$SCRATCH/eval/cooking_stepc_batch.csv\"\n",
+                "  --frame-quota \"COOKING_CREATION:30\" --limit 30\n",
                 "```\n",
             ],
         ),
@@ -1064,7 +1062,21 @@ def build_cooking_stepc_gold_lab() -> nbf.NotebookNode:
                 "3. Fill **Step A** and **Step B**.\n",
                 "4. Fill **Step C qualia** only when stated in the snippet (leave blank otherwise).\n",
                 "5. Check **labelled**, click **Save & next** — pending queue, auto-saves CSV.\n",
-                "6. Overview table shows **snippets** + short qualia columns; dropdown to jump.\n",
+                "6. Jump rows via the **dropdown** or **Prev/Next** (after scanning the overview).\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(
+            [
+                "> **N.B.** The overview table is **browse-only** — not Excel-style inline edit.\n",
+                "> Edits go through the row editor below.\n",
+                ">\n",
+                "> With `pending_only=True`, finished (`labelled=true`) rows drop out of the queue,\n",
+                "> so you cannot reopen them. To fix a mistake (e.g. leftover `mede`):\n",
+                "> set `pending_only=False`, re-run the cell, pick the row in the dropdown.\n",
+                "> For dropped non-food rows also set **Advanced → frame → NONE**.\n",
             ],
         ),
     )
@@ -1072,6 +1084,7 @@ def build_cooking_stepc_gold_lab() -> nbf.NotebookNode:
     nb["cells"].append(
         nbf.v4.new_code_cell(
             source=[
+                "# pending_only=True = unfinished queue only. False = revisit labelled rows.\n",
                 "labeller = RowLabeller(editor, frame_filter='COOKING_CREATION', pending_only=True)\n",
                 "labeller.display()\n",
             ],
@@ -1101,10 +1114,8 @@ def build_cooking_stepc_gold_lab() -> nbf.NotebookNode:
                 "\n",
                 "```bash\n",
                 "uv run python scripts/merge_gold_batch.py \\\n",
-                "  --batch-path \"$SCRATCH/eval/cooking_stepc_batch.csv\"\n",
-                "\n",
-                "uv run python scripts/import_gold_csv.py \\\n",
-                "  --input-path \"$SCRATCH/gold_labelling_all.csv\"\n",
+                "  --batch-logical clear_frame_examples \\\n",
+                "  --import-after\n",
                 "```\n",
             ],
         ),
@@ -1232,13 +1243,12 @@ def build_step_c_review() -> nbf.NotebookNode:
                 "    walk_details,\n",
                 ")\n",
                 "\n",
-                "SCRATCH = Path(resolve('trifecta_gold')).parent\n",
                 "EVAL = Path(resolve('eval_reports'))\n",
                 "\n",
                 "# --- knobs (change for future frames / slices) ---\n",
                 "CONFIG = StepCReviewConfig(\n",
                 "    gold_path=None,\n",
-                "    predictions_path=SCRATCH / 'gold_predictions.jsonl',\n",
+                "    predictions_path=Path(resolve('gold_predictions')),\n",
                 "    output_path=EVAL / 'step_c_review.csv',\n",
                 "    frames=(),  # e.g. ('COOKING_CREATION',)\n",
                 "    tiers=(),  # e.g. ('joint', 'partial_strong', 'miss')\n",
@@ -1371,12 +1381,397 @@ def build_step_c_review() -> nbf.NotebookNode:
     return nb
 
 
+def build_ldk2025_cookbook_slice() -> nbf.NotebookNode:
+    """Notebook: 20th-century cookbook corpus slice (LDK2025) — KWIC extraction, A→B→C batch & qualia analysis."""
+    nb = nbf.v4.new_notebook()
+    nb["metadata"] = {
+        "kernelspec": {"display_name": "Python 3", "name": "python3"},
+        "language_info": {"name": "python", "version": "3.11"},
+    }
+    nb["cells"] = []
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(
+            [
+                "# 20th-Century Cookbook Corpus Slice (1910–1940)\n",
+                "\n",
+                "Regenerate — **do not hand-edit** the `.ipynb` JSON:\n",
+                "\n",
+                "```bash\n",
+                "uv run python scripts/generate_notebooks.py --name ldk2025_cookbook_slice\n",
+                "```\n",
+                "\n",
+                "This notebook explores the 20th-century Dutch cookbook corpus (`LDK2025/corpus`):\n",
+                "1. **Corpus Ingest & KWIC Discovery:** Parse recipe sections (1910, 1912, 1925, 1940) and match food vocabulary terms.\n",
+                "2. **Slice Extraction:** Sample a focused KWIC input batch.\n",
+                "3. **Pipeline Annotation (A→B→C):** Run the LLM annotation pipeline with Structured Outputs.\n",
+                "4. **Qualia Analysis:** Inspect Step A entities, Step B macro-frames, and Step C preparation/preservation qualia.\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(["## 1. Setup & Corpus Discovery"]),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_code_cell(
+            source=[
+                "from pathlib import Path\n",
+                "import re\n",
+                "import json\n",
+                "import pandas as pd\n",
+                "from tqdm.auto import tqdm\n",
+                "\n",
+                "from data_io import resolve, load_jsonl, save_jsonl, save_parquet\n",
+                "from trifecta_annotation.vocabulary import resolve_thesaurus_lookup\n",
+                "from trifecta_annotation.schemas import KwicInput, TrifectaAnnotation\n",
+                "from trifecta_annotation.pipeline import annotate_record\n",
+                "from trifecta_annotation.analysis_export import annotations_to_analysis_frame\n",
+                "\n",
+                "corpus_dir = Path(resolve('ldk2025_cookbooks'))\n",
+                "cookbook_files = sorted(corpus_dir.glob('*.txt'))\n",
+                "print(f'Found {len(cookbook_files)} cookbook files in {corpus_dir}:')\n",
+                "for f in cookbook_files:\n",
+                "    print(f'  - {f.name} ({f.stat().st_size / 1024:.1f} KB)')\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(["## 2. Recipe Extraction & KWIC Matcher"]),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_code_cell(
+            source=[
+                "thesaurus_lookup = resolve_thesaurus_lookup()\n",
+                "print(f'Loaded food thesaurus with {len(thesaurus_lookup)} indexed surface terms.')\n",
+                "\n",
+                "PRESERVATION_TERMS = {\n",
+                "    'inmaken', 'inmaak', 'wecken', 'pekelen', 'gepekelde', 'pekelvleesch', 'zouten', 'gezouten',\n",
+                "    'zoutevisch', 'rooken', 'gerookte', 'rookworst', 'droogen', 'drogen', 'gedroogde',\n",
+                "    'gelei', 'confituur', 'jam', 'azijn', 'inmaakazijn', 'steriliseeren', 'steriliseren',\n",
+                "}\n",
+                "\n",
+                "def extract_recipe_snippets(\n",
+                "    file_path: Path,\n",
+                "    max_snippets_per_file: int = 15,\n",
+                "    include_preservation: bool = True,\n",
+                ") -> list[dict]:\n",
+                "    text = file_path.read_text(encoding='utf-8', errors='replace')\n",
+                "    year_match = re.search(r'\\d{4}', file_path.name)\n",
+                "    year = year_match.group(0) if year_match else '1900'\n",
+                "    \n",
+                "    # Split by numbered recipes (e.g., '1. Radijsjes.', '2. Garnalen.')\n",
+                "    raw_recipes = re.split(r'\\n\\s*\\d+\\.\\s+', text)\n",
+                "    general_snippets = []\n",
+                "    pres_snippets = []\n",
+                "    \n",
+                "    for idx, recipe in enumerate(raw_recipes[1:], start=1):\n",
+                "        cleaned = re.sub(r'\\s+', ' ', recipe).strip()\n",
+                "        if len(cleaned) < 40:\n",
+                "            continue\n",
+                "        \n",
+                "        words = re.findall(r'\\b[a-zA-ZÀ-ÿ\\-]+\\b', cleaned.lower())\n",
+                "        found_term = None\n",
+                "        for w in words:\n",
+                "            if len(w) > 2 and w in thesaurus_lookup:\n",
+                "                found_term = w\n",
+                "                break\n",
+                "        \n",
+                "        if not found_term:\n",
+                "            continue\n",
+                "\n",
+                "        is_pres = any(pt in words or pt in cleaned.lower() for pt in PRESERVATION_TERMS)\n",
+                "        rec = {\n",
+                "            'record_id': f'ldk2025_{year}_rec{idx}_{found_term}',\n",
+                "            'corpus': 'ldk2025_cookbooks',\n",
+                "            'target_word': found_term,\n",
+                "            'context_text': cleaned[:350],\n",
+                "            'date': year,\n",
+                "            'source_path': file_path.name,\n",
+                "            'text_regime': 'RECIPE_PRACTICE',\n",
+                "            'is_preservation_candidate': is_pres,\n",
+                "        }\n",
+                "        \n",
+                "        if is_pres:\n",
+                "            pres_snippets.append(rec)\n",
+                "        else:\n",
+                "            general_snippets.append(rec)\n",
+                "\n",
+                "    # Balance general preparation with explicit preservation recipes\n",
+                "    if include_preservation and pres_snippets:\n",
+                "        n_pres = min(len(pres_snippets), max(3, max_snippets_per_file // 2))\n",
+                "        n_gen = min(len(general_snippets), max_snippets_per_file - n_pres)\n",
+                "        return general_snippets[:n_gen] + pres_snippets[:n_pres]\n",
+                "    return general_snippets[:max_snippets_per_file]\n",
+                "\n",
+                "all_candidates = []\n",
+                "for f in cookbook_files:\n",
+                "    extracted = extract_recipe_snippets(f, max_snippets_per_file=15, include_preservation=True)\n",
+                "    all_candidates.extend(extracted)\n",
+                "\n",
+                "print(f'Extracted {len(all_candidates)} balanced candidate KWIC records across all 4 cookbooks.')\n",
+                "df_candidates = pd.DataFrame(all_candidates)\n",
+                "print(f\"Preservation candidates in pool: {df_candidates['is_preservation_candidate'].sum()} / {len(df_candidates)}\")\n",
+                "display(df_candidates.head(10))\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(["## 3. Save Slice & Run Pipeline (A→B→C)"]),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_code_cell(
+            source=[
+                "kwic_inputs_path = resolve('ldk2025_kwic_inputs')\n",
+                "save_jsonl(all_candidates, kwic_inputs_path, script='ldk2025_cookbook_slice.ipynb')\n",
+                "print(f'Wrote KWIC inputs -> {kwic_inputs_path}')\n",
+                "\n",
+                "# Run batch annotation (sample of 20 or full slice)\n",
+                "sample_to_annotate = all_candidates[:20]\n",
+                "annotations = []\n",
+                "\n",
+                "print(f'Annotating sample of {len(sample_to_annotate)} records with Ollama / Qwen...')\n",
+                "for item in tqdm(sample_to_annotate):\n",
+                "    inp = KwicInput.model_validate(item)\n",
+                "    ann = annotate_record(inp)\n",
+                "    annotations.append(ann.model_dump(mode='json'))\n",
+                "\n",
+                "annotations_path = resolve('ldk2025_annotations')\n",
+                "save_jsonl(annotations, annotations_path, script='ldk2025_cookbook_slice.ipynb')\n",
+                "print(f'Saved annotations -> {annotations_path}')\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(["## 4. Flatten & Qualia Analysis"]),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_code_cell(
+            source=[
+                "df_analysis = annotations_to_analysis_frame(annotations)\n",
+                "print(f'Analysis table shape: {df_analysis.shape}')\n",
+                "\n",
+                "# Macro-frame distribution\n",
+                "print('\\n--- Step B Macro-Frame Counts ---')\n",
+                "print(df_analysis['selected_frame'].value_counts())\n",
+                "\n",
+                "# Display Step C extracted fields\n",
+                "cols_to_show = [\n",
+                "    'target_word', 'date', 'selected_frame', 'lexical_unit',\n",
+                "    'COOKING_CREATION_Method', 'COOKING_CREATION_Process', 'COOKING_CREATION_Food_Product',\n",
+                "    'PR_Technique', 'PR_Medium', 'PR_Food_Patient',\n",
+                "]\n",
+                "display(df_analysis[cols_to_show].fillna(''))\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(
+            [
+                "## 5. Comparative Analysis: VOC Recipes vs 20th-Century Cookbooks\n",
+                "\n",
+                "Compare macro-frames, culinary triggers, and preparation processes across historical eras.\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_code_cell(
+            source=[
+                "# Load historical VOC analysis dataset for side-by-side comparison\n",
+                "try:\n",
+                "    df_voc_analysis = pd.read_parquet(resolve('trifecta_analysis'))\n",
+                "    has_voc = True\n",
+                "    print(f'Loaded {len(df_voc_analysis)} historical analysis records from trifecta_analysis.')\n",
+                "except Exception as e:\n",
+                "    has_voc = False\n",
+                "    print(f'Could not load trifecta_analysis ({e}). Using slice data only.')\n",
+                "\n",
+                "if has_voc:\n",
+                "    # 1. Macro-Frame Distribution Comparison\n",
+                "    print('=' * 60)\n",
+                "    print('1. MACRO-FRAME DISTRIBUTION (VOC vs 20th-C. Cookbooks)')\n",
+                "    print('=' * 60)\n",
+                "    voc_frames = df_voc_analysis['selected_frame'].value_counts(normalize=True).rename('VOC_share')\n",
+                "    ldk_frames = df_analysis['selected_frame'].value_counts(normalize=True).rename('20c_Cookbooks_share')\n",
+                "    frame_comp = pd.concat([voc_frames, ldk_frames], axis=1).fillna(0.0)\n",
+                "    display(frame_comp.applymap(lambda v: f'{v:.1%}'))\n",
+                "\n",
+                "    # 2. Top Culinary Trigger Verbs (lexical_unit)\n",
+                "    print('\\n' + '=' * 60)\n",
+                "    print('2. TOP TRIGGER VERBS (lexical_unit)')\n",
+                "    print('=' * 60)\n",
+                "    voc_lus = df_voc_analysis[df_voc_analysis['selected_frame'] == 'COOKING_CREATION']['lexical_unit'].str.lower().value_counts().head(10).rename('VOC_Cooking_LUs')\n",
+                "    ldk_lus = df_analysis[df_analysis['selected_frame'] == 'COOKING_CREATION']['lexical_unit'].str.lower().value_counts().head(10).rename('20c_Cooking_LUs')\n",
+                "    display(pd.concat([voc_lus.reset_index(), ldk_lus.reset_index()], axis=1).fillna(''))\n",
+                "\n",
+                "    # 3. Preparation Processes (COOKING_CREATION_Process)\n",
+                "    print('\\n' + '=' * 60)\n",
+                "    print('3. TOP PREPARATION PROCESSES (COOKING_CREATION_Process)')\n",
+                "    print('=' * 60)\n",
+                "    voc_proc = df_voc_analysis[df_voc_analysis['COOKING_CREATION_Process'] != '']['COOKING_CREATION_Process'].str.lower().value_counts().head(8).rename('VOC_Processes')\n",
+                "    ldk_proc = df_analysis[df_analysis['COOKING_CREATION_Process'] != '']['COOKING_CREATION_Process'].str.lower().value_counts().head(8).rename('20c_Processes')\n",
+                "    display(pd.concat([voc_proc.reset_index(), ldk_proc.reset_index()], axis=1).fillna(''))\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_code_cell(
+            source=[
+                "# Annotate the remaining candidates from all 4 cookbooks\n",
+                "remaining_candidates = all_candidates[len(annotations):]\n",
+                "\n",
+                "if remaining_candidates:\n",
+                "    print(f'Annotating remaining {len(remaining_candidates)} records with Ollama / Qwen...')\n",
+                "    for item in tqdm(remaining_candidates):\n",
+                "        inp = KwicInput.model_validate(item)\n",
+                "        ann = annotate_record(inp)\n",
+                "        annotations.append(ann.model_dump(mode='json'))\n",
+                "\n",
+                "    # Update saved annotations\n",
+                "    annotations_path = resolve('ldk2025_annotations')\n",
+                "    save_jsonl(\n",
+                "        annotations,\n",
+                "        logical_name='ldk2025_annotations',\n",
+                "        script='ldk2025_cookbook_slice.ipynb',\n",
+                "    )\n",
+                "    print(f'Updated full annotations dataset ({len(annotations)} records) -> {annotations_path}')\n",
+                "\n",
+                "    # Re-generate analysis frame\n",
+                "    df_analysis = annotations_to_analysis_frame(annotations)\n",
+                "    print(f'Updated analysis frame: {df_analysis.shape}')\n",
+                "    print('\\nUpdated Step B Counts across all cookbooks:')\n",
+                "    print(df_analysis['selected_frame'].value_counts())\n",
+                "else:\n",
+                "    print('All candidate records are already annotated.')\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(
+            [
+                "## 6. Comprehensive Corpus Statistics (Full 3,663 Recipes)\n",
+                "\n",
+                "Overview of the entire 1910–1940 cookbook corpus:\n",
+                "1. **Corpus & Volume Summary:** Total recipes, unique targets, frame counts across years.\n",
+                "2. **Top Ingredients & Triggers:** Top 20 ingredients with their most frequent governing verbs and methods.\n",
+                "3. **Macro-Frame Breakdown:** Annual distribution across 1910, 1912, 1925, and 1940.\n",
+                "4. **Step C Qualia Fill Rates:** Coverage for all qualia role fields.\n",
+                "5. **Resulting Food Products:** Top extracted culinary output dishes.\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_code_cell(
+            source=[
+                "import pandas as pd\n",
+                "import numpy as np\n",
+                "from data_io import resolve\n",
+                "\n",
+                "df_full = pd.read_parquet(resolve('ldk2025_analysis'))\n",
+                "\n",
+                "# 1. Corpus Volume & Timeline Breakdown\n",
+                "print('=' * 70)\n",
+                "print('1. CORPUS VOLUME & TIMELINE (1910–1940)')\n",
+                "print('=' * 70)\n",
+                "timeline = df_full.groupby('date').agg(\n",
+                "    recipes=('record_id', 'count'),\n",
+                "    unique_targets=('target_word', 'nunique'),\n",
+                "    cooking_creation=('selected_frame', lambda s: (s == 'COOKING_CREATION').sum()),\n",
+                "    preserving=('selected_frame', lambda s: (s == 'PRESERVING').sum()),\n",
+                "    cure=('selected_frame', lambda s: (s == 'CURE').sum()),\n",
+                "    dropped=('dropped', 'sum')\n",
+                ")\n",
+                "display(timeline)\n",
+                "\n",
+                "# 2. Top 20 Food Targets & Their Dominant Cooking Triggers\n",
+                "print('\\n' + '=' * 70)\n",
+                "print('2. TOP 20 INGREDIENTS & DOMINANT PREPARATION TRIGGERS')\n",
+                "print('=' * 70)\n",
+                "top_targets = df_full['target_word'].value_counts().head(20).index\n",
+                "target_stats = []\n",
+                "for target in top_targets:\n",
+                "    sub = df_full[df_full['target_word'] == target]\n",
+                "    top_verbs = sub['lexical_unit'].str.lower().value_counts().head(3).index.tolist()\n",
+                "    top_methods = sub[sub['COOKING_CREATION_Method'] != '']['COOKING_CREATION_Method'].str.lower().value_counts().head(2).index.tolist()\n",
+                "    target_stats.append({\n",
+                "        'target_word': target,\n",
+                "        'count': len(sub),\n",
+                "        'top_trigger_verbs': ', '.join(top_verbs),\n",
+                "        'top_methods': ', '.join(top_methods[:2])\n",
+                "    })\n",
+                "display(pd.DataFrame(target_stats))\n",
+                "\n",
+                "# 3. Macro-Frame Distribution across Eras (Crosstab)\n",
+                "print('\\n' + '=' * 70)\n",
+                "print('3. MACRO-FRAME DISTRIBUTION PER YEAR')\n",
+                "print('=' * 70)\n",
+                "frame_xtab = pd.crosstab(df_full['date'], df_full['selected_frame'], margins=True)\n",
+                "display(frame_xtab)\n",
+                "\n",
+                "# 4. Qualia Extraction Coverage\n",
+                "print('\\n' + '=' * 70)\n",
+                "print('4. STEP C QUALIA EXTRACTION FILL RATES')\n",
+                "print('=' * 70)\n",
+                "qualia_cols = [\n",
+                "    'COOKING_CREATION_Method', 'COOKING_CREATION_Process', 'COOKING_CREATION_Food_Product',\n",
+                "    'PR_Technique', 'PR_Medium', 'PR_Food_Patient',\n",
+                "    'CURE_Affliction', 'CURE_Food_Treatment',\n",
+                "    'INGESTION_Context', 'INGESTION_Manner'\n",
+                "]\n",
+                "fill_rates = []\n",
+                "for col in qualia_cols:\n",
+                "    non_empty = (df_full[col].astype(str).str.strip() != '').sum()\n",
+                "    fill_rates.append({\n",
+                "        'field': col,\n",
+                "        'filled_count': non_empty,\n",
+                "        'fill_rate': f'{non_empty / len(df_full):.1%}'\n",
+                "    })\n",
+                "display(pd.DataFrame(fill_rates))\n",
+                "\n",
+                "# 5. Top 15 Resulting Food Products (COOKING_CREATION_Food_Product)\n",
+                "print('\\n' + '=' * 70)\n",
+                "print('5. TOP 15 RESULTING DISHES & PRODUCTS (COOKING_CREATION_Food_Product)')\n",
+                "print('=' * 70)\n",
+                "top_products = df_full[df_full['COOKING_CREATION_Food_Product'] != '']['COOKING_CREATION_Food_Product'].value_counts().head(15)\n",
+                "display(top_products.to_frame(name='count'))\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(
+            [
+                "## 7. Summary & Observations\n",
+                "\n",
+                "- **Frame distribution:** In 20th-century recipe practice, `COOKING_CREATION` dominates along with selective `PRESERVING`.\n",
+                "- **Step C Qualia clarity:** Modern 20th-century Dutch syntax leads to cleaner method and product spans.\n",
+                "- **Integration:** This corpus provides a natural modern bridge for comparative historical analyses against the VOC corpora.\n",
+            ],
+        ),
+    )
+
+    return nb
+
+
 NB_BUILDERS: dict[str, Callable[[], nbf.NotebookNode]] = {
     "inspect_lexicon_csvs": build_inspect_lexicon_csvs,
     "gijsbert_none_silver_training": build_gijsbert_none_silver_training,
     "cooking_stepc_gold_lab": build_cooking_stepc_gold_lab,
     "verb_phase2a_gold_lab": build_verb_phase2a_gold_lab,
     "step_c_review": build_step_c_review,
+    "ldk2025_cookbook_slice": build_ldk2025_cookbook_slice,
 }
 
 

@@ -9,14 +9,18 @@ import sys
 from pathlib import Path
 
 import pandas as pd
-from data_io import resolve
+from data_io import UnsetEnvPathError, resolve, resolve_cli_path
 
 from trifecta_annotation.clear_frame_examples import target_centered_snippet
 from trifecta_annotation.gold_io import GOLD_CSV_COLUMNS, kwic_input_to_candidate_row
+from trifecta_annotation.gold_target_filter import (
+    FilterStats,
+    add_lemma_prior_cli_args,
+    filter_from_cli_args,
+    format_filter_report,
+)
 from trifecta_annotation.preservare_export import (
     DEFAULT_PRESERVARE_ROOT,
-    DEFAULT_RECIPE_DATASET,
-    DEFAULT_TECHNIQUE_ASSOC,
     mine_preservare_candidates,
     parse_technique_quotas,
     preservare_summary,
@@ -50,21 +54,45 @@ def main() -> None:
     parser.add_argument("--max-per-target", type=int, default=2)
     parser.add_argument("--max-per-work", type=int, default=3)
     parser.add_argument("--include-gold", action="store_true")
-    parser.add_argument("--output-path", type=Path, default=None)
+    parser.add_argument(
+        "--output-logical",
+        default="preservare_gold_candidates",
+        help="Manifest logical name (default: preservare_gold_candidates). Prefer this over --output-path.",
+    )
+    parser.add_argument(
+        "--output-path",
+        type=Path,
+        default=None,
+        help="Override path (rare). Do not use $SCRATCH — unset expands to /eval/… and is refused.",
+    )
     parser.add_argument("--summary", action="store_true")
     parser.add_argument("--pool-summary", action="store_true")
+    add_lemma_prior_cli_args(parser)
     args = parser.parse_args()
+
+    try:
+        out = resolve_cli_path(
+            logical=args.output_logical,
+            path=args.output_path,
+            what="output path",
+        )
+    except UnsetEnvPathError as exc:
+        raise SystemExit(str(exc)) from exc
 
     root = args.preservare_root.expanduser()
     recipe_path = args.recipe_path or (root / "source_data" / "recipe_dataset_2.csv")
     technique_path = args.technique_assoc_path or (root / "data" / "technique_term_association.csv")
     exclude = set() if args.include_gold else _existing_gold_ids()
+    target_filter = filter_from_cli_args(args)
+    filter_stats = FilterStats()
 
     pool = mine_preservare_candidates(
         recipe_path=recipe_path,
         technique_assoc_path=technique_path,
         exclude_record_ids=exclude,
         min_technique_score=args.min_technique_score,
+        target_filter=target_filter,
+        filter_stats=filter_stats,
     )
     if args.pool_summary:
         print(json.dumps(preservare_summary(pool), indent=2), file=sys.stderr)
@@ -76,7 +104,16 @@ def main() -> None:
         technique_quotas=parse_technique_quotas(args.technique_quota),
         max_per_target=args.max_per_target,
         max_per_work=args.max_per_work,
+        target_filter=target_filter,
     )
+    report = format_filter_report(
+        filter_stats,
+        selected=selected,
+        target_attr="record.target_word",
+        frame_attr="technique",
+        label="preservare",
+    )
+    print(json.dumps(report, indent=2), file=sys.stderr)
     if args.summary:
         print(json.dumps(preservare_summary(selected), indent=2), file=sys.stderr)
 
@@ -100,8 +137,13 @@ def main() -> None:
         )
         rows.append(row)
 
-    scratch = Path(resolve("trifecta_gold")).parent
-    out = args.output_path or scratch / "eval" / "preservare_gold_candidates.csv"
+    if not rows:
+        print(
+            f"No rows selected; nothing written (would have used {out})",
+            file=sys.stderr,
+        )
+        raise SystemExit(2)
+
     out.parent.mkdir(parents=True, exist_ok=True)
     extra_cols = ["review_snippet", *HOMONYM_REVIEW_COLUMNS]
     columns = [c for c in GOLD_CSV_COLUMNS if c in rows[0]] + [
@@ -110,7 +152,11 @@ def main() -> None:
     pd.DataFrame(rows, columns=columns).to_csv(out, index=False)
     print(f"Wrote {len(rows)} rows to {out}", file=sys.stderr)
     if pool:
-        print(f"Pool: {len(pool)} preservare candidates (excluded {len(exclude)} gold ids)", file=sys.stderr)
+        print(
+            f"Pool: {len(pool)} preservare candidates "
+            f"(excluded {len(exclude)} gold ids; lemma hard-skips={filter_stats.hard_skipped})",
+            file=sys.stderr,
+        )
 
 
 if __name__ == "__main__":

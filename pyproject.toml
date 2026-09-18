@@ -24,6 +24,7 @@ dependencies = [
     "tqdm>=4.68.3",
     "nbformat>=5.10.4",
     "flask>=3.0",
+    "torch>=2.12.1",
 ]
 
 [project.optional-dependencies]

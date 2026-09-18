@@ -19,7 +19,7 @@ def main() -> None:
     args = parser.parse_args()
 
     gold_path = args.gold_path or Path(resolve("trifecta_gold"))
-    out = args.output_path or Path(resolve("trifecta_gold")).parent / "gold_eval_inputs.jsonl"
+    out = args.output_path or Path(resolve("gold_eval_inputs"))
     records = load_gold_records(gold_path=gold_path)
     out.parent.mkdir(parents=True, exist_ok=True)
     with out.open("w", encoding="utf-8") as handle:

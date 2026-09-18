@@ -565,6 +565,35 @@ def retrieve_chunks_by_frame(
                 }
             )
 
+    # Fallback: frames starved by NONE margin still need quota representation.
+    # Top up by (score - none_score) without hard margin so INGESTION etc. can appear.
+    if quota_mode and none_scores is not None:
+        for frame in frames:
+            if len(per_frame.get(frame) or []) >= max(top_k_per_frame // 4, 1):
+                continue
+            vec = centroids.get(frame)
+            if vec is None:
+                continue
+            scores = (mat @ l2_normalize(vec.reshape(1, -1)).T).ravel()
+            margin = scores - none_scores
+            order = np.argsort(-margin)
+            existing = {int(h["chunk_index"]) for h in per_frame[frame]}
+            for idx in order:
+                if len(per_frame[frame]) >= top_k_per_frame:
+                    break
+                i = int(idx)
+                if i in existing:
+                    continue
+                per_frame[frame].append(
+                    {
+                        "chunk_index": i,
+                        "frame_hint": frame,
+                        "score": float(scores[i]),
+                        "none_score": float(none_scores[i]),
+                    }
+                )
+                existing.add(i)
+
     if not quota_mode:
         best_for_chunk: dict[int, dict[str, Any]] = {}
         for frame in frames:

@@ -8,18 +8,21 @@
 
 ---
 
-## State of affairs (26 Aug 2026)
+## State of affairs (28 Aug 2026)
 
 > **Done in this stretch:**
-> - Merged **Phase 2a verb-KWIC gold** (40 rows) into primary benchmark.
-> - Hand-labelled & merged **Preservare gold batch** (20 rows), reaching **27 PRESERVING Step C rows**.
-> - Hand-labelled & merged **CURE gold batch** (15 rows), reaching **24 CURE Step C rows**.
-> - Hand-labelled & merged **INGESTION gold batch** (19 rows) + **Tabak pilot** (15 rows), reaching **11 INGESTION Step C rows**.
-> - Added **`tabak`** to food ontology (`Food_terms.csv`) and verified spelling variant resolution (*toebak, snuiftabak, pruimtabak, etc.*).
-> - Added dedicated web UI CLI: **`trifecta-stepc-ui`** for browser-based side-by-side Step A/B/C qualia labelling.
-> - Current gold benchmark: **308 total records** (102 dropped/non-food/metaphor, 206 framed; **93 with Step C qualia**).
+> - Completed full KWIC overnight batch annotation tranche with `caffeinate` power assertions.
+> - Ran gold evaluation via `make eval-all` against current benchmark:
+>   - **Step A Entity Accuracy:** 91.7%
+>   - **Step A Metaphor Accuracy:** 93.1%
+>   - **Dropout Agreement:** 87.5%
+>   - **Step B Frame Accuracy:** 69.0% (F1: `COOKING_CREATION` 0.84, `PRESERVING` 0.86, `CURE` 0.52, `INGESTION` 0.56, `NONE` 0.50).
+>   - **Step C Qualia Soft Micro Accuracy:** 23.7% (leading frames: `INGESTION` 50.0% soft micro, `COOKING_CREATION` 29.6% soft micro, `CURE` 22.2% soft micro).
+> - Added centralized `Makefile` and [docs/COMMANDS.md](docs/COMMANDS.md) for execution without macOS E-core throttling.
+> - Synced operational wisdom topics (`macos-batch-execution-power.md`, `llm-pipeline-batching-strategy.md`) into `dighum_template/wisdom/topics/`.
+> - Exported bilingual interim evaluation reports (NL/EN) in Markdown and PDF formats to `eval_reports`.
 >
-> **Next:** (1) calibrate prompt few-shots for `PRESERVING`, `CURE`, and `INGESTION` using the 93 Step C gold records; (2) optional: enrich `IngestionQualia` schema slots (e.g. `INGESTION_Food_Patient`, `INGESTION_Purpose`); (3) corpus analysis notebooks on `resolve("trifecta_analysis")`.
+> **Next:** (1) calibrate prompt few-shots for `PRESERVING`, `CURE`, and `INGESTION` using the 93 Step C gold records; (2) optional: enrich `IngestionQualia` schema slots (e.g. `INGESTION_Food_Patient`, `INGESTION_Purpose`); (3) corpus analysis notebooks on `resolve("trifecta_analysis")` and `ldk2025_cookbook_slice.ipynb`; (4) future corpus expansion: preprocess DBNL XML corpus on warm tier (`/Volumes/2tb disk/datasets/trifecta/source/dbnl_xml_pd.zip`).
 
 **Primary goal:** qualia for analysis (Step C) — **[ANNOTATION_STRATEGY.md §5 Step 5](docs/ANNOTATION_STRATEGY.md#step-5--qualia-for-analysis-m10--current)** / milestone **m10**. Not bulk NONE silver or GijsBERT-as-replacement for qwen.
 
@@ -31,7 +34,7 @@
 | Web labelling UIs (`trifecta-gold-ui`, `trifecta-stepc-ui`) | **Production-ready** (browser-based side-by-side review) |
 | Step B eval on merged gold (308 rows) | **60–75%** baseline across corpora; per-regime reporting |
 | Step A NONE silver loop (`reizen` KWIC pilot) | **Validated** — 200 Step A → 59 accepted → `gysbert-v2-reizen-none` |
-| GijsBERT macro-frame classifier | **Trained** — 61.8% pooled dev, NONE F1 0.82; frames-only weak (~35%) |
+| GijsBERT macro-frame classifier | **Retrained (28 Aug)** — **67.2%** overall dev, frames-only jumped to **61.5%** (was ~35%) |
 | INCEpTION silver with Step C | ~2,752 LLM-filled `step_c` rows (exploration silver, unvalidated) |
 
 ### Gaps for qualia-for-analysis
@@ -69,6 +72,21 @@ Canonical policy and time budget: [ANNOTATION_STRATEGY.md §5 Step 5](docs/ANNOT
 | 6 | Analysis export (bounded batch → parquet) | done — `export_analysis_parquet.py` → `trifecta_analysis` |
 
 **Defer:** more NONE silver tranches, GijsBERT hybrid wiring, collocation→GijsBERT export (blocked per [COLLOCATION.md §6](docs/COLLOCATION.md#6-gijsbert-export-audit-9-jul-2026)).
+
+### Parallel track — embedding hybrid candidates
+
+KWIC string-match candidate generation is noisy (~33% Step A dropout). Pilot: **embedding retrieval + thesaurus LU anchor**, keep `KwicInput` / A→B→C unchanged.
+
+| Step | Status | Guide |
+|------|--------|-------|
+| E0 Scope | **done** | [plans/steps/EMBEDDING_CANDIDATES.md](plans/steps/EMBEDDING_CANDIDATES.md) |
+| E1 Chunk + embed helpers | **done** | same |
+| E2 Exemplar queries from gold | **done** | same |
+| E3 Hybrid retrieve + export (bounded) | **done** (500 anchored @ passage-limit 2000) | same |
+| E4 500 vs 500 KWIC comparison | **done** — noise win; PRESERVING skew | same |
+| E5 Adopt (re-rank / scale) or stop | **adopted E5a** — `make batch-kwic-reranked`; hybrid discovery deferred | same |
+
+Does **not** replace Step 5 / m10 qualia work.
 
 ---
 
@@ -192,11 +210,18 @@ Legacy preservare `kwic_gold_review` is **not** used for TRIFECTA gold.
 |--------------|------|
 | `food_terms` | Ontology / Step A lexicon |
 | `voc_recipes` | 17th–19th c. corpus |
+| `ldk2025_cookbooks` | 20th-c. Dutch printed cookbooks (1910–1940) |
 | `recipe_web` | 20th c. corpus |
+| `ldk2025_kwic_inputs` | KWIC inputs from 20th-c. cookbooks (scratch) |
+| `ldk2025_annotations` | Full A→B→C outputs on 20th-c. cookbooks (scratch) |
+| `ldk2025_analysis` | Flat A→B→C analysis table for 20th-c. cookbooks (scratch) |
+| `ldk2025_analysis_csv` | Flat A→B→C analysis CSV for 20th-c. cookbooks (scratch) |
 | `kwic_inputs` | Normalized `KwicInput` JSONL (scratch) |
 | `trifecta_gold_csv` | Gold labelling spreadsheet (scratch) |
 | `trifecta_gold_jsonl` | Gold set JSONL mirror (scratch) |
 | `trifecta_gold` | Hand-labelled eval set parquet (scratch) |
+| `gold_eval_inputs` | Gold slice JSONL for eval batch re-runs (scratch) |
+| `gold_predictions` | Predictions on `gold_eval_inputs` (scratch) |
 | `frame_classifications` | Step B JSONL output (scratch) |
 | `trifecta_annotations` | Full A→B→C JSONL output (scratch) |
 | `eval_reports` | Eval metrics JSON + markdown (scratch) |
@@ -210,6 +235,15 @@ Legacy preservare `kwic_gold_review` is **not** used for TRIFECTA gold.
 | `verb_phase2a_inputs` | Phase 2a verb-KWIC annotation inputs (scratch) |
 | `verb_phase2a_predictions` | Phase 2a verb-first predictions (scratch) |
 | `verb_phase2a_eval` | Phase 2a verb-versus-noun evaluation report (scratch) |
+| `embedding_exemplars` | Per-frame gold exemplars for embedding queries (scratch) |
+| `embedding_candidates` | Hybrid embedding KwicInput candidates (scratch) |
+| `embedding_candidates_semantic_only` | Embedding hits without LU anchor (scratch) |
+| `embedding_chunk_index` | Chunk metadata for embedding pilot (scratch) |
+| `gold_lemma_priors` | Lemma priors from labelled gold for exporter filter (scratch) |
+| `clear_frame_examples` | Clear-frame gold candidate CSV (scratch) |
+| `preservare_gold_candidates` | PRESERVING gold candidate CSV (scratch) |
+| `g4_clear_frame_filtered` | G4 dry-run filtered CURE+INGESTION batch (scratch) |
+| `g4_clear_frame_unfiltered` | G4 dry-run unfiltered CURE+INGESTION batch (scratch) |
 
 `kwic_gold_review` (preservare) remains in manifest for ontology legacy only — **not** TRIFECTA hand gold. See [ANNOTATION_STRATEGY.md](docs/ANNOTATION_STRATEGY.md).
 

@@ -1,0 +1,132 @@
+\documentclass[a4paper,11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[dutch]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage{microtype}
+\usepackage{hyperref}
+
+\definecolor{primary}{RGB}{28, 54, 84}
+\definecolor{secondary}{RGB}{70, 95, 125}
+\definecolor{accent}{RGB}{180, 80, 40}
+\definecolor{lightgray}{gray}{0.95}
+
+\titleformat{\section}{\Large\bfseries\color{primary}}{\thesection}{1em}{}[\titlerule]
+\titleformat{\subsection}{\large\bfseries\color{secondary}}{\thesubsection}{1em}{}
+
+\title{\textbf{\LARGE TRIFECTA Annotatie Pipeline}\\[0.3em] \Large Tussentijdse Analyse KWIC Batch}
+\author{\textbf{Datum:} 28 augustus 2026 \quad $\cdot$ \quad \textbf{Model:} \texttt{qwen2.5-coder:latest}}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\vspace{-1.5em}
+\noindent\rule{\textwidth}{1.5pt}
+\vspace{1em}
+
+\section{Overzicht \& Status}
+
+Deze tussenrapportage vat de voortgang en tussenresultaten samen van de grootschalige annotatierun op het historische KWIC-snippetcorpus (\texttt{food\_snippets\_long\_kwic.csv}). 
+
+\begin{itemize}
+    \item \textbf{Totaal verwerkte records op peilmoment:} 9.148 records.
+    \item \textbf{Executie-architectuur:} 3-traps LLM-pipeline (Stap A $\rightarrow$ Stap B $\rightarrow$ Stap C) met gestructureerde Pydantic/instructor schema's via Ollama (100\% GPU Metal-offload op Apple Silicon M4).
+    \item \textbf{Vroegtijdige uitval (Dropout):} 2.995 records (32,7\%) zijn direct bij Stap A afgevallen, waardoor duizenden zware Stap B/C aanroepen zijn bespaard.
+\end{itemize}
+
+\section{Stap A: Entiteit- \& Metafoorfilter (Dropout)}
+
+Stap A valideert of de doelterm in de historische context daadwerkelijk naar een voedingsentiteit verwijst en sluit metaforisch of oneigenlijk taalgebruik direct uit.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{lrrp{7.5cm}}
+\toprule
+\textbf{Stap A Oordeel} & \textbf{Aantal} & \textbf{Percentage} & \textbf{Toelichting} \\
+\midrule
+\texttt{FOOD} (Bevestigd) & 6.153 & 67,3\% & Voedselcontext bevestigd; doorgestroomd naar Stap B \& C. \\
+\texttt{DROPOUT} (Uitval) & 2.995 & 32,7\% & Geen voedselcontext, homoniem of metaforisch gebruik; vroege exit. \\
+\midrule
+\textbf{Totaal} & \textbf{9.148} & \textbf{100,0\%} & \\
+\bottomrule
+\end{tabular}
+\caption{Verdeling van Stap A validatie.}
+\end{table}
+
+\section{Stap B: Macro-Frame Distributie}
+
+Records die Stap A passeren worden in Stap B geclassificeerd in macro-frames. Onderstaand overzicht toont de relatieve aandelen over het gehele verwerkte corpus:
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{lrrp{6.5cm}}
+\toprule
+\textbf{Macro-Frame} & \textbf{Aantal} & \textbf{Aandeel} & \textbf{Karakteristiek / Typische Context} \\
+\midrule
+\texttt{COOKING\_CREATION} & 3.092 & 33,8\% & Recepten, kookbereidingen, culinaire handelingen. \\
+\texttt{NONE} / \texttt{DROPOUT} & 2.995 & 32,7\% & Uitval via Stap A of niet-culinair domein. \\
+\texttt{UNSPECIFIED} & 1.217 & 13,3\% & Voedselentiteit aanwezig zonder expliciete culinaire actie. \\
+\texttt{CURE} & 852 & 9,3\% & Dieet- en medicinale receptuur, huismiddelen, remedies. \\
+\texttt{INGESTION} & 787 & 8,6\% & Consumptie, eten, drinken, maaltijdsituaties. \\
+\texttt{PRESERVING} & 205 & 2,2\% & Inmaken, pekelen, drogen, conserveren. \\
+\midrule
+\textbf{Totaal} & \textbf{9.148} & \textbf{100,0\%} & \\
+\bottomrule
+\end{tabular}
+\caption{Distributie van Stap B macro-frames.}
+\end{table}
+
+\newpage
+
+\section{Stap C: Qualia Slot-Invulling}
+
+Voor de frames \texttt{COOKING\_CREATION}, \texttt{CURE}, \texttt{INGESTION} en \texttt{PRESERVING} worden in Stap C frame-specifieke Qualia-rollen geëxtraheerd.
+
+\begin{table}[h!]
+\centering
+\begin{tabular}{llr}
+\toprule
+\textbf{Frame} & \textbf{Qualia Slot} & \textbf{Ingevulde Instanties} \\
+\midrule
+\textbf{COOKING\_CREATION} & \texttt{Method} (kookmethode / techniek) & 1.972 \\
+& \texttt{Food\_Product} (bereid eindproduct) & 1.788 \\
+& \texttt{Process} (procesverloop) & 1.360 \\
+\midrule
+\textbf{CURE} & \texttt{Food\_Treatment} (behandeling / toediening) & 784 \\
+& \texttt{Affliction} (kwaal, aandoening, doel) & 671 \\
+\midrule
+\textbf{INGESTION} & \texttt{Manner} (wijze van consumptie) & 652 \\
+& \texttt{Context} (maaltijd/setting) & 556 \\
+& \texttt{Ingestor} (consument/persoon) & 489 \\
+& \texttt{Food\_Patient} (geconsumeerd item) & 384 \\
+& \texttt{Purpose} (doel van consumptie) & 249 \\
+\midrule
+\textbf{PRESERVING} & \texttt{PR\_Food\_Patient} (te conserveren waar) & 190 \\
+& \texttt{PR\_Technique} (conserveringstechniek) & 152 \\
+& \texttt{PR\_Medium} (inmaakmedium: azijn, pekel, suiker) & 72 \\
+\bottomrule
+\end{tabular}
+\caption{Top ingevulde Qualia rollen per frame in Stap C.}
+\end{table}
+
+\section{Belangrijkste Inzichten \& Aanbevelingen}
+
+\begin{enumerate}
+    \item \textbf{Hoge densiteit in \texttt{COOKING\_CREATION} en \texttt{CURE}:} Zowel culinaire methoden als medicinale kwalen (\texttt{Affliction}) vertonen een zeer hoge slot-extractiegraad. Dit maakt de dataset direct bruikbaar voor diachrone analyses naar vroegmoderne geneeskundige voedingsrecepten vs. culinaire bereidingen.
+    \item \textbf{Doeltreffendheid van de Dropout-architectuur:} Met een uitvalpercentage van 32,7\% bewijst de tweetraps filtering zijn waarde; 1 op de 3 records hoeft niet door de zware Qualia-prompting.
+    \item \textbf{Schaalstrategie naar de toekomst:}
+    \begin{itemize}
+        \item \emph{Ontkoppelde Stap A filtering:} Voor nieuwe tranches eerst een bulk Stap A run draaien (\texttt{make step-a-bulk}).
+        \item \emph{GijsBERT pre-filter:} Inzet van GijsBERT voor lokale high-throughput screening van \texttt{NONE}-gevallen.
+        \item \emph{HPC Scaling (SURF):} Voor de volledige corpusverwerking ($>$100k snippets) opschalen naar dual NVIDIA A10 GPU's via \texttt{vLLM}.
+    \end{itemize}
+\end{enumerate}
+
+\end{document}

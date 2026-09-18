@@ -24,23 +24,33 @@
 
 ### Step 0 — Export candidate batch
 
-For `PRESERVING`:
+Lemma priors are **on by default** (stderr filter report). Escape only with `--no-lemma-priors` (denylist still applies). While labelling: finish clear food + Step C rows; set `homonym_check` / `dropped` on noise so the next prior rebuild learns. After merge/import, rebuild before the next export:
+
 ```bash
-uv run python scripts/export_preservare_gold_candidates.py --summary --pool-summary --limit 20 \
-  --output-path "$SCRATCH/eval/preservare_gold_candidates.csv"
+uv run python scripts/build_gold_lemma_priors.py --summary
 ```
 
-For `CURE` / `INGESTION`:
+**Paths:** use manifest logical names (`--output-logical` / `--csv-logical` / `--batch-logical`). **Never** `$SCRATCH/…` — if `SCRATCH` is unset that becomes `/eval/…` and is refused.
+
+For `PRESERVING`:
 ```bash
-uv run python scripts/export_clear_frame_examples.py --frames CURE,INGESTION --summary \
-  --output-path "$SCRATCH/eval/cure_ingestion_stepc_batch.csv"
+uv run python scripts/export_preservare_gold_candidates.py --summary --pool-summary --limit 20
+# → resolve("preservare_gold_candidates")
+```
+
+For `CURE` / `INGESTION` (writes `clear_frame_examples` by default):
+```bash
+uv run python scripts/export_clear_frame_examples.py --frames CURE --limit 30 --summary
+# or: --frames CURE,INGESTION
 ```
 
 ### Step 1 — Open the web UI (recommended) or notebook
 
 **Web UI (Fastest):**
 ```bash
-uv run trifecta-stepc-ui --csv-path "$SCRATCH/eval/preservare_gold_candidates.csv"
+uv run trifecta-stepc-ui
+# defaults to --csv-logical clear_frame_examples
+# PRESERVING: uv run trifecta-stepc-ui --csv-logical preservare_gold_candidates
 # Open http://127.0.0.1:5051 in browser
 ```
 
@@ -54,28 +64,29 @@ uv run python scripts/generate_notebooks.py --name cooking_stepc_gold_lab
 
 ```bash
 uv run python scripts/merge_gold_batch.py \
-  --batch-path "$SCRATCH/eval/preservare_gold_candidates.csv" \
+  --batch-logical clear_frame_examples \
   --import-after
+# PRESERVING: --batch-logical preservare_gold_candidates
 ```
 
 Only rows with `labelled=true` import. Step C columns are read from CSV if present.
 
 ### Step 3 — What comes after (engineering / not manual)
 
-1. Rebuild eval inputs and run prediction batch:
+1. Rebuild eval inputs, re-batch gold, eval (manifest logical names — no `$SCRATCH`):
 ```bash
-uv run python scripts/rebuild_gold_eval_inputs.py
-uv run trifecta-batch --model qwen2.5-coder:latest \
-  --input-path "$SCRATCH/gold_eval_inputs.jsonl" \
-  --output-path "$SCRATCH/gold_predictions.jsonl" \
-  --resume
+make eval-gold
+# same as:
+# uv run python scripts/rebuild_gold_eval_inputs.py
+# caffeinate -dims uv run trifecta-batch --model qwen2.5-coder:latest \
+#   --input-logical gold_eval_inputs --output-logical gold_predictions --resume
+# uv run trifecta-eval --gold trifecta_gold --predictions gold_predictions
 ```
 
-2. Step C metrics in `trifecta-eval` (exact + soft containment; joint / micro; by frame):
+2. Step C metrics also via review export (exact + soft in `eval/report.md`):
 ```bash
-uv run trifecta-eval \
-  --gold-path "$SCRATCH/gold.parquet" \
-  --predictions-path "$SCRATCH/gold_predictions.jsonl"
+make eval-stepc
+# or: uv run python scripts/export_step_c_review.py
 ```
 
 ```bash
@@ -247,13 +258,11 @@ uv run python scripts/export_gold_csv.py
 See [ANNOTATION_STRATEGY.md](ANNOTATION_STRATEGY.md) §4.3 for the full eval loop. Quick path:
 
 ```bash
-uv run python scripts/rebuild_gold_eval_inputs.py
-uv run trifecta-batch --model qwen2.5-coder:latest \
-  --input-path "/Volumes/Extreme SSD/scratch/trifecta/gold_eval_inputs.jsonl" \
-  --output-path "/Volumes/Extreme SSD/scratch/trifecta/gold_predictions.jsonl"
-uv run trifecta-eval \
-  --gold-path "/Volumes/Extreme SSD/scratch/trifecta/gold.parquet" \
-  --predictions-path "/Volumes/Extreme SSD/scratch/trifecta/gold_predictions.jsonl"
+make eval-gold
+# or logical names:
+# uv run python scripts/rebuild_gold_eval_inputs.py
+# uv run trifecta-batch --input-logical gold_eval_inputs --output-logical gold_predictions --resume
+# uv run trifecta-eval --gold trifecta_gold --predictions gold_predictions
 ```
 
 Report: read **By text_regime** in `eval/report.md` first; pooled Step B is secondary.

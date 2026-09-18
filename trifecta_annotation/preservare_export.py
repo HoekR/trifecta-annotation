@@ -12,6 +12,7 @@ import pandas as pd
 
 from trifecta_annotation.clear_frame_examples import target_centered_snippet
 from trifecta_annotation.frame_verbs import FrameVerbLexicon, pick_food_near_verb, term_positions
+from trifecta_annotation.gold_target_filter import FilterStats, GoldTargetFilter
 from trifecta_annotation.normalize import normalize_hist_dutch
 from trifecta_annotation.schemas import KwicInput, TrifectaFrame
 from trifecta_annotation.text_regime import TextRegime
@@ -139,6 +140,8 @@ def mine_preservare_candidates(
     min_technique_score: float = 0.0,
     kwic_radius: int = 140,
     max_hits_per_recipe: int = 2,
+    target_filter: GoldTargetFilter | None = None,
+    filter_stats: FilterStats | None = None,
 ) -> list[PreservareCandidate]:
     """Mine PRESERVING KWIC rows from preservare recipe dataset + technique seeds."""
     recipes_path = Path(recipe_path or DEFAULT_RECIPE_DATASET).expanduser()
@@ -157,6 +160,8 @@ def mine_preservare_candidates(
     )
     scores_by_recipe = load_preservation_scores(pres_features_path)
     blocked = exclude_record_ids or set()
+    filt = target_filter or GoldTargetFilter(apply_lemma_priors=False)
+    stats = filter_stats if filter_stats is not None else FilterStats()
 
     recipes = pd.read_csv(recipes_path, dtype=str, keep_default_na=False)
     found: list[PreservareCandidate] = []
@@ -199,6 +204,11 @@ def mine_preservare_candidates(
                 target = food_terms[0]
 
             target_norm = normalize_hist_dutch(target)
+            decision = filt.decide(target)
+            if decision.hard_skip:
+                stats.record_decision(decision)
+                continue
+
             record_id = f"preservare_{recipe_id}__{hit.technique}__{target_norm}"
             key = (recipe_id, hit.technique, target_norm)
             if key in seen_keys:
@@ -221,6 +231,7 @@ def mine_preservare_candidates(
                 kwic_mode="preservare_technique",
                 candidate_terms=food_terms,
             )
+            stats.record_decision(decision)
             found.append(
                 PreservareCandidate(
                     record=record,
@@ -233,6 +244,7 @@ def mine_preservare_candidates(
 
     found.sort(
         key=lambda item: (
+            filt.decide(item.record.target_word).soft_deprioritize,
             -item.technique_score,
             item.technique,
             item.record.record_id,
@@ -259,10 +271,12 @@ def sample_preservare_candidates(
     technique_quotas: dict[str, int] | None = None,
     max_per_target: int = 2,
     max_per_work: int = 3,
+    target_filter: GoldTargetFilter | None = None,
 ) -> list[PreservareCandidate]:
     if not candidates:
         return []
 
+    filt = target_filter or GoldTargetFilter(apply_lemma_priors=False)
     quotas = technique_quotas or dict(_TECHNIQUE_QUOTA_DEFAULT)
     by_technique: dict[str, list[PreservareCandidate]] = defaultdict(list)
     for item in candidates:
@@ -276,41 +290,75 @@ def sample_preservare_candidates(
     target_counts: dict[str, int] = defaultdict(int)
     work_counts: dict[str, int] = defaultdict(int)
 
-    for technique, quota in quotas.items():
-        bucket = by_technique.get(technique, [])
-        picked = 0
-        while bucket and picked < quota and len(selected) < limit:
-            idx = rng.randrange(len(bucket))
-            item = bucket.pop(idx)
-            target_key = normalize_hist_dutch(item.record.target_word)
+    def try_pick(
+        bucket: list[PreservareCandidate],
+        *,
+        allow_soft: bool,
+    ) -> PreservareCandidate | None:
+        for idx in range(len(bucket)):
+            item = bucket[idx]
+            decision = filt.decide(item.record.target_word)
+            if decision.hard_skip:
+                continue
+            if decision.soft_deprioritize and not allow_soft:
+                continue
+            target_key = decision.target_norm or normalize_hist_dutch(item.record.target_word)
             work_key = (item.record.title or item.record.source_path or "unknown")[:80]
             if target_counts[target_key] >= max_per_target:
                 continue
             if work_counts[work_key] >= max_per_work:
                 continue
-            selected.append(item)
+            if item in selected:
+                continue
+            bucket.pop(idx)
             target_counts[target_key] += 1
             work_counts[work_key] += 1
+            return item
+        return None
+
+    for technique, quota in quotas.items():
+        bucket = by_technique.get(technique, [])
+        picked = 0
+        while picked < quota and len(selected) < limit:
+            item = try_pick(bucket, allow_soft=False)
+            if item is None:
+                item = try_pick(bucket, allow_soft=True)
+            if item is None:
+                break
+            selected.append(item)
             picked += 1
 
     if len(selected) < limit:
         remainder = [item for bucket in by_technique.values() for item in bucket]
         rng.shuffle(remainder)
-        for item in remainder:
+        for allow_soft in (False, True):
             if len(selected) >= limit:
                 break
-            target_key = normalize_hist_dutch(item.record.target_word)
-            work_key = (item.record.title or item.record.source_path or "unknown")[:80]
-            if target_key in {normalize_hist_dutch(s.record.target_word) for s in selected}:
+            deferred: list[PreservareCandidate] = []
+            for item in remainder:
+                if len(selected) >= limit:
+                    deferred.append(item)
+                    continue
+                decision = filt.decide(item.record.target_word)
+                if decision.hard_skip:
+                    continue
+                if decision.soft_deprioritize and not allow_soft:
+                    deferred.append(item)
+                    continue
+                target_key = decision.target_norm or normalize_hist_dutch(
+                    item.record.target_word
+                )
+                work_key = (item.record.title or item.record.source_path or "unknown")[:80]
                 if target_counts[target_key] >= max_per_target:
                     continue
-            if work_counts[work_key] >= max_per_work:
-                continue
-            if item in selected:
-                continue
-            selected.append(item)
-            target_counts[target_key] += 1
-            work_counts[work_key] += 1
+                if work_counts[work_key] >= max_per_work:
+                    continue
+                if item in selected:
+                    continue
+                selected.append(item)
+                target_counts[target_key] += 1
+                work_counts[work_key] += 1
+            remainder = deferred
 
     return selected
 
