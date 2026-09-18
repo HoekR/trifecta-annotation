@@ -8,7 +8,6 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
-from data_io import resolve
 
 from trifecta_annotation.gold_io import GOLD_CSV_COLUMNS, _parse_bool
 from trifecta_annotation.schemas import FormalDimension, TrifectaFrame
@@ -16,9 +15,9 @@ from trifecta_annotation.text_regime import TextRegime
 
 
 def csv_path(logical: str = "trifecta_gold_csv", path: str | Path | None = None) -> Path:
-    if path is not None:
-        return Path(path).expanduser().resolve()
-    return resolve(logical)  # type: ignore[return-value]
+    from data_io import resolve_cli_path
+
+    return resolve_cli_path(logical=logical, path=path, what="csv path")
 
 
 def load_frame(path: Path | None = None, *, logical: str = "trifecta_gold_csv") -> pd.DataFrame:
@@ -102,6 +101,36 @@ def next_unlabelled_id(frame: pd.DataFrame, *, start: int = 0) -> str | None:
         if not is_labelled(rows[idx]):
             return rows[idx]["record_id"]
     return None
+
+
+_TGT_MARKERS = re.compile(r"\[/?TGT\]", re.IGNORECASE)
+
+
+def display_snippet_text(row: dict[str, Any], *, radius: int = 220) -> str:
+    """Target-centered excerpt for labelling UI (avoids full-chapter wall of text).
+
+    Prefers ``review_snippet`` when present; otherwise recenters ``context_text``.
+    """
+    target = str(row.get("target_word") or "").strip()
+    review = str(row.get("review_snippet") or "").strip()
+    if review:
+        return _TGT_MARKERS.sub("", review).strip()
+
+    context = str(row.get("context_text") or "").strip()
+    if not context:
+        return ""
+    if not target:
+        return context[: radius * 2]
+
+    from trifecta_annotation.clear_frame_examples import target_centered_snippet
+
+    near_verb = str(row.get("lexical_unit") or "").strip() or None
+    return target_centered_snippet(
+        context,
+        target,
+        radius=radius,
+        near_verb=near_verb,
+    )
 
 
 def highlight_target(context_text: str, target_word: str) -> str:

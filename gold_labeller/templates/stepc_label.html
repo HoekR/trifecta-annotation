@@ -13,6 +13,7 @@
   <span>Row {{ index + 1 }} of {{ stats.total }}</span>
   {% if next_id %}<a class="button secondary" href="{{ url_for('stepc_label', record_id=next_id) }}" title="Next row">Next</a>{% endif %}
 </nav>
+<p class="kbd-hint">Keys: <kbd>s</kbd> save+next · <kbd>d</kbd> drop+next · <kbd>p</kbd>/<kbd>n</kbd> prev/next · <kbd>1</kbd>–<kbd>5</kbd> frame · <kbd>/</kbd> focus Food patient</p>
 
 <main class="label-layout">
   <section class="snippet-panel">
@@ -27,18 +28,26 @@
       <strong>Hint / Notes:</strong> {{ row.step_b_reasoning or row.notes }}
     </p>
     {% endif %}
+    <p class="field-note">Centered on target (±220 chars); full chapter text stays in CSV.</p>
     <div class="context">{{ highlighted | safe }}</div>
   </section>
 
-  <form class="label-form" method="post" action="{{ url_for('stepc_save', record_id=row.record_id) }}">
-    <input type="hidden" name="next_record_id" value="{{ next_id or row.record_id }}">
-    
+  <form
+    id="stepc-form"
+    class="label-form"
+    method="post"
+    action="{{ url_for('stepc_save', record_id=row.record_id) }}"
+    data-next-id="{{ next_id or '' }}"
+  >
+    <input type="hidden" name="next_record_id" id="next_record_id" value="{{ next_id or row.record_id }}">
+    <input type="hidden" name="action" id="form_action" value="save_next">
+
     <fieldset>
       <legend>Step A &amp; B — Entity &amp; Macro-Frame</legend>
       <label>Selected Frame
-        <select name="selected_frame" required>
+        <select name="selected_frame" id="selected_frame" required>
           <option value="">Choose a frame</option>
-          {% for frame in frames %}<option value="{{ frame }}" {% if row.selected_frame == frame %}selected{% endif %}>{{ frame }}</option>{% endfor %}
+          {% for frame in frames %}<option value="{{ frame }}" {% if row.selected_frame == frame %}selected{% endif %}>{{ loop.index }}. {{ frame }}</option>{% endfor %}
         </select>
       </label>
       <label>Lexical unit (trigger verb / word) <input name="lexical_unit" value="{{ row.lexical_unit }}"></label>
@@ -46,37 +55,37 @@
         <label class="check"><input type="radio" name="is_food_entity" value="True" {% if row.is_food_entity in ['True', 'true', '1'] or not row.is_food_entity %}checked{% endif %}> Food entity</label>
         <label class="check"><input type="radio" name="is_food_entity" value="False" {% if row.is_food_entity in ['False', 'false', '0'] %}checked{% endif %}> Not food entity</label>
       </div>
-      <label class="check"><input type="checkbox" name="dropped" value="True" {% if row.dropped in ['True', 'true', '1'] %}checked{% endif %}> Dropped / Out of scope</label>
+      <label class="check"><input type="checkbox" name="dropped" id="dropped" value="True" {% if row.dropped in ['True', 'true', '1'] %}checked{% endif %}> Dropped / Out of scope</label>
     </fieldset>
 
     <fieldset>
       <legend>Step C Qualia</legend>
-      <p class="field-note">Fill only roles supported by the snippet; leave every other field blank.</p>
-      
-      <div class="qualia-group">
+      <p class="field-note">Only the active frame’s slots are shown. Leave blank if not in the snippet.</p>
+
+      <div class="qualia-group" data-frame="COOKING_CREATION">
         <h4>COOKING_CREATION</h4>
         <label>Method <input name="COOKING_CREATION_Method" value="{{ row.COOKING_CREATION_Method }}" placeholder="e.g. koken, braden, bakken"></label>
         <label>Process <input name="COOKING_CREATION_Process" value="{{ row.COOKING_CREATION_Process }}" placeholder="e.g. verhitten, snijden"></label>
         <label>Food product <input name="COOKING_CREATION_Food_Product" value="{{ row.COOKING_CREATION_Food_Product }}" placeholder="e.g. pastei, soep"></label>
       </div>
 
-      <div class="qualia-group">
+      <div class="qualia-group" data-frame="PRESERVING">
         <h4>PRESERVING</h4>
         <label>Technique <input name="PR_Technique" value="{{ row.PR_Technique }}" placeholder="e.g. pekelen, droogen, confijten"></label>
         <label>Medium <input name="PR_Medium" value="{{ row.PR_Medium }}" placeholder="e.g. zout, azijn, suiker"></label>
         <label>Food patient <input name="PR_Food_Patient" value="{{ row.PR_Food_Patient }}" placeholder="e.g. vis, vlees, vruchten"></label>
       </div>
 
-      <div class="qualia-group">
+      <div class="qualia-group" data-frame="INGESTION">
         <h4>INGESTION</h4>
         <label>Context <input name="INGESTION_Context" value="{{ row.INGESTION_Context }}" placeholder="e.g. maaltijd, aan tafel, taveerne"></label>
         <label>Ingestor <input name="INGESTION_Ingestor" value="{{ row.INGESTION_Ingestor }}" placeholder="e.g. zieke, gasten, reizigers"></label>
         <label>Manner <input name="INGESTION_Manner" value="{{ row.INGESTION_Manner }}" placeholder="e.g. warm, nuchter, gerookt, gedronken"></label>
-        <label>Food patient <input name="INGESTION_Food_Patient" value="{{ row.INGESTION_Food_Patient }}" placeholder="e.g. glas wijn, pijp tabak, soep, brood"></label>
+        <label>Food patient <input name="INGESTION_Food_Patient" id="ingestion_food_patient" value="{{ row.INGESTION_Food_Patient }}" placeholder="e.g. glas wijn, pijp tabak, soep, brood"></label>
         <label>Purpose / Occasion <input name="INGESTION_Purpose" value="{{ row.INGESTION_Purpose }}" placeholder="e.g. toasting health, feest, vermaeck, ontbijt"></label>
       </div>
 
-      <div class="qualia-group">
+      <div class="qualia-group" data-frame="CURE">
         <h4>CURE</h4>
         <label>Affliction <input name="CURE_Affliction" value="{{ row.CURE_Affliction }}" placeholder="e.g. koorts, hoest"></label>
         <label>Treatment <input name="CURE_Food_Treatment" value="{{ row.CURE_Food_Treatment }}" placeholder="e.g. innemen, drinken, pleister"></label>
@@ -85,11 +94,13 @@
       <label>Notes / Uncertainty <textarea name="notes" rows="2">{{ row.notes or row.uncertainty_note }}</textarea></label>
     </fieldset>
 
-    <label class="check"><input type="checkbox" name="labelled" value="True" {% if row.labelled in ['True', 'true', '1'] or row.reviewed in ['True', 'true', '1'] %}checked{% endif %}> Mark labelled</label>
+    <p class="field-note">Save always marks the row labelled.</p>
     <div class="actions">
-      <button class="button" type="submit">Save &amp; next</button>
-      <button class="button secondary" type="submit" name="next_record_id" value="{{ row.record_id }}">Save</button>
+      <button class="button" type="submit" data-action="save_next">Save &amp; next</button>
+      <button class="button secondary" type="submit" data-action="save">Save</button>
+      <button class="button danger" type="submit" data-action="drop_next">Drop &amp; next</button>
     </div>
   </form>
 </main>
+<script src="{{ url_for('static', filename='stepc_label.js') }}"></script>
 {% endblock %}

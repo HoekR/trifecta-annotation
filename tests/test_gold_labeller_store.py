@@ -5,6 +5,7 @@ from pathlib import Path
 import pandas as pd
 
 from gold_labeller.store import (
+    display_snippet_text,
     highlight_target,
     is_labelled,
     stats,
@@ -17,6 +18,29 @@ def test_highlight_target() -> None:
     html = highlight_target("een hand vol zout", "zout")
     assert "<mark" in html
     assert "zout" in html
+
+
+def test_display_snippet_prefers_review_snippet() -> None:
+    text = display_snippet_text(
+        {
+            "target_word": "zout",
+            "context_text": "AAA " + ("pad " * 80) + " zout " + ("pad " * 80) + " ZZZ",
+            "review_snippet": "…neem [TGT]zout[/TGT] en water…",
+        },
+    )
+    assert text == "…neem zout en water…"
+    assert "AAA" not in text
+
+
+def test_display_snippet_centers_long_context() -> None:
+    pad = "woord " * 100
+    context = f"{pad}target_food{pad}"
+    text = display_snippet_text(
+        {"target_word": "target_food", "context_text": context, "lexical_unit": "eten"},
+    )
+    assert "target_food" in text
+    assert len(text) < len(context)
+    assert text.startswith("…") or text.endswith("…")
 
 
 def test_update_row_marks_labelled(tmp_path: Path) -> None:

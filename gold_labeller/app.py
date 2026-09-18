@@ -10,6 +10,7 @@ from flask import Flask, abort, jsonify, redirect, render_template, request, url
 from gold_labeller.store import (
     choice_options,
     csv_path,
+    display_snippet_text,
     get_row,
     highlight_target,
     is_labelled,
@@ -241,17 +242,29 @@ def create_verb_phase2a_app(*, csv_file: str | Path | None = None) -> Flask:
     return app
 
 
-def create_stepc_app(*, csv_file: str | Path | None = None) -> Flask:
+def create_stepc_app(
+    *,
+    csv_file: str | Path | None = None,
+    csv_logical: str = "clear_frame_examples",
+) -> Flask:
     """Create a Step C qualia review UI for candidate batches or gold CSVs."""
-    from data_io import resolve
+    from data_io import UnsetEnvPathError, resolve_cli_path
 
     app = Flask(
         "stepc_labeller",
         template_folder=str(TEMPLATE_DIR),
         static_folder=str(STATIC_DIR),
     )
-    default_csv = Path(resolve("trifecta_gold")).parent / "eval" / "preservare_gold_candidates.csv"
-    app.config["CSV_FILE"] = str(csv_file) if csv_file else str(default_csv)
+    try:
+        default_csv = resolve_cli_path(
+            logical=csv_logical,
+            path=csv_file,
+            what="csv path",
+        )
+    except UnsetEnvPathError as exc:
+        raise SystemExit(str(exc)) from exc
+    app.config["CSV_FILE"] = str(default_csv)
+    app.config["CSV_LOGICAL"] = csv_logical
 
     def _path() -> Path:
         return Path(app.config["CSV_FILE"]).expanduser().resolve()
@@ -316,7 +329,10 @@ def create_stepc_app(*, csv_file: str | Path | None = None) -> Flask:
             prev_id=rows[index - 1]["record_id"] if index else None,
             next_id=rows[index + 1]["record_id"] if index + 1 < len(rows) else None,
             stats=_stats(frame),
-            highlighted=highlight_target(row["context_text"], row["target_word"]),
+            highlighted=highlight_target(
+                display_snippet_text(row),
+                row["target_word"],
+            ),
             frames=["COOKING_CREATION", "CURE", "INGESTION", "PRESERVING", "NONE"],
         )
 
@@ -348,10 +364,21 @@ def create_stepc_app(*, csv_file: str | Path | None = None) -> Flask:
         }
         index = matches[0]
         for column in allowed:
+            if column == "dropped":
+                continue
             frame.at[index, column] = request.form.get(column, "").strip()
-        frame.at[index, "labelled"] = "True" if request.form.get("labelled") else "False"
+
+        action = (request.form.get("action") or "save_next").strip()
+        dropped = request.form.get("dropped") == "True" or action == "drop_next"
+        frame.at[index, "dropped"] = "True" if dropped else "False"
+        # Any save from the Step C UI counts as labelled (no checkbox).
+        frame.at[index, "labelled"] = "True"
+
         frame.to_csv(_path(), index=False)
-        destination = request.form.get("next_record_id") or record_id
+        if action == "save":
+            destination = record_id
+        else:
+            destination = request.form.get("next_record_id") or record_id
         return redirect(url_for("stepc_label", record_id=destination))
 
     return app
@@ -394,10 +421,22 @@ def main_step_c() -> None:
     parser = argparse.ArgumentParser(description="Step C Qualia human-labelling web UI")
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=5051)
-    parser.add_argument("--csv-path", default=None, help="Path to batch CSV to label")
+    parser.add_argument(
+        "--csv-logical",
+        default="clear_frame_examples",
+        help="Manifest logical name for the batch CSV (default: clear_frame_examples)",
+    )
+    parser.add_argument(
+        "--csv-path",
+        default=None,
+        help="Override path (rare). Do not use $SCRATCH — unset expands to /eval/… and is refused.",
+    )
     args = parser.parse_args()
 
-    create_stepc_app(csv_file=args.csv_path).run(host=args.host, port=args.port)
+    create_stepc_app(csv_file=args.csv_path, csv_logical=args.csv_logical).run(
+        host=args.host,
+        port=args.port,
+    )
 
 
 if __name__ == "__main__":

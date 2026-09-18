@@ -178,3 +178,105 @@ input[type="text"], textarea, select {
   opacity: 0.55;
   pointer-events: none;
 }
+
+/* Step C lab layout */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+.app-header h1 { margin: 0; font-size: 1.35rem; }
+.eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.record-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+.kbd-hint {
+  margin: 0 0 1rem;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.kbd-hint kbd {
+  font: inherit;
+  font-size: 0.8em;
+  padding: 0.05em 0.35em;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: #fff;
+}
+.label-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .label-layout { grid-template-columns: 1fr; }
+}
+.snippet-panel, .label-form {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.15rem;
+}
+.metadata {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0 0 0.75rem;
+}
+.metadata div { display: flex; gap: 0.5rem; }
+.metadata dt {
+  margin: 0;
+  min-width: 5.5rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.metadata dd { margin: 0; }
+.field-note {
+  margin: 0 0 0.75rem;
+  font-size: 0.88rem;
+  color: var(--muted);
+}
+.context {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.qualia-group { margin-bottom: 0.75rem; }
+.qualia-group[hidden] { display: none !important; }
+.qualia-group h4 { margin: 0 0 0.5rem; }
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+.button {
+  display: inline-block;
+  border: none;
+  border-radius: 6px;
+  padding: 0.45rem 0.85rem;
+  font: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  background: var(--accent);
+  color: #fff;
+}
+.button.secondary { background: #ece7de; color: var(--ink); }
+.button.danger { background: var(--danger); color: #fff; }
+.source-note {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
