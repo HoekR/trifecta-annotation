@@ -169,12 +169,79 @@ class DataManager:
 _default_manager: DataManager | None = None
 
 
-def get_manager() -> DataManager:
+def get_manager(*, reload: bool = False) -> DataManager:
     global _default_manager
-    if _default_manager is None:
+    if _default_manager is None or reload:
         _default_manager = DataManager()
     return _default_manager
 
 
-def resolve(logical_name: str) -> Path:
-    return get_manager().resolve(logical_name)
+def reload_manager() -> DataManager:
+    """Force-reload the DataManager from data_manifest.toml."""
+    return get_manager(reload=True)
+
+
+def resolve(logical_name: str, *, reload: bool = False) -> Path:
+    return get_manager(reload=reload).resolve(logical_name)
+
+
+# Absolute roots that are plausible when an env var expands correctly.
+# Unset `$SCRATCH/eval/foo` becomes `/eval/foo` — first component `eval`.
+_OK_ABS_ROOTS = frozenset(
+    {
+        "Users",
+        "Volumes",
+        "home",
+        "mnt",
+        "media",
+        "opt",
+        "private",
+        "tmp",
+        "var",
+        "Workspace",
+        "workspaces",
+    }
+)
+
+
+def looks_like_unset_env_path(path: Path | str) -> bool:
+    """True for absolute paths that look like `$VAR/…` with VAR empty (e.g. `/eval/x`)."""
+    p = Path(path).expanduser()
+    if not p.is_absolute():
+        return False
+    parts = p.parts
+    if len(parts) <= 1:
+        return False
+    return parts[1] not in _OK_ABS_ROOTS
+
+
+class UnsetEnvPathError(ValueError):
+    """Raised when a CLI path looks like an unset environment variable expansion."""
+
+
+def resolve_cli_path(
+    *,
+    logical: str | None = None,
+    path: Path | str | None = None,
+    reload: bool = False,
+    what: str = "path",
+) -> Path:
+    """Resolve a CLI output/input path via manifest logical name or explicit path.
+
+    Prefer ``--*-logical`` (manifest). Explicit ``--*-path`` is allowed but
+    refused when it looks like an unset env var (classic ``$SCRATCH/eval/…`` →
+    ``/eval/…``).
+    """
+    if path is not None and str(path).strip():
+        resolved = Path(path).expanduser()
+        if looks_like_unset_env_path(resolved):
+            hint = f" Use --*-logical {logical!r} instead." if logical else ""
+            raise UnsetEnvPathError(
+                f"Refusing {what} {resolved} — looks like an unset env var "
+                f"(e.g. $SCRATCH/…). Do not pass $SCRATCH paths; use data_manifest "
+                f"logical names via resolve() / --*-logical.{hint}"
+            )
+        return resolved
+    if logical:
+        return Path(resolve(logical, reload=reload))
+    raise ValueError(f"Provide a logical name or an explicit {what}")

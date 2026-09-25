@@ -1,0 +1,43 @@
+{
+  "examples": [
+    {
+      "target_word": "schol",
+      "context_text": "neemt schol, maakt ze schoon, snyd 'er de vinnen af, en doet 'er al het ingewand uit, en hangt ze wat op om te droogen, of droogt die wel af, en bestrykt ze met boter, na dat men die eenige kerven gegeeven heeft, en legt die op de rooster op een klein vuur t…",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"droogen\", \"PR_Medium\": \"\", \"PR_Food_Patient\": \"vis\", \"lexical_unit\": \"droogen\"}"
+    },
+    {
+      "target_word": "tuinboon",
+      "context_text": "…n welletje in regenwater opkooken: zet ze dan op een vergiettest te verzygen: dan legt men ze op tafels, op zolder, digt aan het venster te droogen; dog men moet ze van tyd tot tyd omkeeren: maar indien het donker weder zonder zonneschyn is, zo legt men ze op glazen te droogen, ook moet…",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"droogen\", \"PR_Medium\": \"\", \"PR_Food_Patient\": \"tuinboon\", \"lexical_unit\": \"droogen\"}"
+    },
+    {
+      "target_word": "ham",
+      "context_text": "als de hammen omtrent acht dagen in het zout gelegen hebben, zo neemt men ze daar uit, en laat ze afdruipen en droogen, en dan naait men ze in rookzakken en hangt ze in de schoorsteen, om met eikenhout of spaanders te rooken. en als ze drie maanden in de sch…",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"rooken\", \"PR_Medium\": \"rook\", \"PR_Food_Patient\": \"vlees\", \"lexical_unit\": \"rooken\"}"
+    },
+    {
+      "target_word": "Aspersjes",
+      "context_text": "4. Aspersjes, hoe men die bewaren zal. Breekt het teedere van de Aspersjes in stukjes onder af, bespreng ze braaf met zout en grof gestoote",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"zouten\", \"PR_Medium\": \"zout\", \"PR_Food_Patient\": \"aspersjes\", \"lexical_unit\": \"bewaren\"}"
+    },
+    {
+      "target_word": "augurk",
+      "context_text": "als men deezen zal inleggen, moeten ae eerst wel schoon in regenwater afgewasschen worden, dan in een vergiet gedaan; afgedropen zynde, laat menze twee nachten in bier…",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"inleggen\", \"PR_Medium\": \"bier\", \"PR_Food_Patient\": \"augurk\", \"lexical_unit\": \"inleggen\"}"
+    },
+    {
+      "target_word": "kruidnagels",
+      "context_text": "dekt ze met pekel, olie of boter, omze dus te bewaren. Men legt ook op deze wyze Komkommers in, twee of drie dagen na dat ze geplukt zyn. Men kan’er een of twee neuten, eenige kruidnagels en wat hele peper bydoen.",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"inleggen\", \"PR_Medium\": \"pekel\", \"PR_Food_Patient\": \"komkommers\", \"lexical_unit\": \"bewaren\"}"
+    }
+  ],
+  "record_ids": [
+    "preservare_2051__drying__schol",
+    "preservare_2415__drying__tuinboon",
+    "preservare_1917__drying__ham",
+    "_vol002volm01_01.xml__ch15__aspersjes",
+    "preservare_3173__pickling__augurk",
+    "chom003huis01_01.xml__ch4__kruidnagels"
+  ],
+  "notes": "PRESERVING Step C few-shots reviewed against soft eval 2026-09-25 (micro 0.31, n=27). Kept two droogen joints. Replaced Laurier/Peterselie/artisjokken (empty patient or wrong local verb). Added rooken, zouten, inleggen. kruidnagels: target is a spice; patient is komkommers. aspersjes patient filled (gold was empty). augurk medium bier (gold was empty). ham lexical_unit set to rooken (gold LU was droogen)."
+}

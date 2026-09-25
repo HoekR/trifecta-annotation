@@ -1,0 +1,602 @@
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs36 Trifecta Food History & Framenet \u8212- research strategy summary\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 {\i Coordination brief for colleagues on the {\b English} INCEpTION / WebAnno track, with enough Dutch context to align procedures and next steps. Canonical policy: {\field{\*\fldinst{HYPERLINK "ANNOTATION_STRATEGY.md"}}{\fldrslt{\ul
+ANNOTATION_STRATEGY.md
+}}}
+. Engineering status: {\field{\*\fldinst{HYPERLINK "../PLAN.md"}}{\fldrslt{\ul
+PLAN.md
+}}}
+.}\par}
+{\pard \qc \f0 \sa180 \li0 \fi0 \emdash\emdash\emdash\emdash\emdash\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs32 1. What we are building\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 TRIFECTA annotates historic food-related text in {\b three steps} (same semantics in Dutch and English):\par}
+{
+\trowd \trgaph120
+\clbrdrb\brdrs\cellx275\clbrdrb\brdrs\cellx4237\clbrdrb\brdrs\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Step\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Question\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Typical output\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx275\cellx4237\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b A}\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Is the target a {\b food entity} in context (or metaphor / out of scope)?\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Keep or drop early\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx275\cellx4237\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b B}\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Which {\b macro-frame} surrounds the target?\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\f1 COOKING_CREATION}\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx275\cellx4237\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b C}\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Which {\b qualia roles} fill that frame?\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 e.g.\u160?Method / Process / Food_Product; Technique / Medium; Affliction / Treatment\par}
+\cell}
+}
+\intbl\row}
+{\pard \ql \f0 \sa180 \li0 \fi0 \par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Above the steps sits {\b Layer 0 \u8212-} {\f1 text_regime} (genre / discourse type): {\f1 RECIPE_PRACTICE}, {\f1 MEDICAL}, {\f1 TRAVEL}, {\f1 LITERARY}, {\f1 ADMIN_TRADE}, {\f1 SCIENTIFIC}, {\f1 UNKNOWN}. Regime is {\b not} the same as the Step B frame (a recipe snippet can still be CURE; a medical book can still be COOKING_CREATION). See {\field{\*\fldinst{HYPERLINK "ANNOTATION_STRATEGY.md#2-layered-annotation-model"}}{\fldrslt{\ul
+ANNOTATION_STRATEGY.md \u167?2
+}}}
+.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Field / WebAnno mapping: {\field{\*\fldinst{HYPERLINK "LABEL_MAPPING_EN_NL.md"}}{\fldrslt{\ul
+LABEL_MAPPING_EN_NL.md
+}}}
+.\par}
+{\pard \qc \f0 \sa180 \li0 \fi0 \emdash\emdash\emdash\emdash\emdash\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs32 2. How English differs from Dutch\par}
+{
+\trowd \trgaph120
+\clbrdrb\brdrs\cellx864\clbrdrb\brdrs\cellx3456\clbrdrb\brdrs\cellx8640
+\trkeep\intbl
+{
+{\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 English track\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Dutch track\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx864\cellx3456\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Tool\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 INCEpTION / WebAnno\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 CSV + notebook gold lab\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx864\cellx3456\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Unit\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Token spans on snippet lines\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 KWIC + {\f1 target_word} + {\f1 record_id}\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx864\cellx3456\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Hand gold\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Parallel {\f1 en_gold} ({\b TBD})\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\f1 gold.parquet} (~{\b 187} rows; ~{\b 27} with Step C)\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx864\cellx3456\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Silver\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 WebAnno exports \u8594? {\f1 inception_*}\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 LLM {\f1 trifecta-batch} + INCEpTION import (~2.7k Step C silver, {\b unvalidated})\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx864\cellx3456\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Current focus\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Align schema, sampling, eval with Dutch\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b Step 5 / m10} \u8212- COOKING_CREATION qualia for analysis\par}
+\cell}
+}
+\intbl\row}
+{\pard \ql \f0 \sa180 \li0 \fi0 \par}
+{\pard \ql \f0 \sa180 \li0 \fi0 {\b Do not merge} EN and NL gold by snippet text \u8212- there is {\b no shared} {\f1 record_id}. Dutch INCEpTION imports are a {\b silver} view (snippet lines + cort_voc metadata), not hand gold.\par}
+{\pard \qc \f0 \sa180 \li0 \fi0 \emdash\emdash\emdash\emdash\emdash\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs32 3. Procedure (Dutch track \u8212- what \u8220"doing TRIFECTA\u8221" looks like)\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 English tooling differs, but the {\b logical procedure} is what we want to keep parallel.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 3.1 Annotate a slice (A \u8594? B \u8594? C)\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 1.\tx360\tab {\b Build inputs} \u8212- KWIC / snippet records with provenance ({\f1 corpus}, {\f1 date}, {\f1 target_word}, {\f1 context_text}, ideally {\f1 text_regime}).\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 2.\tx360\tab {\b Run or label Step A} \u8212- food entity? metaphor? early dropout when out of scope.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 3.\tx360\tab {\b Run or label Step B} \u8212- pick one macro-frame + a short lexical trigger ({\f1 lexical_unit}).\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 4.\tx360\tab {\b Run or label Step C} \u8212- fill {\b only} the roles for that frame; leave empty when not stated in the snippet.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 5.\tx360\tab {\b Keep provenance} on every row \u8212- era/corpus are fields, not separate pipelines.\sa180\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Automated Dutch path: {\f1 trifecta-batch} (LLM + structured Pydantic outputs). Hand path: gold CSV / notebook lab.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 3.2 Grow hand gold (quota batches)\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Dutch Step 5 runbook ({\field{\*\fldinst{HYPERLINK "GOLD_LABELLING.md#step-5-runbook--cooking_creation-qualia-m10"}}{\fldrslt{\ul
+GOLD_LABELLING.md
+}}}
+):\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 1.\tx360\tab {\b Export a bounded batch} \u8212- e.g.\u160?clear-frame miner \u8594? ~30 {\f1 COOKING_CREATION} candidates ({\f1 export_clear_frame_examples.py}).\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 2.\tx360\tab {\b Hand-label} in the notebook lab ({\f1 cooking_stepc_gold_lab}) \u8212- snippet-first; Step A/B + COOKING Step C fields; mark {\f1 labelled=true}.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 3.\tx360\tab {\b Merge \u8594? import} \u8594? {\f1 gold_labelling_all.csv} \u8594? {\f1 gold.parquet} / {\f1 gold.jsonl}.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 4.\tx360\tab {\b Sampling discipline} (policy): cap per lemma; sample by regime \u215? phenomenon; no new core gold with {\f1 UNKNOWN} regime; disagreement CSVs for adjudication only (not auto-relabel).\sa180\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 3.3 Evaluate and calibrate\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 1.\tx360\tab Rebuild gold eval inputs \u8594? {\f1 trifecta-batch} on the gold slice \u8594? {\f1 gold_predictions.jsonl}.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 2.\tx360\tab {\f1 trifecta-eval} \u8212- Step A/B (report {\b per} {\f1 text_regime} first) + Step C:\sa180\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab {\b Exact} normalized string match (strict).\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab {\b Soft} containment (pred may be longer than gold if one string contains the other).\sa180\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 3.\tx360\tab {\b Review} gold vs pred ({\f1 step_c_review} notebook / CSV) \u8594? pick few-shot exemplars \u8594? wire into Step C prompts \u8594? re-batch gold only.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 4.\tx360\tab {\b Analysis export} \u8212- flatten batch JSONL \u8594? parquet ({\f1 trifecta_analysis}) with an explicit {\b uncertainty} note: Step C is an LLM hypothesis unless the row is hand gold.\sa180\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 3.4 What English can mirror without sharing IDs\par}
+{
+\trowd \trgaph120
+\clbrdrb\brdrs\cellx4320\clbrdrb\brdrs\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Dutch artefact\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 English analogue\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx4320\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 KWIC {\f1 record_id}\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Stable WebAnno / document+span id\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx4320\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Gold CSV columns\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Same Step A/B/C semantics via {\field{\*\fldinst{HYPERLINK "LABEL_MAPPING_EN_NL.md"}}{\fldrslt{\ul
+LABEL_MAPPING_EN_NL.md
+}}}
+\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx4320\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Quota batch (~30 per frame)\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Genre \u215? frame pilot export from INCEpTION\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx4320\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\f1 trifecta-eval} per regime\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Same reporting rule once {\f1 en_gold} exists\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx4320\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Soft Step C metric\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Useful for free-text qualia in both languages\par}
+\cell}
+}
+\intbl\row}
+{\pard \ql \f0 \sa180 \li0 \fi0 \par}
+{\pard \qc \f0 \sa180 \li0 \fi0 \emdash\emdash\emdash\emdash\emdash\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs32 4. State of affairs (16 Jul 2026)\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 4.1 Settled (Dutch)\par}
+{
+\trowd \trgaph120
+\clbrdrb\brdrs\cellx2290\clbrdrb\brdrs\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Item\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Status\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx2290\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Full LLM pipeline A\u8594?B\u8594?C\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Production-ready ({\f1 trifecta-annotate} / {\f1 trifecta-batch})\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx2290\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Step B frozen baseline\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b 75%} on curated {\b 157}-row gold (qwen2.5-coder:latest)\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx2290\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Expanded gold (after COOKING pilot)\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b ~187} rows; Step B on this mix ~{\b 59%} (not comparable to the frozen 157)\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx2290\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Hand Step C (COOKING pilot)\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b ~27} rows with qualia in gold\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx2290\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Step C metrics\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Exact + soft in {\f1 eval/report.md}\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx2290\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 COOKING Step C few-shots\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Wired; gold re-batched\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx2290\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Analysis parquet\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\f1 resolve("trifecta_analysis")} \u8212- exploratory use only\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx2290\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 GijsBERT (Step B classifier)\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Trained (~62% pooled dev; strong NONE); {\b not} replacing qwen for Step C; hybrid wiring deferred\par}
+\cell}
+}
+\intbl\row}
+{\pard \ql \f0 \sa180 \li0 \fi0 \par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 4.2 Step C numbers (honest)\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 On ~27 gold Step C rows after COOKING few-shots (soft / exact):\par}
+{
+\trowd \trgaph120
+\clbrdrb\brdrs\cellx2880\clbrdrb\brdrs\cellx5760\clbrdrb\brdrs\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Metric\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Exact\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Soft (containment)\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx2880\cellx5760\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Joint (all fields)\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 ~4%\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 ~11%\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx2880\cellx5760\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Micro (field tokens)\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 ~18%\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 ~22%\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx2880\cellx5760\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 COOKING micro\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 ~10%\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 ~15%\par}
+\cell}
+}
+\intbl\row}
+{\pard \ql \f0 \sa180 \li0 \fi0 \par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Interpretation: longer LLM predictions often feel right to annotators but fail exact match; soft helps only a little. {\b Do not} treat Step C aggregates as analytic claims yet.\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 4.3 Usable vs not\par}
+{
+\trowd \trgaph120
+\clbrdrb\brdrs\cellx4598\clbrdrb\brdrs\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Use\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 OK?\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx4598\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Exploratory qualia on a KWIC / WebAnno slice (spot-check by frame)\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b Yes} \u8212- label as LLM / silver hypotheses\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx4598\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Cheap NONE pre-filter (Dutch GijsBERT)\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Ready offline; not wired into batch CLI\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx4598\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Counts, trends, cross-era claims from Step C\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b Not yet} \u8212- need more hand gold + better field agreement\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx4598\cellx8639
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Merging EN\u8596?NL gold rows\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b No} \u8212- no shared ids\par}
+\cell}
+}
+\intbl\row}
+{\pard \ql \f0 \sa180 \li0 \fi0 \par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 4.4 English track\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 Parallel {\f1 en_gold}, shared eval loop, and a first quota batch are still {\b open} (see \u167?6). Schema and frames are already shared.\par}
+{\pard \qc \f0 \sa180 \li0 \fi0 \emdash\emdash\emdash\emdash\emdash\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs32 5. Future actions\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 5.1 Dutch (near term)\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 1.\tx360\tab {\b More Step C hand gold} \u8212- extend beyond COOKING (PRESERVING / INGESTION / CURE quotas) with the same export \u8594? lab \u8594? merge loop.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 2.\tx360\tab {\b Prompt calibration} \u8212- more frame-specific few-shots; optional softer gold style (allow longer spans) or further soft metrics if review shows systematic pred\u8835?gold.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 3.\tx360\tab {\b Analysis notebooks} \u8212- consume {\f1 trifecta_analysis} with regime filters; always surface {\f1 uncertainty_note}.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 4.\tx360\tab {\b Keep deferred} unless blocking: more NONE silver, GijsBERT hybrid batch wiring, collocation\u8594?GijsBERT export (blocked \u8212- see {\field{\*\fldinst{HYPERLINK "COLLOCATION.md"}}{\fldrslt{\ul
+COLLOCATION.md
+}}}
+).\sa180\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 5.2 English (proposed parallel)\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 1.\tx360\tab {\b Confirm regime list} for English corpora (keep six-way or adapt).\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 2.\tx360\tab {\b Decide first pilot} \u8212- Step B\u8211-only gold vs a COOKING-like Step C quota (~30) mirroring Dutch Step 5.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 3.\tx360\tab {\b Export priority} \u8212- which genres / frames from WebAnno first.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 4.\tx360\tab {\b Stable ids + mapping} \u8212- document EN id scheme; keep {\field{\*\fldinst{HYPERLINK "LABEL_MAPPING_EN_NL.md"}}{\fldrslt{\ul
+LABEL_MAPPING_EN_NL.md
+}}}
+ current.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 5.\tx360\tab {\b Eval reporting} \u8212- commit to {\b per-regime} Step B (then Step C); pooled F1 secondary; consider soft match for qualia.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 6.\tx360\tab {\b Uncertainty convention} \u8212- silver / LLM Step C = hypothesis until {\f1 en_gold} exists.\sa180\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs28 5.3 Joint\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Adjudicate {\b COOKING vs CURE} with the same snippet-level rule (preparation vs treatment) \u8212- see {\field{\*\fldinst{HYPERLINK "ANNOTATION_STRATEGY.md#21-cooking_creation-vs-cure-recipe--cure-frame"}}{\fldrslt{\ul
+ANNOTATION_STRATEGY.md \u167?2.1
+}}}
+.\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 \bullet \tx360\tab Coarse frames first? See ANNOTATION_STRATEGY \u167?7 \u8212- optional staging before full qualia.\sa180\par}
+{\pard \qc \f0 \sa180 \li0 \fi0 \emdash\emdash\emdash\emdash\emdash\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs32 6. Questions for joint discussion\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 1.\tx360\tab {\b Regime taxonomy} \u8212- Is the six-way {\f1 text_regime} list right for English corpora?\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 2.\tx360\tab {\b Coarse frames first?} \u8212- Stage EN annotation before full Step C?\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 3.\tx360\tab {\b English gold size & order} \u8212- Match Dutch stratification (regime \u215? frame \u215? phenomenon)? Start Step B\u8211-only or Step C pilot?\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 4.\tx360\tab {\b WebAnno export priority} \u8212- Which genres / frames first?\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 5.\tx360\tab {\b Evaluation} \u8212- Per regime primary; soft containment for free-text qualia?\par}
+{\pard \ql \f0 \sa0 \li360 \fi-360 6.\tx360\tab {\b Uncertainty} \u8212- Shared wording that LLM / silver Step C is hypothesis-only until hand gold exists in that language?\sa180\par}
+{\pard \qc \f0 \sa180 \li0 \fi0 \emdash\emdash\emdash\emdash\emdash\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 \b \fs32 7. References\par}
+{
+\trowd \trgaph120
+\clbrdrb\brdrs\cellx4320\clbrdrb\brdrs\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Document\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Content\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx4320\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\field{\*\fldinst{HYPERLINK "ANNOTATION_STRATEGY.md"}}{\fldrslt{\ul
+ANNOTATION_STRATEGY.md
+}}}
+\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\b Canonical} gold, sampling, eval, track boundaries\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx4320\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\field{\*\fldinst{HYPERLINK "GOLD_LABELLING.md"}}{\fldrslt{\ul
+GOLD_LABELLING.md
+}}}
+\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Dutch CSV / notebook lab + Step 5 runbook\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx4320\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\field{\*\fldinst{HYPERLINK "LABEL_MAPPING_EN_NL.md"}}{\fldrslt{\ul
+LABEL_MAPPING_EN_NL.md
+}}}
+\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 WebAnno \u8596? TRIFECTA field mapping\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx4320\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\field{\*\fldinst{HYPERLINK "TRIFECTA.md"}}{\fldrslt{\ul
+TRIFECTA.md
+}}}
+\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Pipeline overview\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx4320\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\field{\*\fldinst{HYPERLINK "../PLAN.md"}}{\fldrslt{\ul
+PLAN.md
+}}}
+\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Dutch engineering milestones / status\par}
+\cell}
+}
+\intbl\row}
+{
+\trowd \trgaph120
+\cellx4320\cellx8640
+\trkeep\intbl
+{
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 {\field{\*\fldinst{HYPERLINK "COLLOCATION.md"}}{\fldrslt{\ul
+COLLOCATION.md
+}}}
+\par}
+\cell}
+{{\pard\intbl \ql \f0 \sa0 \li0 \fi0 Frame-verb / collocation track (separate)\par}
+\cell}
+}
+\intbl\row}
+{\pard \ql \f0 \sa180 \li0 \fi0 \par}
+{\pard \qc \f0 \sa180 \li0 \fi0 \emdash\emdash\emdash\emdash\emdash\par}
+{\pard \ql \f0 \sa180 \li0 \fi0 {\i 16 July 2026 \u8212- English coordination brief with Dutch procedure, status, and next actions for alignment.}\par}

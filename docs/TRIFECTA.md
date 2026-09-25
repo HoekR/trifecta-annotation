@@ -25,7 +25,7 @@ KWIC window + target_word
         │  early exit: metaphor / non-food
         ▼
   Step B — Macro-frame enum
-        │  COOKING_CREATION | USING_CURE | USING_INGESTION | PRESERVING | NONE
+        │  COOKING_CREATION | CURE | INGESTION | PRESERVING | NONE
         ▼
   Step C — Frame-specific qualia roles
         ▼
@@ -36,11 +36,13 @@ KWIC window + target_word
 
 | Frame | Description |
 |-------|-------------|
-| `COOKING_CREATION` | Thermal / mechanical preparation |
-| `USING_CURE` | Medicinal treatment |
-| `USING_INGESTION` | Direct consumption |
+| `COOKING_CREATION` | Thermal / mechanical **preparation** — including recipe steps for products later used medicinally |
+| `CURE` | Food **as treatment** for an affliction (not: “recipe in a medical book” by default) |
+| `INGESTION` | Direct consumption |
 | `PRESERVING` | Smoking, salting, pickling, drying |
 | `NONE` | Metaphorical or irrelevant |
+
+**COOKING vs CURE:** see [ANNOTATION_STRATEGY.md](ANNOTATION_STRATEGY.md) §2.1 — regime (`RECIPE_PRACTICE`, `MEDICAL`) and frame are separate; prep-step snippets in cure recipes are usually COOKING_CREATION.
 
 ## Infrastructure
 

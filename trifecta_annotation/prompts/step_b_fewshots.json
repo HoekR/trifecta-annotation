@@ -1,0 +1,65 @@
+{
+  "examples": [
+    {
+      "target_word": "biet",
+      "context_text": "…re weert, Die niet en pot-lijst aenden heert. Een man die sich noeyt vreucht en biet Daer aen sijn vrouwe leet geschiet. Een man, die door een malle dracht Geen wijf en vordert inde pracht. Een man in daet end woorden kuys, Niet fier …",
+      "output": "{\"selected_frame\": \"NONE\", \"lexical_unit\": \"\", \"reasoning\": \"biet is offer here, not food related\"}"
+    },
+    {
+      "target_word": "noot",
+      "context_text": "…lindende, en zoekt alzoo hierin de oorzaak dier uitputting; terwijl hij in eene noot zegt: ‘dat dit de oude leer is, welke hij nog aanneemt, omdat zij algemeen gangbaar is; dat echter volgens de tegenwoordige wetenschap het uitputtend…",
+      "output": "{\"selected_frame\": \"NONE\", \"lexical_unit\": \"\", \"reasoning\": \"noot is footnote here (in eene noot zegt)\"}"
+    },
+    {
+      "target_word": "bloem",
+      "context_text": "…n wekt, Op de roepstem van den Koning, Op der Prinsen roemrijk spoor, Gaat gij, bloem der legerscharen! 't Volk in lijfsgevaren voor. Juichend volgen dan de braven; Want de glorie is hun deel, Als zij strijden met Oranje En de helden …",
+      "output": "{\"selected_frame\": \"NONE\", \"lexical_unit\": \"\", \"reasoning\": \"bloem is flower here and metaphor\"}"
+    },
+    {
+      "target_word": "uijen",
+      "context_text": "…iep hij ons aanmoedigend toe, wanneer wij voor zijn dunne koolsoep of sterk met uijen, ja zelfs met een soupçon d'ail, gekruide pied de mouton den neus optrokken en voorwendden geen honger te hebben, om ons straks bij den pasteibakker…",
+      "output": "{\"selected_frame\": \"INGESTION\", \"lexical_unit\": \"neus optrokken\", \"reasoning\": \"no creation verb here but refusal in ‘neus optrokken’\"}"
+    },
+    {
+      "target_word": "erwten",
+      "context_text": "…egen eenige Snijders by malkander sitten, die haar maaltijd hielden met graauwe Erwten, die sy een voor een met de punt van de Naalde quamen te nuttigen: bad haar om een aalmoese: Doe gaven sy hem een naalde, en seyden, doet als wy do…",
+      "output": "{\"selected_frame\": \"INGESTION\", \"lexical_unit\": \"nuttigen\", \"reasoning\": \"related verb is nuttigen (eten)\"}"
+    },
+    {
+      "target_word": "suiker",
+      "context_text": "…hem geven konde; zijn antwoord was: ‘Ik wilde gaarne, boven mijne gewone portie suiker,’ (bij citroenen, sinaasappelen, enz.) ‘nog wat suiker bij mijne thee hebben, en die laten halen;’ maar het wederantwoord was: ‘Mijn lieve vriend! …",
+      "output": "{\"selected_frame\": \"INGESTION\", \"lexical_unit\": \"hebben\", \"reasoning\": \"suiker bij thee hebben\"}"
+    },
+    {
+      "target_word": "brooden",
+      "context_text": "…daer heel goet koop: want voor een asper, dat is een halve-stuyver, koopt ghy 2 brooden soo veel ghy in 2 dagen eten kondt. En 2 flapkannen wijn voor 3 asperen, dat is twee-blancken. Van daer quam ick tot een Stadt ghenaemt Sallenyck,…",
+      "output": "{\"selected_frame\": \"INGESTION\", \"lexical_unit\": \"eten kondt\", \"reasoning\": \"verb is eten kondt\"}"
+    },
+    {
+      "target_word": "boter",
+      "context_text": "…drie koebeesten, en enkelen brengen het soms tot twaalf, waarvan zij de melk en boter aan de Europesche ingezetenen slijten. Tot aanmoediging van nuttigen arbeid, en vooral van landbouw, staat het Gouvernement aan de planters een geri…",
+      "output": "{\"selected_frame\": \"NONE\", \"lexical_unit\": \"slijten\", \"reasoning\": \"slijten is serve\"}"
+    },
+    {
+      "target_word": "appel",
+      "context_text": "… die van een kind af door 't kreupelbosch gejaagt is. Ik heb door menigen zuren appel gebeten, eer ik zulk een man wierd, door den zegen van God, den Heer; zo dat ik maar zeggen wil, dat ik harden geleert heb: En als ik echter daar zo…",
+      "output": "{\"selected_frame\": \"NONE\", \"lexical_unit\": \"gebeten\", \"reasoning\": \"metaphorical use of door zure appel gebeten, not actual food eating meant\"}"
+    },
+    {
+      "target_word": "Wyn",
+      "context_text": "…Scolopender-blad, rode Cicers, de middelbast van Fleer; of laten weken in witte Wyn, Wortels van wilde Fleer en daar van een uur voor de Koors een slok, of twee van drinken.",
+      "output": "{\"selected_frame\": \"COOKING_CREATION\", \"lexical_unit\": \"weken\", \"reasoning\": \"is a recipe for making an infusion\"}"
+    },
+    {
+      "target_word": "brood",
+      "context_text": "…unne vergaderingen worden zeer geheim gehouden; zy spreken Gebeden uit over het brood en den wyn, 't welk men aan de gantsche vergadering uitdeelt. Zy weten van vasten noch van eenige onthoudinge, uitgenomen dat zy nooit van het wyfje…",
+      "output": "{\"selected_frame\": \"INGESTION\", \"lexical_unit\": \"uitdeelt\", \"reasoning\": \"uitdeelt is serve\"}"
+    },
+    {
+      "target_word": "thee",
+      "context_text": "… ongestelde maag, zekere gele bloemen, die men altijd in de bosschen vindt, als thee te laten trekken, en daarvan veel te drinken. ik had naauwelijks dien wensch te kennen gegeven, of er was een glans van vreugde op het gelaat der hui…",
+      "output": "{\"selected_frame\": \"INGESTION\", \"lexical_unit\": \"drinken\", \"reasoning\": \"als thee laten trekken\"}"
+    }
+  ],
+  "notes": "Cherry-picked from literary/ingestion spot-check (2026-07-07). Regenerate via scripts/export_step_b_fewshots.py."
+}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<header class="app-header">
+  <div>
+    <p class="eyebrow">Verb Phase 2a</p>
+    <h1>Human Review</h1>
+  </div>
+  <p class="progress">Reviewed {{ stats.reviewed }} / {{ stats.total }} · {{ stats.pending }} pending</p>
+</header>
+
+<nav class="record-nav" aria-label="Record navigation">
+  {% if prev_id %}<a class="button secondary" href="{{ url_for('phase2a_label', record_id=prev_id) }}" title="Previous row">Previous</a>{% endif %}
+  <span>Row {{ index + 1 }} of {{ stats.total }}</span>
+  {% if next_id %}<a class="button secondary" href="{{ url_for('phase2a_label', record_id=next_id) }}" title="Next row">Next</a>{% endif %}
+</nav>
+
+<main class="label-layout">
+  <section class="snippet-panel">
+    <dl class="metadata">
+      <div><dt>Target</dt><dd>{{ row.target_word }}</dd></div>
+      <div><dt>Source Step B</dt><dd>{{ row.source_step_b }}</dd></div>
+      <div><dt>Source verb</dt><dd>{{ row.frame_verb }}</dd></div>
+      <div><dt>Regime</dt><dd>{{ row.text_regime }}</dd></div>
+    </dl>
+    <p class="source-note">Source fields are prior model output. They are evidence, not gold.</p>
+    <div class="context">{{ highlighted | safe }}</div>
+  </section>
+
+  <form class="label-form" method="post" action="{{ url_for('phase2a_save', record_id=row.record_id) }}">
+    <input type="hidden" name="next_record_id" value="{{ next_id or row.record_id }}">
+    <fieldset>
+      <legend>Human Step B</legend>
+      <label>Frame
+        <select name="reviewed_frame" required>
+          <option value="">Choose a frame</option>
+          {% for frame in frames %}<option value="{{ frame }}" {% if row.reviewed_frame == frame %}selected{% endif %}>{{ frame }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Frame verb <input name="reviewed_lexical_unit" value="{{ row.reviewed_lexical_unit }}"></label>
+    </fieldset>
+
+    <fieldset>
+      <legend>Step C Qualia</legend>
+      <p class="field-note">Fill only roles supported by the snippet; leave every other field blank.</p>
+      <label>Cooking method <input name="COOKING_CREATION_Method" value="{{ row.COOKING_CREATION_Method }}"></label>
+      <label>Cooking process <input name="COOKING_CREATION_Process" value="{{ row.COOKING_CREATION_Process }}"></label>
+      <label>Cooking product <input name="COOKING_CREATION_Food_Product" value="{{ row.COOKING_CREATION_Food_Product }}"></label>
+      <label>Preserving technique <input name="PR_Technique" value="{{ row.PR_Technique }}"></label>
+      <label>Preserving medium <input name="PR_Medium" value="{{ row.PR_Medium }}"></label>
+      <label>Preserved food <input name="PR_Food_Patient" value="{{ row.PR_Food_Patient }}"></label>
+      <label>Ingestion context <input name="INGESTION_Context" value="{{ row.INGESTION_Context }}"></label>
+      <label>Ingestor <input name="INGESTION_Ingestor" value="{{ row.INGESTION_Ingestor }}"></label>
+      <label>Ingestion manner <input name="INGESTION_Manner" value="{{ row.INGESTION_Manner }}"></label>
+      <label>Affliction <input name="CURE_Affliction" value="{{ row.CURE_Affliction }}"></label>
+      <label>Treatment <input name="CURE_Food_Treatment" value="{{ row.CURE_Food_Treatment }}"></label>
+      <label>Uncertainty <textarea name="uncertainty_note" rows="3">{{ row.uncertainty_note }}</textarea></label>
+    </fieldset>
+
+    <label class="check"><input type="checkbox" name="reviewed" value="true" {% if row.reviewed == 'true' %}checked{% endif %}> Mark reviewed</label>
+    <div class="actions">
+      <button class="button" type="submit">Save & next</button>
+      <button class="button secondary" type="submit" name="next_record_id" value="{{ row.record_id }}">Save</button>
+    </div>
+  </form>
+</main>
+{% endblock %}

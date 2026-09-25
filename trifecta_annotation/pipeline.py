@@ -22,6 +22,12 @@ def _provenance_from_input(inp: KwicInput) -> AnnotationProvenance:
         source_path=inp.source_path,
         record_id=inp.record_id,
         date=inp.date,
+        discovery_verb=inp.discovery_verb,
+        frame_hint=inp.frame_hint,
+        kwic_mode=inp.kwic_mode,
+        kwic_batch=inp.kwic_batch,
+        text_regime=inp.text_regime,
+        title=inp.title,
     )
 
 
@@ -32,6 +38,7 @@ def annotate_record(
     base_url: str | None = None,
     client=None,
     technique_hint: str | None = None,
+    english_hint: str | None = None,
 ) -> TrifectaAnnotation:
     """Run the gated TRIFECTA pipeline for one KWIC record."""
     resolved_model = model or trifecta_model()
@@ -43,6 +50,7 @@ def annotate_record(
         model=resolved_model,
         base_url=base_url,
         client=client,
+        english_hint=english_hint,
     )
     dropped, drop_reason = should_drop(step_a)
     if dropped:
@@ -59,6 +67,7 @@ def annotate_record(
         inp.context_text,
         model=resolved_model,
         base_url=base_url,
+        english_hint=english_hint,
     )
     if step_b.selected_frame == TrifectaFrame.NONE:
         return TrifectaAnnotation(
@@ -85,5 +94,34 @@ def annotate_record(
         step_b=step_b,
         step_c=step_c,
         dropped=False,
+        model=resolved_model,
+    )
+
+
+def annotate_step_a(
+    inp: KwicInput,
+    *,
+    model: str | None = None,
+    base_url: str | None = None,
+    client=None,
+    english_hint: str | None = None,
+) -> TrifectaAnnotation:
+    """Run Step A only (entity validation / early dropout)."""
+    resolved_model = model or trifecta_model()
+    provenance = _provenance_from_input(inp)
+    step_a = validate_entity(
+        inp.target_word,
+        inp.context_text,
+        model=resolved_model,
+        base_url=base_url,
+        client=client,
+        english_hint=english_hint,
+    )
+    dropped, drop_reason = should_drop(step_a)
+    return TrifectaAnnotation(
+        provenance=provenance,
+        step_a=step_a,
+        dropped=dropped,
+        drop_reason=drop_reason,
         model=resolved_model,
     )

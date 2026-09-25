@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
+from trifecta_annotation.english_hint import append_english_hint_block
 from trifecta_annotation.llm import structured_completion
 from trifecta_annotation.prompts import format_few_shots, load_prompt_asset
 from trifecta_annotation.schemas import EntityValidation
-from trifecta_annotation.vocabulary import alt_label_index, load_food_terms
+from trifecta_annotation.thesaurus import canonical_pref_for_term
+from trifecta_annotation.vocabulary import resolve_thesaurus_lookup
 
 SYSTEM_PROMPT = (
     "You are an expert computational linguist annotating historical Dutch corpora "
@@ -20,8 +22,8 @@ SYSTEM_PROMPT = (
 
 def ontology_hint(target_word: str) -> tuple[bool, str | None]:
     """Return ontology match flag and canonical label for *target_word*."""
-    index = alt_label_index(load_food_terms())
-    canonical = index.get(target_word.strip().lower())
+    lookup = resolve_thesaurus_lookup()
+    canonical = canonical_pref_for_term(target_word, lookup)
     return canonical is not None, canonical
 
 
@@ -41,6 +43,7 @@ def validate_entity(
     model: str | None = None,
     base_url: str | None = None,
     client=None,
+    english_hint: str | None = None,
 ) -> EntityValidation:
     """Validate food entity status and formal layer for *target_word*."""
     matched, canonical = ontology_hint(target_word)
@@ -50,10 +53,9 @@ def validate_entity(
     if matched:
         hint = f"\nOntology hint: maps to canonical label '{canonical}'."
 
-    user_prompt = (
-        f"Target Word: {target_word}\n"
-        f"Context: {context_text}"
-        f"{hint}"
+    user_prompt = append_english_hint_block(
+        f"Target Word: {target_word}\nContext: {context_text}{hint}",
+        english_hint,
     )
     result = structured_completion(
         EntityValidation,

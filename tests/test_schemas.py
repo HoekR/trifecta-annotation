@@ -7,19 +7,24 @@ from trifecta_annotation.schemas import (
     KwicInput,
     TrifectaAnnotation,
     TrifectaFrame,
-    UsingCureQualia,
+    CureQualia,
 )
 
 
 def test_frame_classification_roundtrip() -> None:
     record = FrameClassification(
-        selected_frame=TrifectaFrame.USING_CURE,
+        selected_frame=TrifectaFrame.CURE,
         lexical_unit="verzachten",
         reasoning="Medicinal use of elderberry sap against cough.",
     )
     data = record.model_dump()
-    assert data["selected_frame"] == "USING_CURE"
+    assert data["selected_frame"] == "CURE"
     assert FrameClassification.model_validate(data).lexical_unit == "verzachten"
+
+
+def test_frame_legacy_alias() -> None:
+    assert TrifectaFrame("USING_CURE") == TrifectaFrame.CURE
+    assert TrifectaFrame("USING_INGESTION") == TrifectaFrame.INGESTION
 
 
 def test_entity_validation_roundtrip() -> None:
@@ -48,11 +53,24 @@ def test_kwic_input_and_annotation() -> None:
             "context_text": inp.context_text,
             "record_id": inp.record_id,
         },
-        step_c=UsingCureQualia(
-            cure_affliction="hoest",
-            cure_food_treatment="verzachten",
+        step_c=CureQualia(
+            CURE_Affliction="hoest",
+            CURE_Food_Treatment="verzachten",
             lexical_unit="sap",
         ),
     )
     assert ann.step_c is not None
-    assert ann.step_c.frame == TrifectaFrame.USING_CURE
+    assert ann.step_c.frame == TrifectaFrame.CURE
+
+
+def test_cure_qualia_legacy_field_names() -> None:
+    qualia = CureQualia.model_validate(
+        {
+            "frame": "USING_CURE",
+            "cure_affliction": "hoest",
+            "cure_food_treatment": "sap",
+            "lexical_unit": "drinken",
+        },
+    )
+    assert qualia.CURE_Affliction == "hoest"
+    assert qualia.frame == TrifectaFrame.CURE

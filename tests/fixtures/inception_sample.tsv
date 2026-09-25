@@ -1,0 +1,15 @@
+#FORMAT=WebAnno TSV 3.3
+
+#Text=Het gebeurt ook wel dat er te veel Honing word gehaalt en de Byen moeten boeten
+1-1	0-3	Het	_	_	_	
+1-2	4-11	gebeurt	_	_	_	
+1-3	16-21	te	_	_	_	
+1-4	22-26	veel	_	_	_	
+1-5	27-33	Honing	FOOD\_LU	_	_	
+1-6	34-38	word	_	_	_	
+1-7	39-46	gehaalt	_	_	_	
+1-8	50-52	de	CURE\_LU	_	_	
+1-9	53-57	Byen	CURE\_Patient	_	_	
+1-10	58-66	moeten	_	_	_	
+1-11	67-73	boeten	CURE\_LU	_	_	
+1-12	74-78	Loop	CURE\_Affliction	_	_	
