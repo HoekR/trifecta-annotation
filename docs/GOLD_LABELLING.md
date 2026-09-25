@@ -44,6 +44,11 @@ uv run python scripts/export_clear_frame_examples.py --frames CURE --limit 30 --
 # or: --frames CURE,INGESTION
 ```
 
+CURE discovery uses guideline cure verbs **and** indication constructions
+(`goed voor`, `behoort voor`, `krachtig tegen`, …). `gebruik … voor/tegen` is
+included only when a nearby therapeutic cue is present (e.g. hoest, koorts);
+prep-only “gebruik boter voor het bakken” is excluded.
+
 ### Step 1 — Open the web UI (recommended) or notebook
 
 **Web UI (Fastest):**
@@ -105,6 +110,8 @@ Use `walk_details(df, start=0, n=5)` to compare GOLD vs PRED line-by-line.
 **Note:** exact-match Step C scores understate quality when predictions are longer but still correct (pred ⊃ gold). Use **§ Step C — soft match (containment)** in `eval/report.md` for that judgment.
 
 COOKING few-shots (2026-07-16): review table indices `1,5–11,22,23,26` → `trifecta_annotation/prompts/step_c_cooking_fewshots.json` (pred fields). Skipped `0,2,3,4` (PRESERVING/INGESTION).
+
+PRESERVING few-shots (2026-09-25): reviewed against soft Step C (micro 0.31, n=27). Asset `step_c_preserving_fewshots.json` — droogen plus rooken, zouten, inleggen; patient is the preserved food, not an added spice. Re-batch once with `make eval-gold` before judging whether the soft score is worth keeping. Fourteen of 27 misses are Step B (COOKING/NONE), which these few-shots do not change.
 
 4. Prompt / few-shot tuning on weakest qualia fields.
 

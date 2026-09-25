@@ -11,33 +11,33 @@
       "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"droogen\", \"PR_Medium\": \"\", \"PR_Food_Patient\": \"tuinboon\", \"lexical_unit\": \"droogen\"}"
     },
     {
+      "target_word": "ham",
+      "context_text": "als de hammen omtrent acht dagen in het zout gelegen hebben, zo neemt men ze daar uit, en laat ze afdruipen en droogen, en dan naait men ze in rookzakken en hangt ze in de schoorsteen, om met eikenhout of spaanders te rooken. en als ze drie maanden in de sch…",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"rooken\", \"PR_Medium\": \"rook\", \"PR_Food_Patient\": \"vlees\", \"lexical_unit\": \"rooken\"}"
+    },
+    {
       "target_word": "Aspersjes",
-      "context_text": " in schoon water ververschen, dan zyn ze zo goed als of ze versch waren. Men kan dezelve ook in de zon of in den oven zagjes droogen, dog dan zyn ze zo goed niet in 't gebruik. 4. Aspersjes, hoe men die bewaren zal. Breekt het teedere van de Aspersjes in stukjes onder af, bespreng ze braaf met zout en grof gestoote Op een andere wyze. Breekt het harde boven van de As",
-      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"bespreng met zout\", \"PR_Medium\": \"zout\", \"PR_Food_Patient\": \"\", \"lexical_unit\": \"bewaren\"}"
+      "context_text": "4. Aspersjes, hoe men die bewaren zal. Breekt het teedere van de Aspersjes in stukjes onder af, bespreng ze braaf met zout en grof gestoote",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"zouten\", \"PR_Medium\": \"zout\", \"PR_Food_Patient\": \"aspersjes\", \"lexical_unit\": \"bewaren\"}"
     },
     {
-      "target_word": "Laurier",
-      "context_text": " Komijn, ende Zout, elcks even veel, Azijn ronde ballen, legt die onder het Meel, ende het Meel en sal niet verderven. Hoe dat men de Gerste onbeschadigt bewaren sal. Neemt drooge Laurier-bladeren, van een Boom die vruchten draeght, smijt die onder de Gerste. Item, neemt Assche van Laurier-hout ende smijt die onder de Gerste: Ofte neemt Sempervivum, ende Calamintum",
-      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"onbeschadigd bewaren\", \"PR_Medium\": \"\", \"PR_Food_Patient\": \"\", \"lexical_unit\": \"smijt\"}"
+      "target_word": "augurk",
+      "context_text": "als men deezen zal inleggen, moeten ae eerst wel schoon in regenwater afgewasschen worden, dan in een vergiet gedaan; afgedropen zynde, laat menze twee nachten in bier…",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"inleggen\", \"PR_Medium\": \"bier\", \"PR_Food_Patient\": \"augurk\", \"lexical_unit\": \"inleggen\"}"
     },
     {
-      "target_word": "Peterselie",
-      "context_text": "spouwt mense in vieren, en men snijdse in stukjes so lang als een vinger, en men hangtse buiten de zon te droogen. Daar zyn ook wortelen die stokachtig zyn als van oude Venkel, en Peterselie, dese kneust men met een hamertjen tot de schil week werd, en men haalt het stokkige hart daar uit. De vreemde wortelen, moet men soo versch sien te krijgen als mogelijk is, de ve",
-      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"droogen\", \"PR_Medium\": \"\", \"PR_Food_Patient\": \"\", \"lexical_unit\": \"kneust\"}"
-    },
-    {
-      "target_word": "artisjokken stoelen",
-      "context_text": "…t die een nacht in schoon water ververschen, dan zyn ze zo goed als of ze versch waren. men kan dezelve ook in de zon of in den oven zagjes droogen, dog dan zyn ze zo goed niet in 't gebruik.",
-      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"droogen\", \"PR_Medium\": \"\", \"PR_Food_Patient\": \"artisjokken\", \"lexical_unit\": \"droogen\"}"
+      "target_word": "kruidnagels",
+      "context_text": "dekt ze met pekel, olie of boter, omze dus te bewaren. Men legt ook op deze wyze Komkommers in, twee of drie dagen na dat ze geplukt zyn. Men kan’er een of twee neuten, eenige kruidnagels en wat hele peper bydoen.",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"inleggen\", \"PR_Medium\": \"pekel\", \"PR_Food_Patient\": \"komkommers\", \"lexical_unit\": \"bewaren\"}"
     }
   ],
   "record_ids": [
     "preservare_2051__drying__schol",
     "preservare_2415__drying__tuinboon",
+    "preservare_1917__drying__ham",
     "_vol002volm01_01.xml__ch15__aspersjes",
-    "bate002secr02_01.xml__ch63__laurier",
-    "_pha001phar05_01.xml__ch16__peterselie",
-    "preservare_2373__drying__artisjokken stoelen"
+    "preservare_3173__pickling__augurk",
+    "chom003huis01_01.xml__ch4__kruidnagels"
   ],
-  "notes": "PRESERVING Step C few-shots from step_c_review (PRESERVING/CURE/INGESTION), excluding indices [18,45,46] (2026-09-16). Gold fields."
+  "notes": "PRESERVING Step C few-shots reviewed against soft eval 2026-09-25 (micro 0.31, n=27). Kept two droogen joints. Replaced Laurier/Peterselie/artisjokken (empty patient or wrong local verb). Added rooken, zouten, inleggen. kruidnagels: target is a spice; patient is komkommers. aspersjes patient filled (gold was empty). augurk medium bier (gold was empty). ham lexical_unit set to rooken (gold LU was droogen)."
 }

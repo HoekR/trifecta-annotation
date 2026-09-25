@@ -1,7 +1,8 @@
-"""Mine high-confidence COOKING_CREATION / INGESTION examples from food snippets.
+"""Mine high-confidence frame examples from food snippets.
 
-Uses guideline frame verbs + food proximity + regime fit. Intended for silver
-augmentation, few-shot pools, or pre-filled gold batches — not auto-merge.
+Uses guideline frame verbs (and CURE indication constructions such as
+``goed voor`` / ``behoort voor``) + food proximity + regime fit. Intended for
+silver augmentation, few-shot pools, or pre-filled gold batches — not auto-merge.
 """
 
 from __future__ import annotations
@@ -46,6 +47,13 @@ PREFERRED_REGIMES: dict[TrifectaFrame, frozenset[TextRegime]] = {
             TextRegime.RECIPE_PRACTICE,
         },
     ),
+    TrifectaFrame.CURE: frozenset(
+        {
+            TextRegime.MEDICAL,
+            TextRegime.RECIPE_PRACTICE,
+            TextRegime.SCIENTIFIC,
+        },
+    ),
 }
 
 CORE_VERBS: dict[TrifectaFrame, frozenset[str]] = {
@@ -75,6 +83,23 @@ CORE_VERBS: dict[TrifectaFrame, frozenset[str]] = {
             "genieten",
         )
     ),
+    TrifectaFrame.CURE: frozenset(
+        normalize_hist_dutch(v)
+        for v in (
+            "genezen",
+            "verzachten",
+            "verlichten",
+            "behandelen",
+            "goed_voor",
+            "behoort_voor",
+            "krachtig_tegen",
+            "goed_tegen",
+            "helpt_tegen",
+            "dienstig_voor",
+            "heilzaam_voor",
+            "gebruik_voor",
+        )
+    ),
 }
 
 CONFLICT_FRAMES: dict[TrifectaFrame, frozenset[TrifectaFrame]] = {
@@ -82,6 +107,7 @@ CONFLICT_FRAMES: dict[TrifectaFrame, frozenset[TrifectaFrame]] = {
     TrifectaFrame.INGESTION: frozenset(
         {TrifectaFrame.CURE, TrifectaFrame.COOKING_CREATION},
     ),
+    TrifectaFrame.CURE: frozenset({TrifectaFrame.COOKING_CREATION}),
 }
 
 DEFAULT_NEAR_WINDOW = 80
@@ -146,7 +172,11 @@ def score_snippet_for_frame(
 
     best: ClearFrameCandidate | None = None
     for hit in frame_hits:
-        if guideline_only and "guideline" not in hit.lexicon_sources:
+        sources = set(hit.lexicon_sources)
+        is_indication = "indication" in sources
+        if guideline_only and "guideline" not in sources and not (
+            is_indication and target_frame == TrifectaFrame.CURE
+        ):
             continue
 
         verb_norm = normalize_hist_dutch(hit.verb)
@@ -170,8 +200,12 @@ def score_snippet_for_frame(
         score = 0
         reasons: list[str] = []
 
-        score += 4
-        reasons.append("guideline_verb")
+        if is_indication:
+            score += 4
+            reasons.append("indication_construction")
+        else:
+            score += 4
+            reasons.append("guideline_verb")
 
         if verb_distance <= 40:
             score += 2

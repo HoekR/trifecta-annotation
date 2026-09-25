@@ -9,7 +9,9 @@ from trifecta_annotation.schemas import FrameClassification, PreservingQualia
 SYSTEM_PROMPT = (
     "You are annotating historical Dutch food texts for the TRIFECTA PRESERVING frame. "
     "Extract PR_Technique, PR_Medium, and PR_Food_Patient. "
-    "Prefer concise spans or standardized technique descriptions (droogen, pekelen, rooken, inleggen). "
+    "Prefer concise spans or standardized technique descriptions (droogen, zouten, pekelen, rooken, inleggen). "
+    "PR_Food_Patient is the food being preserved; if the target word is only a spice or agent, name the food in the preserving clause. "
+    "PR_Medium is the agent (zout, pekel, rook, azijn, bier), not the technique name. "
     "Use empty string when a field is not stated in the context.\n\n"
     "{few_shots}"
 )

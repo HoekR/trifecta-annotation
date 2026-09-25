@@ -60,7 +60,7 @@ A frequent source of disagreement — including in `RECIPE_PRACTICE` eval (weake
 | Choose | When the snippet … | Typical `lexical_unit` |
 |--------|-------------------|------------------------|
 | **COOKING_CREATION** | Describes preparation: ingredients, heat, time, tools, “neem … kook … tot …” | `koken`, `sieden`, `mengen`, `bakken` |
-| **CURE** | Describes therapeutic use: symptom/affliction + food as remedy | `verzachten`, `genezen`, `tegen de hoest`, `behoort voor` |
+| **CURE** | Describes therapeutic use: symptom/affliction + food as remedy | `verzachten`, `genezen`, `tegen de hoest`, `behoort voor`, `goed voor`, `gebruik … voor/tegen` (indication mining; `gebruik` only with therapeutic cues) |
 | **INGESTION** | Describes eating/drinking without a medical framing | `eten`, `drinken`, `smaken` |
 
 **Worked examples (same “cure recipe” book, different snippets):**

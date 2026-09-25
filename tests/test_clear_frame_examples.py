@@ -36,6 +36,48 @@ def test_score_ingestion_literary_high() -> None:
     assert scored.suggested_frame == TrifectaFrame.INGESTION
 
 
+def test_score_cure_indication_goed_voor() -> None:
+    snippet = "Deze siroop van honing is goed voor de droge hoest bij koorts."
+    scored = score_snippet_for_frame(
+        snippet,
+        ["honing"],
+        TrifectaFrame.CURE,
+        regime=TextRegime.MEDICAL,
+    )
+    assert scored is not None
+    assert scored.discovery_verb == "goed_voor"
+    assert "indication_construction" in scored.reasons
+    assert scored.confidence_tier in {"high", "medium"}
+
+
+def test_score_cure_gebruik_voor_with_affliction() -> None:
+    snippet = "Men gebruikt kamille voor de maagpijn en tegen de koorts."
+    scored = score_snippet_for_frame(
+        snippet,
+        ["kamille"],
+        TrifectaFrame.CURE,
+        regime=TextRegime.MEDICAL,
+    )
+    assert scored is not None
+    assert scored.discovery_verb == "gebruik_voor"
+    assert "indication_construction" in scored.reasons
+
+
+def test_gebruik_voor_cooking_context_rejected() -> None:
+    """Bare 'gebruik X voor' near prep steps must not seed CURE."""
+    from trifecta_annotation.frame_verbs import find_cure_indication_hits
+
+    snippet = "Gebruik boter voor het bakken van het deeg in de oven."
+    assert find_cure_indication_hits(snippet) == []
+    scored = score_snippet_for_frame(
+        snippet,
+        ["boter"],
+        TrifectaFrame.CURE,
+        regime=TextRegime.RECIPE_PRACTICE,
+    )
+    assert scored is None
+
+
 def test_cure_conflict_downgrades_cooking() -> None:
     snippet = (
         "Het vleesch moet men koken en daarna genezen de zieke maag met deze bouillon."

@@ -401,13 +401,119 @@ def frame_for_verb(verb: str) -> TrifectaFrame | None:
     return _DEFAULT_LEXICON.frame_for(verb)
 
 
+# Therapeutic *indication* constructions (historic + modern). Not FrameNet cure
+# verbs — phrases like "X is goed voor …" / "krachtig tegen …". Matched as
+# multi-word spans so discovery is not limited to genezen/verzachten.
+CURE_INDICATION_PATTERNS: tuple[tuple[str, str], ...] = (
+    # regex (case-insensitive), canonical discovery id
+    (r"\bgoed(?:e|t)?\s+voor\b", "goed_voor"),
+    (r"\bgoet\s+vo(?:o|e)r\b", "goed_voor"),
+    (r"\bbehoort\s+voor\b", "behoort_voor"),
+    (r"\bkrachtig(?:e)?\s+tegen\b", "krachtig_tegen"),
+    (r"\bgoed(?:e|t)?\s+tegen\b", "goed_tegen"),
+    (r"\bgoet\s+tegen\b", "goed_tegen"),
+    (r"\bbaat\s+(?:tegen|voor)\b", "baat_tegen"),
+    (r"\bdienstig(?:e)?\s+(?:voor|tegen)\b", "dienstig_voor"),
+    (r"\bnuttig(?:e)?\s+(?:voor|tegen)\b", "nuttig_voor"),
+    (r"\bheilzaam(?:e)?\s+(?:voor|tegen)\b", "heilzaam_voor"),
+    (r"\bhelpt\s+(?:tegen|voor)\b", "helpt_tegen"),
+    (r"\bhelpen\s+(?:tegen|voor)\b", "helpt_tegen"),
+    (r"\bprobaat\s+(?:voor|tegen)\b", "probaat_voor"),
+    (r"\bremedie\s+(?:voor|tegen)\b", "remedie_voor"),
+    # "gebruik X voor/tegen …" — gated by therapeutic context (see below)
+    (
+        r"\b(?:gebruik(?:t|en|e)?|gebruickt|gebruyckt|gebruicken|gebruycken)\s+"
+        r"(?:\w+\s+){0,4}(?:voor|tegen)\b",
+        "gebruik_voor",
+    ),
+)
+
+# Indication ids that need local therapeutic cues (too common otherwise).
+_CONTEXT_GATED_INDICATIONS: frozenset[str] = frozenset({"gebruik_voor"})
+
+_THERAPEUTIC_CONTEXT = re.compile(
+    r"\b(?:"
+    r"hoest|koorts|pijn|ziekte|tering|jicht|podagra|worm(?:en)?|zweren?|"
+    r"steen|koliek|verkoud(?:heid)?|waterzucht|kwaal|qualen?|qualen|"
+    r"maag(?:ziekte|pijn)?|borst(?:ziekte|pijn)?|long(?:en)?|"
+    r"genees|heel(?:en|kunde)|medicyn|remedie|heelen|verlichten|verzachten|"
+    r"behandelen|cureren"
+    r")\b",
+    re.IGNORECASE,
+)
+
+_COOKING_CONTEXT = re.compile(
+    r"\b(?:"
+    r"koken|sieden|bakken|braden|bereiden|mengen|stoven|smoren|"
+    r"stampen|kloppen|deeg|oven|braadpan|kookpot"
+    r")\b",
+    re.IGNORECASE,
+)
+
+
+def _indication_context_ok(text: str, start: int, end: int, *, canonical: str) -> bool:
+    """For gated constructions (gebruik … voor/tegen), require remedy context."""
+    if canonical not in _CONTEXT_GATED_INDICATIONS:
+        return True
+    window = 100
+    lo = max(0, start - window)
+    hi = min(len(text), end + window)
+    span = text[lo:hi]
+    therapeutic = bool(_THERAPEUTIC_CONTEXT.search(span))
+    cooking = bool(_COOKING_CONTEXT.search(span))
+    if therapeutic and not cooking:
+        return True
+    if therapeutic and cooking:
+        # Prefer cure when affliction cues are present even near prep wording
+        return True
+    return False
+
+
+def find_cure_indication_hits(text: str) -> list[VerbHit]:
+    """Multi-word CURE indication spans (goed voor, gebruik … tegen, …)."""
+    if not text or not text.strip():
+        return []
+    hits: list[VerbHit] = []
+    for pattern, canonical in CURE_INDICATION_PATTERNS:
+        for match in re.finditer(pattern, text, flags=re.IGNORECASE):
+            if not _indication_context_ok(
+                text, match.start(), match.end(), canonical=canonical,
+            ):
+                continue
+            hits.append(
+                VerbHit(
+                    verb=canonical,
+                    frame=TrifectaFrame.CURE,
+                    start=match.start(),
+                    end=match.end(),
+                    lexicon_sources=("indication",),
+                    technique=None,
+                ),
+            )
+    hits.sort(key=lambda hit: (hit.start, hit.end))
+    return hits
+
+
 def find_frame_verbs_in_text(text: str) -> list[VerbHit]:
-    """Return frame-trigger hits in left-to-right order."""
-    return _DEFAULT_LEXICON.find_in_text(text)
+    """Return frame-trigger hits in left-to-right order (verbs + CURE indications)."""
+    hits = list(_DEFAULT_LEXICON.find_in_text(text))
+    # Drop verb hits fully covered by an indication span (e.g. lone "dienstig").
+    indications = find_cure_indication_hits(text)
+    if not indications:
+        return hits
+    kept: list[VerbHit] = []
+    for hit in hits:
+        covered = any(ind.start <= hit.start and hit.end <= ind.end for ind in indications)
+        if covered:
+            continue
+        kept.append(hit)
+    merged = kept + indications
+    merged.sort(key=lambda hit: (hit.start, hit.end))
+    return merged
 
 
 def snippet_has_frame_verb(text: str) -> bool:
-    return _DEFAULT_LEXICON.snippet_has_trigger(text)
+    return bool(find_frame_verbs_in_text(text))
 
 
 def lexicon_summary() -> dict[str, int]:
