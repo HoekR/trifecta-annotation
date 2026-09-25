@@ -146,6 +146,8 @@ Interpretation: longer LLM predictions often feel right to annotators but fail e
 
 Parallel `en_gold`, shared eval loop, and a first quota batch are still **open** (see §6). Schema and frames are already shared.
 
+For correcting **CoNLL BIO model predictions** as human spans (outside INCEpTION), use sibling repo `trifecta-span-lab` (`make` / `uv run span-lab`). How that repo was set up: `trifecta-span-lab/docs/CREATING_THE_REPO.md`.
+
 ---
 
 
@@ -204,6 +206,7 @@ Parallel `en_gold`, shared eval loop, and a first quota batch are still **open**
 | [ANNOTATION_STRATEGY.md](ANNOTATION_STRATEGY.md) | **Canonical** gold, sampling, eval, track boundaries |
 | [GOLD_LABELLING.md](GOLD_LABELLING.md)           | Dutch CSV / notebook lab + Step 5 runbook            |
 | [LABEL_MAPPING_EN_NL.md](LABEL_MAPPING_EN_NL.md) | WebAnno ↔ TRIFECTA field mapping                     |
+| Sibling `trifecta-span-lab`                      | EN CoNLL BIO span correction UI; setup record `docs/CREATING_THE_REPO.md` |
 | [TRIFECTA.md](TRIFECTA.md)                       | Pipeline overview                                    |
 | [PLAN.md](../PLAN.md)                            | Dutch engineering milestones / status                |
 | [COLLOCATION.md](COLLOCATION.md)                 | Frame-verb / collocation track (separate)            |

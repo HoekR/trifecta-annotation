@@ -81,3 +81,7 @@ Also in WebAnno: `PR_Agent`.
 | Step C | Inline token roles | JSON `step_c` object (optional in gold CSV) |
 
 Legacy JSON and CSV values (`USING_CURE`, `cure_affliction`, …) are still accepted on import.
+
+## Correcting English BIO predictions
+
+Token-level CoNLL BIO hand-correction lives in the sibling repo **`trifecta-span-lab`** (spans in the UI; BIO on disk). Label names should stay aligned with this mapping. How that repo was set up: `trifecta-span-lab/docs/CREATING_THE_REPO.md`.
