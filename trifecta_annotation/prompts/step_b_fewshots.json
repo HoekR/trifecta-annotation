@@ -61,5 +61,5 @@
       "output": "{\"selected_frame\": \"INGESTION\", \"lexical_unit\": \"drinken\", \"reasoning\": \"als thee laten trekken\"}"
     }
   ],
-  "notes": "Cherry-picked from literary/ingestion spot-check (2026-07-07). Regenerate via scripts/export_step_b_fewshots.py."
+  "notes": "Cherry-picked from literary/ingestion spot-check (2026-07-07). Regenerate via scripts/export_step_b_fewshots.py. 2026-10-12: tried adding PRESERVING + CURE examples to fix PRESERVING/CURE being absorbed into COOKING_CREATION/NONE at Step B — this set has zero of either. Two attempts both reverted: (1) additive 17-example set, step_b_accuracy 0.759 -> 0.549; (2) frame-balanced 10-example replacement (2 per frame, shorter prompt than this original), step_b_accuracy 0.759 -> 0.511 (worse, not better). Ruled out both prompt-length and imbalance as the cause — the common factor in both regressions was simply the presence of any PRESERVING/CURE example at all, on this local model (qwen2.5-coder). See project memory (project_step_b_fewshot_regression) before re-attempting; needs a different model or a much more incremental test (one example at a time), not just a different mix."
 }

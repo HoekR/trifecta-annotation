@@ -1,4 +1,6 @@
-The draft and your work share the same scientific story; the fit is **Dutch staged A→B→C + stage-wise eval** as the counterpart (or extension) to the paper’s English single-pass BIO + harmonization story.
+The draft and your work share the same scientific story; the fit is **Dutch staged A→B→C + stage-wise eval** as the counterpart to the English track’s **all-at-once** protocol (they **departed from IOB** annotations rather than staying in stacked token tagging).
+
+**Dutch methods snapshot** (procedure diagrams, frozen eval tables, regime × frame contradictions): [PAPER_REPORT.md](PAPER_REPORT.md).
 
 ## What the draft already claims
 
@@ -11,19 +13,19 @@ Your numbers already echo (3): Step B F1 CURE **0.52** vs COOKING **0.84** / PRE
 
 ## Where you plug in (especially “comparing stages”)
 
-The draft treats annotation as one BIO pass. You have an explicit **cascade**. That is the natural ACL angle:
+The draft treats annotation as **one joint pass** (post-IOB). You have an explicit **cascade**. That is the natural ACL angle:
 
 
 | Paper section        | Your material                                                                                    | Stage-comparison story                                                                                     |
 | -------------------- | ------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
 | §3 Schema            | Same frames + roles (FOOD → COOKING / PRESERVING / CURE; you add **INGESTION**; paper has DESCR) | Same guideline family; Dutch as the Limitations “cross-lingual” case                                       |
 | §4 LLM silver        | A→B→C with instructor/Pydantic; model compare (`compare_llm_models`)                             | Don’t only compare **models** — compare **stages**: A easy (91.7%), B mid (69%), C hard (30.3% soft micro) |
-| §5 Harmonization     | Gold UIs + silver→gold correction                                                                | Correction rate **by stage and by frame** (not only by BIO layer)                                          |
-| §6 Fine-tune / scale | GijsBERT Step B (~67%); Step C stays LLM; KWIC batch ~9k                                         | Staged specialization: classifier for B, LLM for C — vs one multitask tagger                               |
+| §5 Harmonization     | Gold UIs + silver→gold correction                                                                | Correction rate **by stage and by frame** (not only by joint layer)                                        |
+| §6 Fine-tune / scale | GijsBERT / GloBERTise Step B; Step C stays LLM; KWIC batch                                       | Staged specialization: classifier for B, LLM for C — vs one joint all-at-once model                        |
 | Limitations          | Explicitly flags historical Dutch                                                                | You *are* that experiment                                                                                  |
 
 
-**Comparing stages** = show error concentrates downstream:
+**Comparing stages** = show that each stage asks a finer question (entity → scenario → roles), so scores fall as specificity rises:
 
 - **A** filters ~1/3 of KWIC noise (dropout 32.7%) → cheap precision for "is this food?"  
 - **B** gets macro-frame mostly right except long-tail CURE/INGESTION/NONE  

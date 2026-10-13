@@ -29,6 +29,21 @@
       "target_word": "kruidnagels",
       "context_text": "dekt ze met pekel, olie of boter, omze dus te bewaren. Men legt ook op deze wyze Komkommers in, twee of drie dagen na dat ze geplukt zyn. Men kan’er een of twee neuten, eenige kruidnagels en wat hele peper bydoen.",
       "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"inleggen\", \"PR_Medium\": \"pekel\", \"PR_Food_Patient\": \"komkommers\", \"lexical_unit\": \"bewaren\"}"
+    },
+    {
+      "target_word": "Kriecken",
+      "context_text": "Maeckt u sirope van het beste suycker dat ghy vinden cont, ende laet dit dickachtich sieden, neempt daer af naer de quantiteyt vande kriecken, datse wel ruym moghen sieden, doeter die kriecken in, ende laetse soo langhe op een koolvier sieden tot datse ghenoech sijn, behoudende altoos soo veel sirope, datse overdeckt moghen blijven ligghen.",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"confijten\", \"PR_Medium\": \"sirope\", \"PR_Food_Patient\": \"kriecken\", \"lexical_unit\": \"confijten\"}"
+    },
+    {
+      "target_word": "Snyboonen",
+      "context_text": "…legze voords in een steenen pot, met wat heele witte peperkorrels, foely, en laurierbladen er tusschen: neem voords goeden wynazyn, kook denzelven af, en giet hem dan over de boonen; bind de pot met een blaas toe, en laatze dus 8 of 10 dagen staan…",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"inleggen\", \"PR_Medium\": \"wynazyn\", \"PR_Food_Patient\": \"snyboonen\", \"lexical_unit\": \"leggen\"}"
+    },
+    {
+      "target_word": "aalbesien",
+      "context_text": "…giet er dan ook sooveel water bij, totdat het vaatje vol is. Doet er dan de stop vast op en laat het maar stilletjes leggen, totdat het van selfs begind te gisten, dog men moet er somwylen na sien… Als het nu begint te gisten, soo neemt men er de bom aff, en laat het soolang als het werkt openleggen, al duurde het een maand off langer…",
+      "output": "{\"frame\": \"PRESERVING\", \"PR_Technique\": \"gisten\", \"PR_Medium\": \"suiker\", \"PR_Food_Patient\": \"aalbesien\", \"lexical_unit\": \"gisten\"}"
     }
   ],
   "record_ids": [
@@ -37,7 +52,10 @@
     "preservare_1917__drying__ham",
     "_vol002volm01_01.xml__ch15__aspersjes",
     "preservare_3173__pickling__augurk",
-    "chom003huis01_01.xml__ch4__kruidnagels"
+    "chom003huis01_01.xml__ch4__kruidnagels",
+    "preservare_1655__sugaring__kriecken",
+    "preservare_2917__pickling__snyboonen",
+    "preservare_1864__fermentation__aalbesien"
   ],
-  "notes": "PRESERVING Step C few-shots reviewed against soft eval 2026-09-25 (micro 0.31, n=27). Kept two droogen joints. Replaced Laurier/Peterselie/artisjokken (empty patient or wrong local verb). Added rooken, zouten, inleggen. kruidnagels: target is a spice; patient is komkommers. aspersjes patient filled (gold was empty). augurk medium bier (gold was empty). ham lexical_unit set to rooken (gold LU was droogen)."
+  "notes": "PRESERVING Step C few-shots reviewed against soft eval 2026-09-25 (micro 0.31, n=27). Kept two droogen joints. Replaced Laurier/Peterselie/artisjokken (empty patient or wrong local verb). Added rooken, zouten, inleggen. kruidnagels: target is a spice; patient is komkommers. aspersjes patient filled (gold was empty). augurk medium bier (gold was empty). ham lexical_unit set to rooken (gold LU was droogen). 2026-10-12: added sugaring (kriecken/confijten) and fermentation (aalbesien/gisten) — categories previously missing entirely from this set despite being established early-modern preservation techniques (see sibling recepten-preservare-analysis technique_term_association.csv) — plus an azijn-medium pickling example (snyboonen), since prior pickling examples only used bier/pekel media. Sourced from recepten_preservare/recipe_dataset_2.csv ids 1655 (1612), 2917 (1797), 1864 (1785/1855) — dated, human-curated recipe texts, not mined from our own gold set."
 }

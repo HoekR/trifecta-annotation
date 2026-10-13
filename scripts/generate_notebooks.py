@@ -1765,6 +1765,339 @@ def build_ldk2025_cookbook_slice() -> nbf.NotebookNode:
     return nb
 
 
+def build_frame_disagreement_review() -> nbf.NotebookNode:
+    """Notebook: Step B frame disagreements — pair filters + gold notes (pandas)."""
+    nb = nbf.v4.new_notebook()
+    nb["metadata"] = {
+        "kernelspec": {"display_name": "Python 3", "name": "python3"},
+        "language_info": {"name": "python", "version": "3.11"},
+    }
+    nb["cells"] = []
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(
+            [
+                "# Step B frame disagreement review\n",
+                "\n",
+                "Regenerate — **do not hand-edit** the `.ipynb` JSON:\n",
+                "\n",
+                "```bash\n",
+                "uv run python scripts/generate_notebooks.py --name frame_disagreement_review\n",
+                "```\n",
+                "\n",
+                "**Purpose:** paper / methods prep — skim **COOKING↔CURE** and "
+                "**CURE↔INGESTION** (and service/use verb rows) where hand gold "
+                "and `gold_predictions` disagree. Plain **pandas** (works in Cursor).\n",
+                "\n",
+                "**Not** a re-labelling session unless you change "
+                "[ANNOTATION_STRATEGY §2.1](../docs/ANNOTATION_STRATEGY.md). "
+                "Policy: [GOLD_LABELLING.md § Review disagreements]"
+                "(../docs/GOLD_LABELLING.md#review-disagreements-csv--edit-this-not-excel).\n",
+                "\n",
+                "CLI export:\n",
+                "\n",
+                "```bash\n",
+                "uv run python scripts/eval_disagreements.py\n",
+                "```\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(
+            [
+                "## 0 — Paths & helpers\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_code_cell(
+            source=[
+                "from __future__ import annotations\n",
+                "\n",
+                "import re\n",
+                "import subprocess\n",
+                "from pathlib import Path\n",
+                "\n",
+                "import pandas as pd\n",
+                "from data_io import resolve\n",
+                "\n",
+                "pd.set_option('display.max_colwidth', 120)\n",
+                "pd.set_option('display.max_rows', 80)\n",
+                "\n",
+                "EVAL = Path(resolve('eval_reports'))\n",
+                "SCRATCH = Path(resolve('trifecta_gold')).parent\n",
+                "FRAME_CSV = EVAL / 'frame_disagreements.csv'\n",
+                "FIXES_CSV = EVAL / 'gold_fixes.csv'\n",
+                "GOLD_ALL = SCRATCH / 'gold_labelling_all.csv'\n",
+                "GOLD_CSV = Path(resolve('trifecta_gold_csv'))\n",
+                "\n",
+                "DISPLAY_COLS = [\n",
+                "    'record_id', 'target_word', 'gold_frame', 'pred_frame',\n",
+                "    'gold_lexical_unit', 'pred_lexical_unit', 'pair',\n",
+                "    'text_regime', 'notes', 'context_snippet',\n",
+                "]\n",
+                "\n",
+                "BOUNDARY_PAIRS = {\n",
+                "    'COOKING_CURE': {\n",
+                "        ('COOKING_CREATION', 'CURE'),\n",
+                "        ('CURE', 'COOKING_CREATION'),\n",
+                "    },\n",
+                "    'CURE_INGESTION': {\n",
+                "        ('CURE', 'INGESTION'),\n",
+                "        ('INGESTION', 'CURE'),\n",
+                "    },\n",
+                "    'COOKING_INGESTION': {\n",
+                "        ('COOKING_CREATION', 'INGESTION'),\n",
+                "        ('INGESTION', 'COOKING_CREATION'),\n",
+                "    },\n",
+                "}\n",
+                "\n",
+                "SERVICE_USE_RE = re.compile(\n",
+                "    r'\\b(aanbied|server|gebruik|bedien|toepass)\\w*',\n",
+                "    re.I,\n",
+                ")\n",
+                "\n",
+                "\n",
+                "def pair_key(gold: str, pred: str) -> str:\n",
+                "    a, b = sorted([str(gold or ''), str(pred or '')])\n",
+                "    return f'{a}↔{b}'\n",
+                "\n",
+                "\n",
+                "def mask_pair_set(frame: pd.DataFrame, pairs: set[tuple[str, str]]) -> pd.Series:\n",
+                "    return frame.apply(\n",
+                "        lambda r: (str(r['gold_frame']), str(r['pred_frame'])) in pairs,\n",
+                "        axis=1,\n",
+                "    )\n",
+                "\n",
+                "\n",
+                "def walk_rows(frame: pd.DataFrame, start: int = 0, n: int = 5) -> None:\n",
+                "    \"\"\"Print GOLD vs PRED + notes for paper quotes.\"\"\"\n",
+                "    chunk = frame.iloc[start : start + n]\n",
+                "    if chunk.empty:\n",
+                "        print('(empty)')\n",
+                "        return\n",
+                "    for i, row in chunk.iterrows():\n",
+                "        print('=' * 72)\n",
+                "        print(f\"[{i}] {row.get('record_id')}\")\n",
+                "        print(f\"  target: {row.get('target_word')!r}  regime: {row.get('text_regime')!r}\")\n",
+                "        print(f\"  gold={row.get('gold_frame')}  pred={row.get('pred_frame')}  \"\n",
+                "              f\"pair={row.get('pair')}\")\n",
+                "        print(f\"  LU gold={row.get('gold_lexical_unit')!r}  \"\n",
+                "              f\"pred={row.get('pred_lexical_unit')!r}\")\n",
+                "        notes = str(row.get('notes') or '').strip()\n",
+                "        if notes:\n",
+                "            print(f\"  notes: {notes}\")\n",
+                "        print(f\"  context: {row.get('context_snippet')}\")\n",
+                "    print('=' * 72)\n",
+                "\n",
+                "\n",
+                "print('EVAL', EVAL)\n",
+                "print('FRAME_CSV exists', FRAME_CSV.exists())\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(
+            [
+                "## 1 — Refresh disagreement CSVs (optional)\n",
+                "\n",
+                "Needs current `gold_predictions`. Skip if CSVs are already fresh.\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_code_cell(
+            source=[
+                "REFRESH = True  # set False to skip re-export\n",
+                "\n",
+                "if REFRESH:\n",
+                "    subprocess.run(\n",
+                "        ['uv', 'run', 'python', 'scripts/eval_disagreements.py'],\n",
+                "        check=True,\n",
+                "    )\n",
+                "else:\n",
+                "    print('skipped export')\n",
+                "\n",
+                "assert FRAME_CSV.is_file(), f'Missing {FRAME_CSV} — run eval_disagreements.py'\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(
+            [
+                "## 2 — Load frame disagreements + gold notes\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_code_cell(
+            source=[
+                "frames = pd.read_csv(FRAME_CSV, dtype=str, keep_default_na=False)\n",
+                "frames['pair'] = [\n",
+                "    pair_key(g, p) for g, p in zip(frames['gold_frame'], frames['pred_frame'])\n",
+                "]\n",
+                "\n",
+                "gold_path = GOLD_ALL if GOLD_ALL.is_file() else GOLD_CSV\n",
+                "gold = pd.read_csv(gold_path, dtype=str, keep_default_na=False)\n",
+                "note_cols = [c for c in ('record_id', 'notes', 'text_regime', 'selected_frame',\n",
+                "                          'lexical_unit', 'context_text', 'labelled')\n",
+                "             if c in gold.columns]\n",
+                "gold_slim = gold[note_cols].drop_duplicates(subset=['record_id'], keep='last')\n",
+                "\n",
+                "df = frames.merge(gold_slim, on='record_id', how='left', suffixes=('', '_gold'))\n",
+                "if 'text_regime' not in df.columns and 'text_regime_gold' in df.columns:\n",
+                "    df['text_regime'] = df['text_regime_gold']\n",
+                "if 'notes' not in df.columns:\n",
+                "    df['notes'] = ''\n",
+                "\n",
+                "print(f'frame disagreements: {len(df)}  (gold source: {gold_path.name})')\n",
+                "print('by pair:')\n",
+                "display(df['pair'].value_counts().to_frame('n'))\n",
+                "print('by regime (top):')\n",
+                "display(df['text_regime'].fillna('').value_counts().head(10).to_frame('n'))\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(
+            [
+                "## 3 — Confusion / boundary slices\n",
+                "\n",
+                "Paper-relevant pairs from [ANNOTATION_STRATEGY §2.1 / §2.4]"
+                "(../docs/ANNOTATION_STRATEGY.md).\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_code_cell(
+            source=[
+                "xtab = pd.crosstab(df['gold_frame'], df['pred_frame'], margins=True)\n",
+                "display(xtab)\n",
+                "\n",
+                "slices = {\n",
+                "    name: df[mask_pair_set(df, pairs)].copy()\n",
+                "    for name, pairs in BOUNDARY_PAIRS.items()\n",
+                "}\n",
+                "summary = pd.DataFrame(\n",
+                "    [{'slice': k, 'n': len(v), 'with_notes': (v['notes'].astype(str).str.strip() != '').sum()}\n",
+                "     for k, v in slices.items()]\n",
+                ").set_index('slice')\n",
+                "display(summary)\n",
+                "\n",
+                "# Default focus for this session (edit):\n",
+                "FOCUS = 'CURE_INGESTION'  # or COOKING_CURE / COOKING_INGESTION\n",
+                "slice_ = slices[FOCUS]\n",
+                "print(f'FOCUS={FOCUS} n={len(slice_)}')\n",
+                "cols = [c for c in DISPLAY_COLS if c in slice_.columns]\n",
+                "display(slice_[cols].head(20))\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(
+            [
+                "## 4 — Service / use verbs (`aanbieden`, `serveren`, `gebruiken`, …)\n",
+                "\n",
+                "Heuristic on LU + context — not a new frame. Skim for paper examples.\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_code_cell(
+            source=[
+                "lu_gold = df['gold_lexical_unit'].fillna('')\n",
+                "lu_pred = df['pred_lexical_unit'].fillna('')\n",
+                "ctx = df['context_snippet'].fillna('')\n",
+                "service = df[\n",
+                "    lu_gold.str.contains(SERVICE_USE_RE, na=False)\n",
+                "    | lu_pred.str.contains(SERVICE_USE_RE, na=False)\n",
+                "    | ctx.str.contains(SERVICE_USE_RE, na=False)\n",
+                "].copy()\n",
+                "print(f'service/use heuristic hits: {len(service)}')\n",
+                "cols = [c for c in DISPLAY_COLS if c in service.columns]\n",
+                "display(service[cols].head(25))\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(
+            [
+                "## 5 — Walk details (2–3 paper quotes)\n",
+                "\n",
+                "Prefer rows with non-empty `notes`. Bump `start` for the next page.\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_code_cell(
+            source=[
+                "with_notes = slice_[slice_['notes'].astype(str).str.strip() != ''].copy()\n",
+                "pool = with_notes if len(with_notes) else slice_\n",
+                "print(f'walking {len(pool)} rows (notes-first={len(with_notes) > 0})')\n",
+                "walk_rows(pool, start=0, n=5)\n",
+                "# walk_rows(pool, start=5, n=5)\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(
+            [
+                "## 6 — Optional: shortlist CSV for quotes / gold_fixes skim\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_code_cell(
+            source=[
+                "out = EVAL / f'frame_boundary_{FOCUS.lower()}.csv'\n",
+                "cols = [c for c in DISPLAY_COLS if c in slice_.columns]\n",
+                "slice_[cols].to_csv(out, index=False)\n",
+                "print('wrote', out, 'rows', len(slice_))\n",
+                "\n",
+                "if FIXES_CSV.is_file():\n",
+                "    fixes = pd.read_csv(FIXES_CSV, dtype=str, keep_default_na=False)\n",
+                "    pending = fixes[fixes['verdict'].astype(str).str.strip() == '']\n",
+                "    print(f'gold_fixes: {len(fixes)} rows, {len(pending)} without verdict')\n",
+                "    # Edit FIXES_CSV in Cursor if adjudicating; then:\n",
+                "    # uv run python scripts/import_gold_fixes.py --import-after\n",
+                "else:\n",
+                "    print('no gold_fixes.csv yet')\n",
+            ],
+        ),
+    )
+
+    nb["cells"].append(
+        nbf.v4.new_markdown_cell(
+            [
+                "## How to use\n",
+                "\n",
+                "1. Set `FOCUS` to the boundary you need for the write-up.\n",
+                "2. `walk_rows` — copy 2–3 snippets + `notes` into the paper methods section.\n",
+                "3. Do **not** re-label the same rows unless §2.1 rules change.\n",
+                "4. Optional adjudication: fill `verdict` in `gold_fixes.csv` → "
+                "`import_gold_fixes.py` (not disagreement-driven sampling alone).\n",
+                "5. For Step C qualia (not frame pairs): use `step_c_review.ipynb`.\n",
+            ],
+        ),
+    )
+
+    return nb
+
+
 NB_BUILDERS: dict[str, Callable[[], nbf.NotebookNode]] = {
     "inspect_lexicon_csvs": build_inspect_lexicon_csvs,
     "gijsbert_none_silver_training": build_gijsbert_none_silver_training,
@@ -1772,6 +2105,7 @@ NB_BUILDERS: dict[str, Callable[[], nbf.NotebookNode]] = {
     "verb_phase2a_gold_lab": build_verb_phase2a_gold_lab,
     "step_c_review": build_step_c_review,
     "ldk2025_cookbook_slice": build_ldk2025_cookbook_slice,
+    "frame_disagreement_review": build_frame_disagreement_review,
 }
 
 

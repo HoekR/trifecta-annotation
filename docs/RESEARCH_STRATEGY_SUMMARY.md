@@ -1,13 +1,12 @@
 # Trifecta Food History & Framenet — research strategy summary
 
-*Coordination brief for colleagues on the **English** INCEpTION / WebAnno track, with enough Dutch context to align procedures and next steps. Canonical policy: [ANNOTATION_STRATEGY.md](ANNOTATION_STRATEGY.md). Engineering status: [PLAN.md](../PLAN.md).*
+*Coordination brief for colleagues on the **English** INCEpTION / WebAnno track, with enough Dutch context to align procedures and next steps. Canonical policy: [ANNOTATION_STRATEGY.md](ANNOTATION_STRATEGY.md). Engineering status: [PLAN.md](../PLAN.md). Paper / methods snapshot (procedure, stats, frame contradictions): [PAPER_REPORT.md](PAPER_REPORT.md).*
 
 ---
 
 ## 1. What we are building
 
 TRIFECTA annotates historic food-related text in **three steps** (same semantics in Dutch and English):
-
 
 | Step  | Question                                                                 | Typical output                                                                   |
 | ----- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |

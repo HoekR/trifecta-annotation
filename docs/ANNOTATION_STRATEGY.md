@@ -21,7 +21,26 @@ Early gold work showed a **design signal**, not a labelling failure. **Current f
 | **1× PRESERVING** in gold | Per-frame F1 for rare frames is not meaningful yet |
 | Effort on polysemous lemmas (*water*, *boter*) | Lemma-driven expansion **loops** without practice coverage |
 
+**Sparse frames:** Even after targeted sampling, some frames (and regime × frame cells) stay thin — historically **PRESERVING**, and **CURE** outside recipe/medical. Next lever is often **corpus extension**, not only more quota from the same KWIC. Low long-tail scores also reflect **Step B confusion** (COOKING↔CURE, etc.) before training sparsity bites; separate those in error analysis.
+
 **Do not** let disagreement exports alone drive gold growth. Use them for **error analysis** and selective adjudication.
+
+### 1.1 Manual contribution (what humans do)
+
+Automation (LLM silver, GijsBERT/GloBERTise, KWIC mining) does **not** replace the human track. Manual work is the scientific backbone:
+
+| Manual contribution | Role |
+|---------------------|------|
+| **Schema & guidelines** | Layer 0–3 design; §2.1 frame boundaries (COOKING↔CURE, CURE↔INGESTION, service/use verbs); one frame per window + `notes` |
+| **Hand gold** | Track A — labelled rows in `gold_labelling_all.csv` / `gold.parquet`; **eval reference** for Step A/B/C (not silver merged in by default) |
+| **Regime (Layer 0)** | Set / correct `text_regime` so metrics can be stratified; no new core gold with `UNKNOWN` |
+| **Quota labelling** | Deliberate Step B / Step C batches (clear-frame, preservare, regime-stratified) — not disagreement-driven auto-growth |
+| **Adjudication** | Selective `gold_fixes.csv` (`keep_gold` / `adopt_pred` / `custom`) when model and gold disagree on purpose |
+| **Analysis reliability** | Field-level spot-check of qualia used in historical claims; literal string match is only a diagnostic |
+
+**Division of labour:** LLM / encoder = **scale and hypotheses**; hand gold + adjudication = **truth for eval and for paper claims**. English track: all-at-once silver then human correction. Dutch track: **staged** silver plus the same human roles above — see [PAPER_REPORT.md](PAPER_REPORT.md) §1 keep list and §9.
+
+Operational runbooks: [GOLD_LABELLING.md](GOLD_LABELLING.md). Tracks: [§3](#3-three-annotation-tracks). Grow/eval loop: [§4](#4-gold-workflow-current).
 
 ---
 
@@ -69,6 +88,17 @@ A frequent source of disagreement — including in `RECIPE_PRACTICE` eval (weake
 2. *“Deze siroop verzacht de droge hoest.”* → **CURE** (`verzacht`) — affliction + food-as-treatment.
 3. *“Geef des morgens een lepel van de siroop.”* → often **INGESTION** or **CURE** depending on whether intake is framed as diet or as dosing against illness; prefer **CURE** when affliction/dosage-for-treatment is explicit.
 
+**Service and “use” verbs (not stable frame triggers):** Historical prose often uses **aanbieden**, **serveren**, **bedienen**, **presenteren**, or **gebruiken** without naming *eten* / *drinken*. These are **not** macro-frames in the guideline lexicon (`gebruiken` belongs to the deprecated **GEBRUIK/USING** prototype — see `frame_verb_guidelines.py`). Annotators should read the **local scenario**:
+
+| Verb family | Often … | Frame hint |
+|-------------|---------|------------|
+| **serveren / aanbieden / bedienen** | Plating, hospitality, “bring to table” | **INGESTION** when the snippet is about **serving food to be consumed**; **NONE** or regime-appropriate non-practice when ceremonial, trade, or narrative filler; end of recipe “dien op” may be **INGESTION** (serving) not **COOKING** (prep is already done) |
+| **gebruiken / toepassen** | Generic “use X” | **COOKING** when use is **in preparation** (*gebruik boter om te bakken*); **CURE** only with **therapeutic indication** (*gebruik … voor/tegen* + affliction — same gate as indication mining); otherwise avoid forcing **CURE** or **INGESTION** from *gebruik* alone |
+
+Silver models often treat *gebruik* as CURE or INGESTION; hand gold should **not** expand those frames without an explicit prep, dose, or consumption scenario in the snippet.
+
+**INGESTION boundary (same snippet-level rule):** In receipt and household prose, **intake is rarely labelled as “eating” in isolation** — *neem*, *drink*, *giet in de neus*, *kauw*, *een lepel* can be **CURE** (dose against X), **INGESTION** (social/dietary consumption), or even **COOKING** when the line is still about preparing something to be taken later. Models often default to **INGESTION** whenever a food is put in the mouth or mixed with wine, which **collapses therapeutic dosing into consumption** (eval: CURE gold → pred INGESTION on *Amandelen* / *kauwen* lines). **LITERARY** and **TRAVEL** regimes add homograph and metaphor noise — Step B over-frames mundane mentions as INGESTION ([§2.2 metric preference](#22-archetypical-framing-and-prior-fe-lu-work-smell--taste)). For analysis, do not treat pooled **INGESTION** F1 as “how people talked about eating” without regime stratification.
+
 **Do not:** label CURE because `text_regime=MEDICAL` or because the source is a pharmacopoeia; **do not** label COOKING_CREATION only because `text_regime=RECIPE_PRACTICE`.
 
 **Silver / LLM note:** INCEpTION coarse `MEDICAL_CURE` and LLM prompts both skew toward CURE in recipe-like medical text. Hand gold and adjudication should apply the rule above; expect systematic qwen/GijsBERT errors on prep-step lines in cure recipes until guidelines are reflected in prompts and few-shots.
@@ -77,12 +107,14 @@ A frequent source of disagreement — including in `RECIPE_PRACTICE` eval (weake
 
 **Step C carry-over:** Under COOKING_CREATION, medicinal purpose may appear in notes or `COOKING_CREATION_Food_Product` but does not flip the frame to CURE. Under CURE, fill `CURE_Affliction` and `CURE_Food_Treatment` when stated.
 
+**Analysis framing (corpus history):** See [§2.4](#24-therapeutic-food-discourse-analysis-framing) — the macro-frame enum is not “institutional medicine vs cuisine.”
+
 ### Sampling rules
 
 | Rule | Rationale |
 |------|-----------|
 | **Cap per lemma** (max 2 `target_word` per batch unless deliberate) | Stops *water*-style spirals |
-| **Sample by regime × phenomenon** | Grow PRESERVING, **COOKING vs CURE in recipe/medical overlap** on purpose |
+| **Sample by regime × phenomenon** | Grow PRESERVING; **COOKING vs CURE** and **CURE vs INGESTION** (dose vs eat) in recipe/medical overlap on purpose |
 | **No new core gold with `UNKNOWN` regime** | Layer 0 must be set before merge |
 | **Disagreement CSV for adjudication only** | `keep_gold` / `adopt_pred` / `custom` — not auto-relabel |
 
@@ -126,7 +158,26 @@ TRIFECTA follows a **coarse-to-fine (rough $\to$ refinement)** architecture:
 - **Step C:** Per-Field Accuracy & Soft Containment — evaluates reliability of individual semantic slots (e.g. `PR_Food_Patient` or `CURE_Affliction`).
 - **Composite Micro-Accuracy:** Field-level hit rate across all slot opportunities ($\frac{\sum \text{Correct Field Hits}}{\sum \text{Total Field Opportunities}}$), tracking overall extraction density without penalizing valid partial extractions.
 
-**Grounding analytic claims:** Corpus analysis should not wait for perfect joint row accuracy. Instead, researchers can query specific fields whose individual field accuracy and soft precision meet domain reliability thresholds.
+**Grounding analytic claims:** Corpus analysis should not wait for perfect joint row accuracy. Instead, researchers can query specific fields whose individual field accuracy and soft precision meet domain reliability thresholds. For **COOKING / CURE / INGESTION** overlap in vernacular text, see [§2.4](#24-therapeutic-food-discourse-analysis-framing).
+
+### 2.4 Therapeutic food discourse (analysis framing)
+
+**Corpus reality:** In the Dutch sources this project annotates (receipt / household books, preservare-style recipe material, KWIC from mixed vernacular corpora), talk of food **against ailments** usually appears in the **same receipt register** as preparation and preservation — not as a separate “medical” shelf distinct from “cuisine.” Veterinary and household therapeutics follow the same pattern. Learned **Latin** apothecary or faculty texts are largely **outside** current gold and batch slices; improving Step B on huishoud/recept KWIC is not something corpus expansion alone is expected to “fix.”
+
+**What the enum still does:** Step B remains a **snippet-level discourse function** ([§2.1](#21-cooking_creation-vs-cure-recipe--cure-frame)): preparation scenario vs food-as-treatment scenario. Hand gold keeps **one frame per window**; use `notes` when the alternate reading is obvious. That supports comparable evaluation and qualia slots — it does **not** claim early modern readers separated medicine and cooking the way modern institutions do.
+
+**Claims for diachronic / cultural analysis:** Prefer **therapeutic food discourse** as the analytic object rather than treating `CURE` accuracy as a proxy for “medical” culture:
+
+| Include in analysis | How |
+|---------------------|-----|
+| Explicit remedy framing | Rows with Step B `CURE` and filled `CURE_Affliction` / `CURE_Food_Treatment` (LLM or hand gold; tag uncertainty on bulk batch) |
+| Indication in preparation context | Step B `COOKING_CREATION` (or other frames) where **affliction, indication, or therapeutic purpose** appears in Step C slots, `COOKING_CREATION_Food_Product`, or reviewer `notes` |
+| Intake / consumption (non-therapeutic) | Step B `INGESTION` with `INGESTION_Context` / `INGESTION_Manner` / `INGESTION_Purpose` — or **CURE** rows where the analytic question is “how taken” (`CURE_Food_Treatment` ≈ manner of use) |
+| Overlap adjudication | Gold on **COOKING/CURE** and **CURE/INGESTION** boundaries ([sampling rules](#sampling-rules)); e.g. `eval/recipe_practice_cure_cooking_adjudication.md` |
+
+**Evaluation reporting:** Treat **COOKING ↔ CURE** and **CURE ↔ INGESTION** confusion in `RECIPE_PRACTICE` / `MEDICAL` (and **INGESTION** over-predicts in `LITERARY`) as **separate error slices** — not as generic “CURE Step C” failure. Step C prompt calibration has **limited ROI** while Step B assigns the wrong frame on half or more of CURE gold rows. Iteration effort: overlap adjudication and optional Step B contrast examples ([§2.1](#21-cooking_creation-vs-cure-recipe--cure-frame)), not repeated full re-batches chasing pooled frame accuracy alone.
+
+**Exports:** `trifecta_analysis` and notebooks may define a derived flag or filter (e.g. “therapeutic_food”) from frame + qualia + `notes`; document the rule in the notebook or export script when used for publication.
 
 ---
 

@@ -278,6 +278,15 @@ Report: read **By text_regime** in `eval/report.md` first; pooled Step B is seco
 
 See [ANNOTATION_STRATEGY.md](ANNOTATION_STRATEGY.md) §6 for rationale (why not to let disagreements alone drive all sampling).
 
+**Notebook (pandas):** Step B boundary pairs + gold `notes` for paper quotes:
+
+```bash
+uv run python scripts/generate_notebooks.py --name frame_disagreement_review
+# open notebooks/frame_disagreement_review.ipynb
+```
+
+Filters **COOKING↔CURE**, **CURE↔INGESTION**, service/use-verb heuristics; does not replace labelling unless §2.1 rules change.
+
 Export mismatches vs Qwen:
 
 ```bash

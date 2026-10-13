@@ -80,16 +80,21 @@ Guide: [plans/steps/EMBEDDING_CANDIDATES.md](../plans/steps/EMBEDDING_CANDIDATES
 Paths live in `data_manifest.toml` (`gold_eval_inputs`, `gold_predictions`, `trifecta_gold`) — no `$SCRATCH`.
 
 ```bash
-# Gold-only re-batch after prompt/few-shot changes (rebuild → batch → eval)
+# Gold re-batch + eval (incremental: --resume, concurrency 1)
 make eval-gold
+
+# After prompt/few-shot changes: full re-inference + Step C review CSV
+make eval-gold-fresh
 
 # Or step by step (logical names only):
 uv run python scripts/rebuild_gold_eval_inputs.py
 caffeinate -dims uv run trifecta-batch --model qwen2.5-coder:latest \
   --input-logical gold_eval_inputs \
   --output-logical gold_predictions \
-  --resume
+  --concurrency 4
+# omit --resume to replace gold_predictions; add --resume to skip existing rows
 uv run trifecta-eval --gold trifecta_gold --predictions gold_predictions
+make eval-stepc
 
 # Export JSONL batch to DuckDB/parquet analysis table
 uv run python scripts/export_analysis_parquet.py
