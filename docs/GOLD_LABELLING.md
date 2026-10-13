@@ -113,6 +113,8 @@ COOKING few-shots (2026-07-16): review table indices `1,5–11,22,23,26` → `tr
 
 PRESERVING few-shots (2026-09-25): reviewed against soft Step C (micro 0.31, n=27). Asset `step_c_preserving_fewshots.json` — droogen plus rooken, zouten, inleggen; patient is the preserved food, not an added spice. Re-batch once with `make eval-gold` before judging whether the soft score is worth keeping. Fourteen of 27 misses are Step B (COOKING/NONE), which these few-shots do not change.
 
+**Step C span-extraction prototype (2026-10-13, ruled out):** Tried fine-tuning GloBERTise as a joint BERT-QA span extractor for all 12 Step C qualia fields across all 4 frames (one shared encoder, not split per frame — `trifecta_annotation/stepc_span_export.py` / `stepc_span_train.py`, `scripts/export_stepc_span.py` / `train_stepc_span.py`). Gold-only training (no trustworthy silver exists for Step C). Dev "all fields" exact match looked good (0.590) but that's inflated by trivial no-answer predictions on fields that are mostly/entirely empty in gold; rescored on positive-span examples only, exact match was **0.045** — essentially no real extraction. Root cause: only 160 real-span training examples total across all 12 fields (~13/field). **Do not revisit this approach without substantially more grounded gold** (or switch to deterministic extraction from indication constructions, per `project_step_c_grounding_prototype` memory). Always score positive-span and true-negative-empty subsets separately for any future Step C model eval — the training/eval code already does this (`stepc_span_train.py::_evaluate_predictions`); a blended metric alone is misleading here.
+
 4. Prompt / few-shot tuning on weakest qualia fields.
 
 5. Analysis export (LLM hypotheses → flat parquet):

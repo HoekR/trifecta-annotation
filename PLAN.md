@@ -415,6 +415,33 @@ Run abbreviated Step 5 quota on verb-KWIC:
 
 ---
 
+## 9b. Exploration — GloBERTise Step C span-extraction prototype (13 Oct 2026)
+
+**Research question:** Can a fine-tuned encoder (GloBERTise) extract Step C qualia fields as literal spans, replacing LLM free-generation for Step C?
+
+**Hypothesis:** Per `project_step_c_grounding_prototype` memory, most LLM Step C misses are hallucinated substitutions, not wording variants — an extractive model structurally can't hallucinate, so it should beat free generation where gold values are literal spans at all.
+
+**Result: ruled out, not adopted.**
+
+| Metric | Result |
+|--------|--------|
+| Dev exact match (all fields, blended) | 0.590 — **misleading** |
+| Dev exact match (positive spans only — the real number) | **0.045** |
+| Train rows with a real span to learn from | 160 total across 12 fields (~13/field) |
+
+The blended 0.590 is inflated by fields that are mostly/entirely empty in gold (e.g. `INGESTION_Manner`, `INGESTION_Purpose`) — a model that always predicts "no answer" scores those perfectly for free. Scored on positive-span examples only, the model shows essentially no real extraction ability (8 of 10 fields with any positive dev rows scored 0.000).
+
+**Root cause:** data volume, not architecture. There is no trustworthy silver for Step C (the LLM's own generations are the unreliable signal this was meant to replace), so training was gold-only — and gold-with-a-literal-span is a further 25–75%-per-field cut of an already-small gold set (56–186 rows/frame).
+
+**Implementation (kept, isolated, documented as a negative result):**
+- `trifecta_annotation/stepc_span_export.py` / `scripts/export_stepc_span.py` — gold-only export, one shared encoder across all 4 frames (not split per frame, to avoid the data-fragmentation failure mode confirmed by the Step B hierarchical split — see §9a-adjacent `project_step_b_split_regression` memory).
+- `trifecta_annotation/stepc_span_train.py` / `scripts/train_stepc_span.py` — BERT-QA fine-tune; eval reports positive-span and true-negative-empty metrics separately (don't trust a blended metric on this kind of sparse-field data again).
+- `scripts/reeval_stepc_span.py` — re-score an existing run without retraining.
+
+**Recommendation:** Don't revisit joint encoder span extraction for Step C without substantially more grounded gold. The more promising remaining lever is deterministic extraction from indication constructions (`goed voor`, `krachtig tegen`, …) rather than any learned model at this data volume.
+
+---
+
 ## 10. Implementation order (reference)
 
 1. I/O schemas + kwic adapter
