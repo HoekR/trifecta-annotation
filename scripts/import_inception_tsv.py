@@ -60,6 +60,12 @@ def main() -> None:
         default="all",
     )
     parser.add_argument(
+        "--output-prefix",
+        default="inception",
+        help="Filename prefix for scratch outputs (default: inception). "
+        "Use a distinct prefix per export (e.g. inception_en) to avoid overwriting other imports.",
+    )
+    parser.add_argument(
         "--granularity",
         choices=("fine", "coarse", "both"),
         default="both",
@@ -78,6 +84,7 @@ def main() -> None:
         annotators = {"CURATION_USER"}
 
     scratch = _scratch_root()
+    prefix = args.output_prefix
 
     if args.output in {"kwic", "all"}:
         kwic_records, kwic_skipped = load_inception_kwic_inputs(
@@ -90,7 +97,7 @@ def main() -> None:
         kwic_path = save_jsonl(
             [record.model_dump(mode="json") for record in kwic_records],
             logical_name=None,
-            out_path=scratch / "inception_kwic_inputs.jsonl",
+            out_path=scratch / f"{prefix}_kwic_inputs.jsonl",
             parent_sources=[str(export_root)],
             description="KwicInput records from INCEpTION WebAnno TSV",
             script=__file__,
@@ -112,7 +119,7 @@ def main() -> None:
             ann_path = save_jsonl(
                 [ann.model_dump(mode="json") for ann in annotations],
                 logical_name=None,
-                out_path=scratch / "inception_annotations.jsonl",
+                out_path=scratch / f"{prefix}_annotations.jsonl",
                 parent_sources=[str(export_root)],
                 description="Silver TRIFECTA annotations from INCEpTION WebAnno TSV",
                 script=__file__,
@@ -123,7 +130,7 @@ def main() -> None:
             rows = [annotation_to_silver_row(ann) for ann in annotations]
             gold_csv = export_silver_csv(
                 rows,
-                output_path=scratch / "inception_silver_labelling.csv",
+                output_path=scratch / f"{prefix}_silver_labelling.csv",
             )
             print(f"Silver CSV: {len(rows)} rows -> {gold_csv}")
 
