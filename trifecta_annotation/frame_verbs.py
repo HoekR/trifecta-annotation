@@ -469,6 +469,43 @@ def _indication_context_ok(text: str, start: int, end: int, *, canonical: str) -
     return False
 
 
+# "bewaren" is the single most common PRESERVING trigger in historic Dutch but
+# also the most polysemous: apothecary stock-listing ("Medicamenten die men in
+# de Winkels bewaren moet") and abstract/moral "protect, keep safe"
+# ("levensgeesten bewaren") both use the bare verb with no preservation sense.
+# Gate it on a nearby storage/duration cue, same mechanism as CURE's
+# indication-construction context gate above.
+_PRESERVING_STORAGE_CUE = re.compile(
+    r"\b(?:"
+    r"lang(?:e)?\s+(?:te\s+)?bewa(?:a)?r\w*|"
+    r"om\s+(?:\w+\s+){0,3}te\s+bewa(?:a)?r\w*|"
+    r"voor\s+(?:de\s+)?(?:verrotting|bederf|bederving)\s+(?:te\s+)?bewa(?:a)?r\w*|"
+    r"van\s+(?:een|twee|drie|vier|vijf|zes|zeven|acht|negen|tien|\d+)\s+"
+    r"(?:jaren?|maanden?|weken?|dagen?)|"
+    r"jaren?\s+lang|"
+    r"(?:goed|lang)\s+(?:blijven|houden|blijft|houdt)|"
+    r"\bwinters?\b|"
+    r"\bpot(?:je)?\b|\bton(?:ne)?\b|\bvat(?:je)?\b|\bkelder\b|\bflesch(?:en)?\b"
+    r")\b",
+    re.IGNORECASE,
+)
+_PRESERVING_NEGATIVE_CUE = re.compile(
+    r"\b(?:winkel(?:s)?|medicament(?:en)?|apoth?eek|levensgeest(?:en)?)\b",
+    re.IGNORECASE,
+)
+
+
+def bewaren_context_ok(text: str, start: int, end: int, *, window: int = 100) -> bool:
+    """Require a storage/duration cue near a bare ``bewaren`` hit, and reject
+    the apothecary-stock / abstract-protection senses outright."""
+    lo = max(0, start - window)
+    hi = min(len(text), end + window)
+    span = text[lo:hi]
+    if _PRESERVING_NEGATIVE_CUE.search(span):
+        return False
+    return bool(_PRESERVING_STORAGE_CUE.search(span))
+
+
 def find_cure_indication_hits(text: str) -> list[VerbHit]:
     """Multi-word CURE indication spans (goed voor, gebruik … tegen, …)."""
     if not text or not text.strip():

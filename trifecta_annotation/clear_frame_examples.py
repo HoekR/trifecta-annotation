@@ -15,6 +15,7 @@ from pathlib import Path
 
 from trifecta_annotation.adapters.food_snippets import load_food_snippets_frame
 from trifecta_annotation.frame_verbs import (
+    bewaren_context_ok,
     find_frame_verbs_in_text,
     pick_food_near_verb,
     term_positions,
@@ -240,6 +241,13 @@ def score_snippet_for_frame(
             continue
 
         verb_norm = normalize_hist_dutch(hit.verb)
+        if (
+            target_frame == TrifectaFrame.PRESERVING
+            and verb_norm == normalize_hist_dutch("bewaren")
+            and not bewaren_context_ok(snippet, hit.start, hit.end)
+        ):
+            continue
+
         food_target = pick_food_near_verb(hit.start, food_positions)
         if food_target is None:
             continue
