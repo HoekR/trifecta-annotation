@@ -54,6 +54,13 @@ PREFERRED_REGIMES: dict[TrifectaFrame, frozenset[TextRegime]] = {
             TextRegime.SCIENTIFIC,
         },
     ),
+    TrifectaFrame.PRESERVING: frozenset(
+        {
+            TextRegime.RECIPE_PRACTICE,
+            TextRegime.ADMIN_TRADE,
+            TextRegime.SCIENTIFIC,
+        },
+    ),
 }
 
 CORE_VERBS: dict[TrifectaFrame, frozenset[str]] = {
@@ -100,14 +107,34 @@ CORE_VERBS: dict[TrifectaFrame, frozenset[str]] = {
             "gebruik_voor",
         )
     ),
+    TrifectaFrame.PRESERVING: frozenset(
+        normalize_hist_dutch(v)
+        for v in (
+            "conserveren",
+            "drogen",
+            "inblikken",
+            "inleggen",
+            "inmaken",
+            "roken",
+            "wecken",
+            "zouten",
+            "bewaren",
+            "pekelen",
+            "konfijten",
+            "confijten",
+        )
+    ),
 }
 
 CONFLICT_FRAMES: dict[TrifectaFrame, frozenset[TrifectaFrame]] = {
-    TrifectaFrame.COOKING_CREATION: frozenset({TrifectaFrame.CURE}),
+    TrifectaFrame.COOKING_CREATION: frozenset(
+        {TrifectaFrame.CURE, TrifectaFrame.PRESERVING},
+    ),
     TrifectaFrame.INGESTION: frozenset(
-        {TrifectaFrame.CURE, TrifectaFrame.COOKING_CREATION},
+        {TrifectaFrame.CURE, TrifectaFrame.COOKING_CREATION, TrifectaFrame.PRESERVING},
     ),
     TrifectaFrame.CURE: frozenset({TrifectaFrame.COOKING_CREATION}),
+    TrifectaFrame.PRESERVING: frozenset({TrifectaFrame.COOKING_CREATION}),
 }
 
 DEFAULT_NEAR_WINDOW = 80
@@ -146,6 +173,39 @@ def _hits_in_window(
     return [hit for hit in hits if abs(hit.start - center) <= window]
 
 
+def _passes_guideline_gate(
+    sources: set[str],
+    target_frame: TrifectaFrame,
+    *,
+    is_indication: bool,
+) -> bool:
+    """Decide whether a non-``guideline`` hit is trustworthy enough under
+    ``guideline_only=True``.
+
+    CURE's indication constructions (``goed voor``, ``krachtig tegen``, …) get
+    an exception because they're curated multi-word triggers, not noisy corpus
+    co-occurrence. PRESERVING has almost no ``guideline`` verbs (8, missing
+    fermentation/sugaring and ``bewaren`` entirely — see
+    ``docs/ANNOTATION_STRATEGY.md`` on PRESERVING staying thin), but does have
+    its own curated layers: the hand-picked ``FRAME_VERB_LEXICON`` extras
+    (source ``manual``) and the technique-association CSV's ``is_seed`` rows
+    (source ``technique:<name>``). Both get the same trust CURE's indications
+    get. The frequency-filtered, non-seed ``technique_expanded:*`` tier and
+    generic ``corpus:*`` tier stay behind ``--allow-corpus-verbs`` — they're
+    distributional co-occurrence, not curated vocabulary.
+    """
+    if "guideline" in sources:
+        return True
+    if is_indication and target_frame == TrifectaFrame.CURE:
+        return True
+    if target_frame == TrifectaFrame.PRESERVING:
+        if "manual" in sources:
+            return True
+        if any(source.startswith("technique:") for source in sources):
+            return True
+    return False
+
+
 def score_snippet_for_frame(
     snippet: str,
     food_terms: list[str],
@@ -174,8 +234,8 @@ def score_snippet_for_frame(
     for hit in frame_hits:
         sources = set(hit.lexicon_sources)
         is_indication = "indication" in sources
-        if guideline_only and "guideline" not in sources and not (
-            is_indication and target_frame == TrifectaFrame.CURE
+        if guideline_only and not _passes_guideline_gate(
+            sources, target_frame, is_indication=is_indication,
         ):
             continue
 
