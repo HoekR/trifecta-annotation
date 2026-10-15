@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 from trifecta_annotation.llm import structured_completion
+from trifecta_annotation.prompts import format_few_shots, load_prompt_asset
 from trifecta_annotation.schemas import FrameClassification, PreservingQualia
 
 SYSTEM_PROMPT = (
     "You are annotating historical Dutch food texts for the TRIFECTA PRESERVING frame. "
-    "Extract preservation technique, preserving agent or medium, and target food. "
-    "Use empty string when a field is not stated in the context."
+    "Extract PR_Technique, PR_Medium, and PR_Food_Patient. "
+    "Prefer concise spans or standardized technique descriptions (droogen, zouten, pekelen, rooken, inleggen). "
+    "PR_Food_Patient is the food being preserved; if the target word is only a spice or agent, name the food in the preserving clause. "
+    "PR_Medium is the agent (zout, pekel, rook, azijn, bier), not the technique name. "
+    "Use empty string when a field is not stated in the context.\n\n"
+    "{few_shots}"
 )
 
 
@@ -22,6 +27,8 @@ def fill_preserving(
     client=None,
     technique_hint: str | None = None,
 ) -> PreservingQualia:
+    few_shots = format_few_shots(load_prompt_asset("step_c_preserving_fewshots.json")["examples"])
+    system = SYSTEM_PROMPT.format(few_shots=few_shots)
     hint = ""
     if technique_hint:
         hint = f"\nCalibration hint (weak prior): {technique_hint}"
@@ -33,7 +40,7 @@ def fill_preserving(
     )
     return structured_completion(
         PreservingQualia,
-        system_prompt=SYSTEM_PROMPT,
+        system_prompt=system,
         user_prompt=user_prompt,
         model=model,
         base_url=base_url,
