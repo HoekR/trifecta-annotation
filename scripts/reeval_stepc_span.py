@@ -100,36 +100,42 @@ def main() -> None:
         f"- Dev rows: {len(dev_rows)}",
         f"- Dev exact match (all fields, incl. true-negative empties): **{metrics.exact_match:.3f}**",
         f"- Dev token F1 (all fields, incl. true-negative empties): **{metrics.token_f1:.3f}**",
+        f"- Dev soft/containment match (all fields): **{metrics.soft_match:.3f}**",
         f"- Dev exact match (**positive spans only** — the real span-recall number): **{metrics.positive_exact_match:.3f}**",
         f"- Dev token F1 (**positive spans only**): **{metrics.positive_token_f1:.3f}**",
+        f"- Dev soft/containment match (**positive spans only** — the number to trust): **{metrics.positive_soft_match:.3f}**",
         "",
         "The \"all fields\" numbers above are inflated by fields that are mostly/entirely "
         "empty in gold (e.g. `INGESTION_Manner`, `INGESTION_Purpose`) — a model that "
         "always predicts \"no answer\" scores perfectly on those for free. The "
         "**positive spans only** numbers restrict to rows where gold actually has a "
-        "value to extract, and are the number to trust for judging extraction quality.",
+        "value to extract. Within those, **exact match understates quality**: span "
+        "boundaries are debatable and historical text has no single canonical wording, "
+        "so **soft/containment match is the number to trust**, not raw EM.",
         "",
-        "## Per-field (dev) — EM / F1 / n, vs. groundedness ceiling",
+        "## Per-field (dev) — EM / F1 / soft / n, vs. groundedness ceiling",
         "",
         "Ceiling = fraction of non-empty gold values in the full export that were "
         "literal spans at all (the rest are paraphrases/glosses this extractor "
         "structurally cannot recover; see `skipped_ungrounded.jsonl`). `n_empty` / "
         "`n_positive` show how much of each field's dev score is trivial true-negatives "
-        "vs. real extraction; `pos EM` / `pos F1` are scored on the positive subset only.",
+        "vs. real extraction; `pos EM` / `pos F1` / `pos soft` are scored on the "
+        "positive subset only — **`pos soft` is the number to trust**.",
         "",
-        "| Field | EM (all) | F1 (all) | n | n_empty | n_positive | pos EM | pos F1 | train-time skipped (ungrounded) |",
-        "|---|---|---|---|---|---|---|---|---|",
+        "| Field | EM (all) | F1 (all) | soft (all) | n | n_empty | n_positive | pos EM | pos F1 | pos soft | train-time skipped (ungrounded) |",
+        "|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for field, stats in sorted(metrics.per_field.items()):
         skipped_n = skipped_by_field.get(field, 0)
         n_pos = int(stats["n_positive"])
         pos_em = f"{stats['positive_exact_match']:.3f}" if n_pos else "n/a"
         pos_f1 = f"{stats['positive_token_f1']:.3f}" if n_pos else "n/a"
+        pos_soft = f"{stats['positive_soft_match']:.3f}" if n_pos else "n/a"
         report_lines.append(
             f"| {field} ({field_to_frame.get(field, '?')}) "
-            f"| {stats['exact_match']:.3f} | {stats['token_f1']:.3f} "
+            f"| {stats['exact_match']:.3f} | {stats['token_f1']:.3f} | {stats['soft_match']:.3f} "
             f"| {int(stats['n'])} | {int(stats['n_empty'])} | {n_pos} "
-            f"| {pos_em} | {pos_f1} | {skipped_n} |"
+            f"| {pos_em} | {pos_f1} | {pos_soft} | {skipped_n} |"
         )
     report_path = run_path / "report.md"
     report_path.write_text("\n".join(report_lines) + "\n", encoding="utf-8")

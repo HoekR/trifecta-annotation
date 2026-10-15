@@ -8,21 +8,17 @@
 
 ---
 
-## State of affairs (28 Aug 2026)
+## State of affairs (14 Oct 2026)
 
-> **Done in this stretch:**
-> - Completed full KWIC overnight batch annotation tranche with `caffeinate` power assertions.
-> - Ran gold evaluation via `make eval-all` against current benchmark:
->   - **Step A Entity Accuracy:** 91.7%
->   - **Step A Metaphor Accuracy:** 93.1%
->   - **Dropout Agreement:** 87.5%
->   - **Step B Frame Accuracy:** 69.0% (F1: `COOKING_CREATION` 0.84, `PRESERVING` 0.86, `CURE` 0.52, `INGESTION` 0.56, `NONE` 0.50).
->   - **Step C Qualia Soft Micro Accuracy:** 23.7% (leading frames: `INGESTION` 50.0% soft micro, `COOKING_CREATION` 29.6% soft micro, `CURE` 22.2% soft micro).
-> - Added centralized `Makefile` and [docs/COMMANDS.md](docs/COMMANDS.md) for execution without macOS E-core throttling.
-> - Synced operational wisdom topics (`macos-batch-execution-power.md`, `llm-pipeline-batching-strategy.md`) into `dighum_template/wisdom/topics/`.
-> - Exported bilingual interim evaluation reports (NL/EN) in Markdown and PDF formats to `eval_reports`.
+> **Done in this stretch (since 28 Aug baseline below):**
+> - INCEpTION IAA tooling: `--output-prefix` namespacing on `import_inception_tsv.py` (was silently overwriting Dutch outputs with English re-imports), `export_inception_iaa.py` (frame + Step C qualia agreement report), `export_inception_iaa_agreed.py` (promotes 2+-annotator-agreed frame/qualia straight to gold-candidate CSV; disagreeing fields left blank for adjudication, not guessed).
+> - Unlocked `PRESERVING` in the clear-frame candidate miner (`clear_frame_examples.py`): added missing `PREFERRED_REGIMES`/`CORE_VERBS`/`CONFLICT_FRAMES` entries and generalized the guideline-only gate to trust PRESERVING's `manual`/seed-tier `technique:*` sources — candidate pool 12→49 (0→32 high-tier), surfacing fermentation/sugaring terms that were previously invisible.
+> - Added `bewaren_context_ok()` storage/duration gate (`frame_verbs.py`) after a 19-row hand-labelled batch showed bare "bewaren" false-positives from apothecary boilerplate and abstract "protect, keep safe" senses — pool 49→35, all 5 human-dropped bewaren rows now correctly excluded.
+> - Step C span-extraction prototype (ruled out 13 Oct, §9b) continued: found and partially fixed the real root cause of the Dutch 0.05–0.08 positive EM ceiling (passage-length `context_text`, not data volume) — see §9b "Continued" for the full result, bottom line still **not production-viable**.
 >
-> **Next:** (1) calibrate prompt few-shots for `PRESERVING`, `CURE`, and `INGESTION` using the 93 Step C gold records; (2) optional: enrich `IngestionQualia` schema slots (e.g. `INGESTION_Food_Patient`, `INGESTION_Purpose`); (3) corpus analysis notebooks on `resolve("trifecta_analysis")` and `ldk2025_cookbook_slice.ipynb`; (4) future corpus expansion: preprocess DBNL XML corpus on warm tier (`/Volumes/2tb disk/datasets/trifecta/source/dbnl_xml_pd.zip`).
+> **Carried over from 28 Aug baseline** (`make eval-all`): Step A Entity 91.7% / Metaphor 93.1%, Dropout Agreement 87.5%, Step B Frame Accuracy 69.0% (F1: `COOKING_CREATION` 0.84, `PRESERVING` 0.86, `CURE` 0.52, `INGESTION` 0.56, `NONE` 0.50), Step C Qualia Soft Micro 23.7% — not yet re-run against current gold.
+>
+> **Next:** (1) label more of the newly-unlocked PRESERVING candidate pool (35 candidates, 19 done) toward Step C gold; (2) run the English IAA-agreed adjudication queue down to resolve disagreeing/blank qualia fields; (3) calibrate prompt few-shots for `PRESERVING`, `CURE`, and `INGESTION` using the growing Step C gold; (4) optional: enrich `IngestionQualia` schema slots (e.g. `INGESTION_Food_Patient`, `INGESTION_Purpose`); (5) corpus analysis notebooks on `resolve("trifecta_analysis")` and `ldk2025_cookbook_slice.ipynb`; (6) future corpus expansion: preprocess DBNL XML corpus on warm tier (`/Volumes/2tb disk/datasets/trifecta/source/dbnl_xml_pd.zip`).
 
 **Primary goal:** qualia for analysis (Step C) — **[ANNOTATION_STRATEGY.md §5 Step 5](docs/ANNOTATION_STRATEGY.md#step-5--qualia-for-analysis-m10--current)** / milestone **m10**. Not bulk NONE silver or GijsBERT-as-replacement for qwen.
 
@@ -439,6 +435,40 @@ The blended 0.590 is inflated by fields that are mostly/entirely empty in gold (
 - `scripts/reeval_stepc_span.py` — re-score an existing run without retraining.
 
 **Recommendation:** Don't revisit joint encoder span extraction for Step C without substantially more grounded gold. The more promising remaining lever is deterministic extraction from indication constructions (`goed voor`, `krachtig tegen`, …) rather than any learned model at this data volume.
+
+**Continued (14 Oct 2026) — root cause found, still ruled out:**
+
+- Merging the English IAA-agreed batch (829 rows) raised grounded positive spans 160→437; a blended mBERT/XLM-R positive-EM of ~0.36 looked like real progress but was a dev-composition illusion (dev was 70% English by then) — Dutch-only was still 0.05–0.08, unchanged.
+- Real cause: Dutch `context_text` was passage-length (median 552 words, max 7,317) because `scripts/build_kwic_inputs.py --source long` never applied the target-centered `context_radius` clip that `--source kwic` already defaults to. Confirmed independently (not assumed) via the genuine Dutch INCEpTION export producing naturally short context (median 61 words) on the same texts.
+- Fix: clip `context_text` to ±180 chars around `target_word` in `stepc_span_export.py` (`DEFAULT_CONTEXT_RADIUS`). Verified not a train/test cheat: gold answers sit within ±1 sentence of `target_word` 79.5% of the time, and the clip rule is identical at train and inference. Result: Dutch positive EM 0.079→0.258 (soft/containment match, also newly added: 0.452).
+- Added 394 Dutch INCEpTION IAA-agreed rows narrowly (agreed + positive-values-only, not a general Dutch gold-growth strategy — see `project_frame_overlap_cooking_creation` / `project_frame_split_options` memory). Net effect on the hard `cort_voc_db` corpus: flat-to-negative (0.179 EM / 0.333 soft for mBERT), confounded with dev becoming more rigorously hard-only at the same time.
+- Four-way encoder comparison (mBERT, XLM-R, GloBERTise, GysBERT-v2) on identical clipped+merged data found no confident winner (0.10–0.23 positive EM, noise-level differences on a 101-row eval) — `CURE_Affliction` scored 0.0 on every model, the one fully model-independent finding. All four are standard BERT-family encoders capped at 512 tokens; a genuinely longer-context architecture (none exists pretrained for Dutch) would be needed to go further.
+- **Bottom line: Dutch Step C span extraction is still not production-viable.** Real progress this round was diagnostic (pipeline bug, contamination, metric choice, annotation-scheme effects), not a working extractor. Full detail: [docs/GOLD_LABELLING.md](docs/GOLD_LABELLING.md) and [docs/DECISIONS.md](docs/DECISIONS.md) (2026-10-14 entries).
+
+---
+
+## 9c. Exploration — Step C embedding-exemplar-retrieval (15 Oct 2026)
+
+**Research question:** Can Step C qualia be extracted without fine-tuning at all — by scoring candidate spans against embeddings of gold answer exemplars — now that §9b showed fine-tuning is capped by too little grounded gold (160–437 positive spans across 12 fields)?
+
+**Method:** No training step. For each qualia field, embed every other gold answer span (`emanjavacas/gysbert` mean-pooled — the embedder already adopted for the KWIC embedding pilot, §-parallel-track below) as exemplars. Generate candidate spans inside the row's already-clipped (§9b) `context_text` via word n-grams (punctuation-safe tokenization) plus char-level sub-word candidates for long tokens (Dutch compounding hides answers like "braden" inside "gebraden"). Score every candidate by cosine similarity to its field's exemplars, apply a small penalty to sub-word candidates (calibrated, not guessed — see below), and take the top match. Implementation: `trifecta_annotation/stepc_embedding_retrieval.py` / `scripts/eval_stepc_embedding_retrieval.py`.
+
+**Result: beats the fine-tuned floor, with zero training cost.**
+
+| Eval | EM | F1 | soft |
+|---|---:|---:|---:|
+| Original ruled-out floor (§9b, 13 Oct, pre-clip-fix) | 0.045 | — | — |
+| Four-way fine-tuned comparison (§9b, 14 Oct, same clipped+merged data) | 0.10–0.23 | — | — |
+| **This prototype, leave-one-out over the full positive pool (n=518)** | **0.612** | **0.621** | **0.681** |
+
+Key diagnostic: oracle coverage (is the correct answer *reachable* among generated candidates at all, regardless of ranking) is ~1.0 for 10/12 fields — so unlike §9b, the remaining gap here is a **ranking** problem, not a candidate-generation or gold-volume ceiling.
+
+**Two data/method bugs found and fixed along the way, both confirmed empirically rather than assumed:**
+
+- 10/52 `CURE_Affliction` and 1/41 `PR_Medium` gold "answers" are bare English stopwords ("from", "for", "acidity") from the `english_iaa` merge batch — a data bug in that source (flagged, not fixed, in [docs/DECISIONS.md](docs/DECISIONS.md)), excluded from the pool.
+- Sub-word candidates (added to reach compound-internal answers) caused short, generic exemplars ("zwaren", "maag", "jagt") to spuriously match unrelated garbage fragments at near-1.0 cosine similarity — a known mean-pooled-BERT degeneracy for short strings, not a semantic failure. A hard ban on sub-word candidates fixed this but regressed the largest field (`INGESTION_Food_Patient`, 0.700→0.667 EM); a soft score penalty (0.05, A/B-tested across 0.0–0.12) fixed it without that regression. A follow-on idea — checking candidates against the GysBERT tokenizer's own vocabulary as a cheap "is this a real word" filter — was tested and **rejected**: WordPiece vocab entries are chosen by subword frequency, not wordhood, so real words like "braden"/"zwelling" split into multiple pieces while garbage fragments like "wend"/"brui" are each a single vocab entry (the opposite of a useful signal). No Dutch wordlist/spellchecker is a dependency of this project.
+
+**Recommendation:** This is now the leading Step C qualia-extraction approach — cheaper than fine-tuning, better on the only apples-to-apples comparison available, and the remaining gap is diagnosable (ranking, not data volume). `INGESTION_Context` and `INGESTION_Manner` still score 0.000 EM (n=9, n=6) and weren't resolved this round — small-n fields, not yet root-caused. Full detail: [docs/GOLD_LABELLING.md](docs/GOLD_LABELLING.md) and [docs/DECISIONS.md](docs/DECISIONS.md) (2026-10-15 entries).
 
 ---
 

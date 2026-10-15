@@ -12,6 +12,7 @@ import json
 
 from trifecta_annotation.gold_io import load_gold_records
 from trifecta_annotation.stepc_span_export import (
+    DEFAULT_CONTEXT_RADIUS,
     DEFAULT_MODEL_BASE,
     export_stepc_span_splits,
 )
@@ -25,6 +26,22 @@ def main() -> None:
     parser.add_argument("--model-base", default=DEFAULT_MODEL_BASE)
     parser.add_argument("--dev-fraction", type=float, default=0.2)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--context-radius",
+        type=int,
+        default=DEFAULT_CONTEXT_RADIUS,
+        help=(
+            "Chars each side of target_word to keep (target-centered window) before "
+            f"span-matching. Default {DEFAULT_CONTEXT_RADIUS}; some Dutch gold context_text "
+            "is passage-length (unclipped --source long KWIC build) and needs this to match "
+            "what Step C would see in production."
+        ),
+    )
+    parser.add_argument(
+        "--full-context",
+        action="store_true",
+        help="Keep passage-length context_text as-is (no target-centered clip)",
+    )
     args = parser.parse_args()
 
     gold = load_gold_records(gold_logical=args.gold_logical, gold_path=args.gold_path)
@@ -33,12 +50,15 @@ def main() -> None:
     if out is None:
         out = _resolve_output_dir()
 
+    context_radius = None if args.full_context else args.context_radius
+
     paths = export_stepc_span_splits(
         gold_records=gold,
         output_dir=out,
         model_base=args.model_base,
         dev_fraction=args.dev_fraction,
         seed=args.seed,
+        context_radius=context_radius,
     )
     print(json.dumps({key: str(path) for key, path in paths.items()}, indent=2))
 

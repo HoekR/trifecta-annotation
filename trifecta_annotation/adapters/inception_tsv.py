@@ -289,9 +289,20 @@ def parse_webanno_tsv(path: str | Path) -> list[AnnotatedSentence]:
     return sentences
 
 
-def _record_id(doc_name: str, annotator: str, sentence: AnnotatedSentence, token: AnnotatedToken) -> str:
+def _record_id(
+    doc_name: str,
+    annotator: str,
+    sentence: AnnotatedSentence,
+    token: AnnotatedToken,
+    *,
+    record_id_prefix: str = "inception_nl",
+) -> str:
+    # Historically hardcoded to "inception_nl" regardless of export language —
+    # importing a non-Dutch export (e.g. English) silently produced record_ids
+    # indistinguishable from Dutch ones. Pass a distinct record_id_prefix
+    # (e.g. matching --output-prefix) per export to keep them separable.
     return (
-        f"inception_nl__{_slug(doc_name)}__{_slug(annotator)}__"
+        f"{record_id_prefix}__{_slug(doc_name)}__{_slug(annotator)}__"
         f"s{sentence.sentence_id}__{token.begin}__{_slug(token.surface)}"
     )
 
@@ -344,6 +355,7 @@ def sentence_to_kwic_input(
     annotator: str,
     export_root: str | Path | None = None,
     text_regime: TextRegime | None = None,
+    record_id_prefix: str = "inception_nl",
 ) -> KwicInput:
     corpus = _corpus_from_doc(doc_name)
     meta = _enrich_from_snippets(context_text=sentence.text, doc_name=doc_name)
@@ -352,7 +364,7 @@ def sentence_to_kwic_input(
     if source_path is None and export_root is not None:
         source_path = str(Path(export_root) / "source" / doc_name)
     return KwicInput(
-        record_id=_record_id(doc_name, annotator, sentence, food_token),
+        record_id=_record_id(doc_name, annotator, sentence, food_token, record_id_prefix=record_id_prefix),
         corpus=str(meta["corpus"]),
         target_word=food_token.surface,
         context_text=sentence.text,
@@ -371,6 +383,7 @@ def sentence_to_annotation(
     annotator: str,
     export_root: str | Path | None = None,
     text_regime: TextRegime | None = None,
+    record_id_prefix: str = "inception_nl",
 ) -> TrifectaAnnotation:
     kwic = sentence_to_kwic_input(
         sentence,
@@ -379,6 +392,7 @@ def sentence_to_annotation(
         annotator=annotator,
         export_root=export_root,
         text_regime=text_regime,
+        record_id_prefix=record_id_prefix,
     )
     metaphor = _is_metaphor(food_token.layers)
     is_food = _is_food_target(food_token.layers) and not metaphor
@@ -438,6 +452,7 @@ def sentence_to_coarse_annotation(
     annotator: str,
     export_root: str | Path | None = None,
     text_regime: TextRegime | None = None,
+    record_id_prefix: str = "inception_nl",
 ) -> TrifectaAnnotation:
     """Import frame-first / simplified WebAnno spans as coarse silver."""
     kwic = sentence_to_kwic_input(
@@ -447,6 +462,7 @@ def sentence_to_coarse_annotation(
         annotator=annotator,
         export_root=export_root,
         text_regime=text_regime,
+        record_id_prefix=record_id_prefix,
     )
     metaphor = _is_metaphor(food_token.layers)
     frame = _infer_frame(sentence, food_token)
@@ -545,6 +561,7 @@ def load_inception_kwic_inputs(
     layer: str = "annotation",
     annotators: set[str] | None = None,
     require_food_lu: bool = True,
+    record_id_prefix: str = "inception_nl",
 ) -> tuple[list[KwicInput], list[dict[str, object]]]:
     """Build KwicInput records from INCEpTION WebAnno exports."""
     records: list[KwicInput] = []
@@ -577,6 +594,7 @@ def load_inception_kwic_inputs(
                     doc_name=doc_name,
                     annotator=annotator,
                     export_root=export_root,
+                    record_id_prefix=record_id_prefix,
                 )
                 if kwic.record_id in seen_ids:
                     continue
@@ -590,6 +608,7 @@ def _load_fine_annotations(
     *,
     layer: str,
     annotators: set[str] | None,
+    record_id_prefix: str = "inception_nl",
 ) -> tuple[list[TrifectaAnnotation], list[dict[str, object]]]:
     records: list[TrifectaAnnotation] = []
     skipped: list[dict[str, object]] = []
@@ -620,6 +639,7 @@ def _load_fine_annotations(
                         doc_name=doc_name,
                         annotator=annotator,
                         export_root=export_root,
+                        record_id_prefix=record_id_prefix,
                     ),
                     annotator=annotator,
                 )
@@ -636,6 +656,7 @@ def _load_coarse_annotations(
     *,
     layer: str,
     annotators: set[str] | None,
+    record_id_prefix: str = "inception_nl",
 ) -> tuple[list[TrifectaAnnotation], list[dict[str, object]]]:
     records: list[TrifectaAnnotation] = []
     skipped: list[dict[str, object]] = []
@@ -665,6 +686,7 @@ def _load_coarse_annotations(
                     doc_name=doc_name,
                     annotator=annotator,
                     export_root=export_root,
+                    record_id_prefix=record_id_prefix,
                 )
                 rid = ann.provenance.record_id or ""
                 if rid in seen_ids:
@@ -680,6 +702,7 @@ def load_inception_annotations(
     layer: str = "annotation",
     annotators: set[str] | None = None,
     granularity: str = "both",
+    record_id_prefix: str = "inception_nl",
 ) -> tuple[list[TrifectaAnnotation], list[dict[str, object]]]:
     """Build silver TrifectaAnnotation records from INCEpTION exports."""
     granularity = granularity.lower()
@@ -694,6 +717,7 @@ def load_inception_annotations(
             export_root,
             layer=layer,
             annotators=annotators,
+            record_id_prefix=record_id_prefix,
         )
         skipped.extend(coarse_skipped)
         for ann in coarse_records:
@@ -706,6 +730,7 @@ def load_inception_annotations(
             export_root,
             layer=layer,
             annotators=annotators,
+            record_id_prefix=record_id_prefix,
         )
         skipped.extend(fine_skipped)
         for ann in fine_records:

@@ -14,6 +14,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+from trifecta_annotation.eval import soft_qualia_match
 from trifecta_annotation.gijsbert_train import _resolve_device
 from trifecta_annotation.stepc_span_export import DEFAULT_MODEL_BASE, load_stepc_span_jsonl
 
@@ -29,8 +30,10 @@ class SpanEvalResult:
     total: int
     exact_match: float
     token_f1: float
+    soft_match: float
     positive_exact_match: float
     positive_token_f1: float
+    positive_soft_match: float
     per_field: dict[str, dict[str, float]]
 
     def to_dict(self) -> dict[str, Any]:
@@ -38,8 +41,10 @@ class SpanEvalResult:
             "total": self.total,
             "exact_match": self.exact_match,
             "token_f1": self.token_f1,
+            "soft_match": self.soft_match,
             "positive_exact_match": self.positive_exact_match,
             "positive_token_f1": self.positive_token_f1,
+            "positive_soft_match": self.positive_soft_match,
             "per_field": self.per_field,
         }
 
@@ -274,36 +279,44 @@ def train_stepc_span(
         f"- Device: {resolved_device}",
         f"- Dev exact match (all fields, incl. true-negative empties): **{metrics.exact_match:.3f}**",
         f"- Dev token F1 (all fields, incl. true-negative empties): **{metrics.token_f1:.3f}**",
+        f"- Dev soft/containment match (all fields): **{metrics.soft_match:.3f}**",
         f"- Dev exact match (**positive spans only** — the real span-recall number): **{metrics.positive_exact_match:.3f}**",
         f"- Dev token F1 (**positive spans only**): **{metrics.positive_token_f1:.3f}**",
+        f"- Dev soft/containment match (**positive spans only** — the number to trust): **{metrics.positive_soft_match:.3f}**",
         "",
         "The \"all fields\" numbers above are inflated by fields that are mostly/entirely "
         "empty in gold (e.g. `INGESTION_Manner`, `INGESTION_Purpose`) — a model that "
         "always predicts \"no answer\" scores perfectly on those for free. The "
         "**positive spans only** numbers restrict to rows where gold actually has a "
-        "value to extract, and are the number to trust for judging extraction quality.",
+        "value to extract. Within those, **exact match understates quality**: span "
+        "boundaries are debatable (what should be included?) and historical text has "
+        "no single canonical wording, so **soft/containment match (bidirectional "
+        "substring, same `soft_qualia_match` logic used for the LLM Step C eval) is "
+        "the number to trust**, not raw EM.",
         "",
-        "## Per-field (dev) — EM / F1 / n, vs. groundedness ceiling",
+        "## Per-field (dev) — EM / F1 / soft / n, vs. groundedness ceiling",
         "",
         "Ceiling = fraction of non-empty gold values in the full export that were "
         "literal spans at all (the rest are paraphrases/glosses this extractor "
         "structurally cannot recover; see `skipped_ungrounded.jsonl`). `n_empty` / "
         "`n_positive` show how much of each field's dev score is trivial true-negatives "
-        "vs. real extraction; `pos EM` / `pos F1` are scored on the positive subset only.",
+        "vs. real extraction; `pos EM` / `pos F1` / `pos soft` are scored on the "
+        "positive subset only — **`pos soft` is the number to trust**.",
         "",
-        "| Field | EM (all) | F1 (all) | n | n_empty | n_positive | pos EM | pos F1 | train-time skipped (ungrounded) |",
-        "|---|---|---|---|---|---|---|---|---|",
+        "| Field | EM (all) | F1 (all) | soft (all) | n | n_empty | n_positive | pos EM | pos F1 | pos soft | train-time skipped (ungrounded) |",
+        "|---|---|---|---|---|---|---|---|---|---|---|",
     ]
     for field, stats in sorted(metrics.per_field.items()):
         skipped_n = skipped_by_field.get(field, 0)
         n_pos = int(stats["n_positive"])
         pos_em = f"{stats['positive_exact_match']:.3f}" if n_pos else "n/a"
         pos_f1 = f"{stats['positive_token_f1']:.3f}" if n_pos else "n/a"
+        pos_soft = f"{stats['positive_soft_match']:.3f}" if n_pos else "n/a"
         report_lines.append(
             f"| {field} ({field_to_frame.get(field, '?')}) "
-            f"| {stats['exact_match']:.3f} | {stats['token_f1']:.3f} "
+            f"| {stats['exact_match']:.3f} | {stats['token_f1']:.3f} | {stats['soft_match']:.3f} "
             f"| {int(stats['n'])} | {int(stats['n_empty'])} | {n_pos} "
-            f"| {pos_em} | {pos_f1} | {skipped_n} |"
+            f"| {pos_em} | {pos_f1} | {pos_soft} | {skipped_n} |"
         )
     report_path = out_path / "report.md"
     report_path.write_text("\n".join(report_lines) + "\n", encoding="utf-8")
@@ -330,11 +343,13 @@ def _evaluate_predictions(
     """
     import numpy as np
 
-    per_field: dict[str, list[tuple[float, float, bool]]] = defaultdict(list)
+    per_field: dict[str, list[tuple[float, float, float, bool]]] = defaultdict(list)
     em_total = 0.0
     f1_total = 0.0
+    soft_total = 0.0
     pos_em_total = 0.0
     pos_f1_total = 0.0
+    pos_soft_total = 0.0
     n_positive = 0
 
     for i, row in enumerate(dev_rows):
@@ -352,38 +367,51 @@ def _evaluate_predictions(
             end_char = offsets[pred_end][1]
             pred_text = context[start_char:end_char] if end_char > start_char else ""
 
-        em = 1.0 if _normalize_text(pred_text) == _normalize_text(gold_text) else 0.0
+        norm_pred = _normalize_text(pred_text)
+        norm_gold = _normalize_text(gold_text)
+        em = 1.0 if norm_pred == norm_gold else 0.0
         f1 = _token_f1(gold_text, pred_text) if gold_text or pred_text else 1.0
+        # Soft/containment match (bidirectional substring, like soft_qualia_match
+        # elsewhere in the project): span boundaries are debatable and there's no
+        # single canonical wording, so exact char match understates real quality —
+        # same reasoning as the LLM Step C soft-match bar in docs/GOLD_LABELLING.md.
+        soft = 1.0 if soft_qualia_match(norm_gold, norm_pred) else 0.0
 
         em_total += em
         f1_total += f1
+        soft_total += soft
         if is_positive:
             n_positive += 1
             pos_em_total += em
             pos_f1_total += f1
-        per_field[row["field_name"]].append((em, f1, is_positive))
+            pos_soft_total += soft
+        per_field[row["field_name"]].append((em, f1, soft, is_positive))
 
     total = len(dev_rows)
     per_field_metrics: dict[str, dict[str, float]] = {}
-    for field, triples in per_field.items():
-        n = len(triples)
-        pos_triples = [t for t in triples if t[2]]
-        n_pos = len(pos_triples)
+    for field, quads in per_field.items():
+        n = len(quads)
+        pos_quads = [t for t in quads if t[3]]
+        n_pos = len(pos_quads)
         per_field_metrics[field] = {
-            "exact_match": sum(t[0] for t in triples) / n if n else 0.0,
-            "token_f1": sum(t[1] for t in triples) / n if n else 0.0,
+            "exact_match": sum(t[0] for t in quads) / n if n else 0.0,
+            "token_f1": sum(t[1] for t in quads) / n if n else 0.0,
+            "soft_match": sum(t[2] for t in quads) / n if n else 0.0,
             "n": float(n),
             "n_positive": float(n_pos),
             "n_empty": float(n - n_pos),
-            "positive_exact_match": (sum(t[0] for t in pos_triples) / n_pos if n_pos else float("nan")),
-            "positive_token_f1": (sum(t[1] for t in pos_triples) / n_pos if n_pos else float("nan")),
+            "positive_exact_match": (sum(t[0] for t in pos_quads) / n_pos if n_pos else float("nan")),
+            "positive_token_f1": (sum(t[1] for t in pos_quads) / n_pos if n_pos else float("nan")),
+            "positive_soft_match": (sum(t[2] for t in pos_quads) / n_pos if n_pos else float("nan")),
         }
 
     return SpanEvalResult(
         total=total,
         exact_match=em_total / total if total else 0.0,
         token_f1=f1_total / total if total else 0.0,
+        soft_match=soft_total / total if total else 0.0,
         positive_exact_match=pos_em_total / n_positive if n_positive else float("nan"),
         positive_token_f1=pos_f1_total / n_positive if n_positive else float("nan"),
+        positive_soft_match=pos_soft_total / n_positive if n_positive else float("nan"),
         per_field=per_field_metrics,
     )

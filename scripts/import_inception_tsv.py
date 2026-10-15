@@ -91,6 +91,7 @@ def main() -> None:
             export_root,
             layer=layer,
             annotators=annotators,
+            record_id_prefix=prefix,
         )
         if args.limit is not None:
             kwic_records = kwic_records[: args.limit]
@@ -111,6 +112,7 @@ def main() -> None:
             layer=layer,
             annotators=annotators,
             granularity=args.granularity,
+            record_id_prefix=prefix,
         )
         if args.limit is not None:
             annotations = annotations[: args.limit]
