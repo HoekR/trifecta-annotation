@@ -98,6 +98,14 @@ _GOAL_STOP = re.compile(
 _DETERMINERS = frozenset({"de", "den", "het", "t", "der", "des", "een", "eene", "eenen", "d"})
 _MAX_GOAL_TOKENS = 5
 
+# Dutch compounds solidly, so a dish name can be "absent" from its own body on a
+# literal token test while its parts are plainly there: "Komkommersla" vs a body
+# saying "komkommers" and "sla". A prefix match separates that orthographic case
+# from genuine lexical opacity ("blancmengier", "bruwet", which have no
+# recoverable relation to the ingredients at all). Length 6 keeps the prefix
+# long enough not to collide across unrelated words.
+_COMPOUND_PREFIX_LEN = 6
+
 
 @dataclass(frozen=True)
 class UnitSpan:
@@ -316,6 +324,10 @@ def goal_body_reachability(text: str, *, language: str = "nl") -> dict[str, int]
         "first_token_absent": 0,
         "head_token_in_body": 0,
         "head_token_absent": 0,
+        # Of the head-token absences, how many are only absent because Dutch
+        # compounds solidly (parts present) vs genuinely unrecoverable.
+        "head_absent_compound_recoverable": 0,
+        "head_absent_truly": 0,
     }
     for unit in units:
         if unit.inherits_goal:
@@ -333,10 +345,15 @@ def goal_body_reachability(text: str, *, language: str = "nl") -> dict[str, int]
             counts["first_token_in_body"] += 1
         else:
             counts["first_token_absent"] += 1
-        if tokens[-1] in body_norm:
+        head = tokens[-1]
+        if head in body_norm:
             counts["head_token_in_body"] += 1
         else:
             counts["head_token_absent"] += 1
+            if len(head) >= _COMPOUND_PREFIX_LEN and head[:_COMPOUND_PREFIX_LEN] in body_norm:
+                counts["head_absent_compound_recoverable"] += 1
+            else:
+                counts["head_absent_truly"] += 1
     return counts
 
 

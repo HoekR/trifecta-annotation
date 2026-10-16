@@ -424,6 +424,10 @@ def measure_e_cross_language(english_export: str, limit: int | None) -> dict[str
             **counts,
             "first_token_absent_rate": counts.get("first_token_absent", 0) / with_goal,
             "head_token_absent_rate": counts.get("head_token_absent", 0) / with_goal,
+            "compound_recoverable_rate": (
+                counts.get("head_absent_compound_recoverable", 0) / with_goal
+            ),
+            "truly_absent_rate": counts.get("head_absent_truly", 0) / with_goal,
             "small_bucket": counts.get("with_goal", 0) < SMALL_BUCKET,
         }
 
@@ -460,6 +464,25 @@ def measure_e_cross_language(english_export: str, limit: int | None) -> dict[str
         for key, value in goal_body_reachability(str(row["snippet"]), language="nl").items():
             dutch_lk[key] += value
     out["dutch_long_kwic_recipe_medical"] = {**rates(dict(dutch_lk)), "passages": passages}
+
+    # Dutch — 20th-c printed cookbooks, the diachronic comparison. Same language
+    # and same compounding behaviour as the Middle Dutch set above, so this is
+    # the cleanest contrast available (the cross-language one is confounded by
+    # spaced vs solid compounding; see the English caveat in the report).
+    ldk_root = Path(resolve("ldk2025_cookbooks"))
+    if ldk_root.exists():
+        per_file: dict[str, Any] = {}
+        ldk_total: dict[str, int] = defaultdict(int)
+        for path in sorted(ldk_root.glob("*.txt")):
+            counts = goal_body_reachability(
+                path.read_text(encoding="utf-8", errors="replace"), language="nl"
+            )
+            per_file[path.name] = rates(dict(counts))
+            for key, value in counts.items():
+                ldk_total[key] += value
+        out["dutch_ldk2025_cookbooks"] = {**rates(dict(ldk_total)), "per_file": per_file}
+    else:
+        out["dutch_ldk2025_cookbooks"] = {"available": False, "path": str(ldk_root)}
 
     # English — INCEpTION export documents, bucketed by filename genre code.
     root = Path(english_export)
@@ -633,41 +656,51 @@ def _render_report(results: dict[str, Any]) -> str:
             "between measurement methods. B's headline uses `voc_recipes`' given",
             "Title/Content split, which has no English equivalent.",
             "",
-            "| Source | units | goals | head-token absent | first-token absent |",
-            "|---|---:|---:|---:|---:|",
+            "| Source | units | goals | head-token absent | of which compound-recoverable | **truly absent** |",
+            "|---|---:|---:|---:|---:|---:|",
         ]
-        for key in ("dutch_voc_recipes", "dutch_long_kwic_recipe_medical"):
+        for key in (
+            "dutch_voc_recipes",
+            "dutch_long_kwic_recipe_medical",
+            "dutch_ldk2025_cookbooks",
+        ):
             stats = e.get(key)
-            if not stats:
+            if not stats or stats.get("available") is False:
                 continue
             flag = " ⚠" if stats.get("small_bucket") else ""
             lines.append(
                 f"| {key}{flag} | {stats.get('units', 0)} | {stats.get('with_goal', 0)} | "
-                f"**{stats['head_token_absent_rate']:.1%}** | {stats['first_token_absent_rate']:.1%} |"
+                f"{stats['head_token_absent_rate']:.1%} | {stats['compound_recoverable_rate']:.1%} | "
+                f"**{stats['truly_absent_rate']:.1%}** |"
             )
         english = e.get("english", {})
         if english.get("available"):
             for genre, stats in english["by_genre"].items():
                 flag = " ⚠" if stats.get("small_bucket") else ""
                 lines.append(
-                    f"| english {genre}{flag} | {stats.get('units', 0)} | {stats.get('with_goal', 0)} | "
-                    f"**{stats['head_token_absent_rate']:.1%}** | {stats['first_token_absent_rate']:.1%} |"
+                    f"| english {genre}{flag} (see caveat) | {stats.get('units', 0)} | "
+                    f"{stats.get('with_goal', 0)} | {stats['head_token_absent_rate']:.1%} | "
+                    f"{stats['compound_recoverable_rate']:.1%} | "
+                    f"{stats['truly_absent_rate']:.1%} |"
                 )
         else:
-            lines.append(f"| english | — | — | export not found at {english.get('path')} | — |")
+            lines.append(f"| english | — | — | export not found at {english.get('path')} | — | — |")
         lines += [
             "",
-            "Two token choices are reported because they diverge by language and",
-            "picking one silently decides the answer: English receipt titles are",
-            "compositional (`CUCUMBER SOOP` = ingredient + dish type), so the first",
-            "token is an ingredient that recurs in the body while the head noun may",
-            "not; Middle Dutch titles are opaque dish names (`blancmengier`, `bruwet`)",
-            "where neither appears.",
+            "**Within-Dutch diachronic comparison (the clean one).** Same language, same",
+            "compounding behaviour, same metric. Raw head-token absence looks similar",
+            "across eras, but separating mechanisms splits them apart: in the 20th-c",
+            "cookbooks a large share of absences are only absent because Dutch compounds",
+            "solidly — `Komkommersla` against a body saying \"komkommers\" and \"sla\" — while",
+            "Middle Dutch absences are genuine lexical opacity (`blancmengier`, `bruwet`",
+            "bear no recoverable relation to their ingredients). The *truly absent* column",
+            "is the comparable figure.",
             "",
-            "**Read:** the structural gap is present in both traditions but roughly",
-            "half as severe in English — so it is a property of the recipe/remedy",
-            "*genre*, amplified in Dutch by opaque culinary vocabulary, not an artifact",
-            "of the Dutch corpus that produced the finding.",
+            "**English caveat — deferred, do not read the English rows as comparable.**",
+            "English compounds with spaces, so its head token is the dish-type word",
+            "(`soop`) and the prefix test that separates Dutch compounding from opacity",
+            "does not translate. Making the English side comparable needs an",
+            "all-tokens-present metric; postponed to a later stage.",
             "",
         ]
 
