@@ -540,6 +540,18 @@ So §9b–§9d are better read not as four failures but as four methods correctl
 - **`MEDICAL` is the surprise negative.** Pharmacopoeia/apothecary texts segment at just 5.5% (9/164), so the affliction side gets no help from this segmenter as built. Their structure is presumably carried by Latin headings or page/column layout lost in text extraction.
 - **The affliction side could not be tested at all.** Gold `context_text` is a KWIC snippet already cut around the food word (median 367 chars for these rows), so any governing header was truncated before segmentation sees it: 48 of 82 rows contain no detectable unit structure, and only 10 of 82 can be re-joined to their source chapter. Measurement D's 3.7% exact / 9.8% soft is that artifact, not a result. Note this also corrects the §9d framing: the food-anchored ±180 window *does* contain the gold affliction 58–73% of the time, so the window is not the bottleneck for afflictions — the "Hulpmiddelen voor den Hik" case at 657 chars was an outlier, not the norm.
 
+**Refinement — there is no single "unit structure"; there are organizing axes, and the axis decides which frame element is free.** Profiling three works with `document_unit_profile()` shows three different principles of arrangement, each making a *different* thing structurally given:
+
+| Work | dominant cue | what the headers name | what structure gives you free |
+|---|---|---|---|
+| `Het secreet-boek` (recipes) | `purpose_om` + `inheritance` | purposes ("om het Water onder den Wijn … te doen boven komen") | the goal/outcome; **not** the affliction |
+| `Pharmacopoea Amstelredamensis` (formulary) | `latin_preparation` | preparations (`Emplastrum Meliloti`, `Oleum Ovorum`) | the preparation; affliction sits *in the body* as an indication |
+| `Nederlandtsche woorden-schat` (dictionary) | `roman` | lemmas and alphabet dividers (`Ciborie`, `Elaboreren`) | **nothing frame-relevant** — headwords are lexical entries, not frame elements |
+
+Two consequences. First, this explains the §9d puzzle: in a formulary the affliction is local (an indication beside the preparation), which is exactly why the food-anchored ±180 window recovers gold afflictions 58–73% of the time while the *remedy-collection* layout ("Hulpmiddelen voor den Hik") puts it in a distant header. Two medical layouts, opposite consequences for the same field — so "MEDICAL" is too coarse a bucket to reason about Step C with.
+
+Second, and this is the frame-semantics consequence: **which frame element is structurally given is a property of the book's organizing axis, not of the sentence.** Frame semantics has nowhere to record that, because it assumes every frame element is recovered the same way, from local lexical evidence. The same frame (CURE) is therefore differently tractable in a formulary than in a remedy collection, for reasons that have nothing to do with the language in either.
+
 **Validity threat if the reframe is adopted — header inheritance is a semantic scope change, not an extraction win.** A chapter headed "Remedies voor de hik" covering 40 remedies makes the affliction constant within that chapter. Propagating it:
 
 1. *Inflates evaluation trivially.* Per-row `CURE_Affliction` accuracy would jump without anything being extracted — the same family of trap as §9b's blended 0.590 (free points for predicting empty) and §9d's 0.525 (free points for predicting empty more often), now on the non-empty side. Any future eval of a unit-based approach must score propagation per unit-group, not per row.
