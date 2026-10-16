@@ -513,6 +513,40 @@ The frame-selective CURE swap drives the best aggregate F1, but **the CURE-speci
 
 ---
 
+## 9e. Finding — intention is partly structural, not semantic (16 Oct 2026)
+
+**The reframe that prompted this:** §9b–§9d read as four method failures on the same two fields. The alternative reading is that the pipeline starts at the wrong end — it enters through a food mention (Step A validates a food entity → Step B frames it → Step C hangs qualia off it), while `CURE_Affliction` and `COOKING_CREATION_Food_Product` are the *organizing concepts* of these texts: a remedy is identified by what it treats, a recipe by what it makes. Recovering the organizing concept from one participant's local window is backwards.
+
+**Measured, not argued** (`trifecta_annotation/unit_segmentation.py`, `scripts/measure_unit_feasibility.py`, report under the `unit_feasibility` logical; heuristics only, no model inference, no LLM calls, nothing in the pipeline touched):
+
+| Measurement | Result |
+|---|---|
+| **Goal reachability** (`voc_recipes`, n=3,326 hand-separated Title/Content pairs) | **71.0%** (2,363) name a goal in the title whose head word never appears in the body. 78.4% if body-head restatements count as unreachable-from-ingredients |
+| Coverage bias check | The 1,954 titles the parser couldn't handle came out **more** extreme (74.4% absent), not less — the headline doesn't depend on which half parsed |
+| **Segmenter vs. known boundaries** (same source, 3,324 real boundaries) | precision 0.780 / recall 0.610 / F1 0.685 — workable, recall-limited |
+| **Segmentability by regime** (long-KWIC) | `RECIPE_PRACTICE` 53.2%, `UNKNOWN` 20.2% (secreet-boek etc., driven by `Om … te` + `Een ander`), `TRAVEL` 13.6%, `ADMIN_TRADE` 14.5%, **`MEDICAL` only 5.5%**, `LITERARY` 5.7% |
+| 20th-c printed cookbooks (`ldk2025_cookbooks`) | 15.9–17.3 units per 10k chars, stable across 1910–1940 — a unit roughly every 600 chars |
+
+**What this means — the general version.** Frame semantics aims to recover intention from text semantics. In these genres a large share of the intention is not in the text semantics at all; it is carried structurally. 71% of recipes state their purpose once, in a title, and never restate it where the ingredients are. The purest case is `Een ander.` ("another one [for the same thing]") — 218 instances in the `UNKNOWN` bucket alone — a unit whose entire intention is inherited positionally, with zero lexical content expressing it. No semantic method can read that off the words, because the words do not carry it.
+
+So §9b–§9d are better read not as four failures but as four methods correctly failing to recover a quantity absent from their input. `CURE_Affliction` scoring 0.0 across every encoder tried stops looking like a modelling problem.
+
+**Three boundaries on the finding, stated honestly:**
+
+- **Genre-bounded by construction.** In literary/descriptive text a food mention is incidental (a meal in a novel); there is no unit-with-a-goal to recover and the current mention-based model is arguably correct there. `LITERARY` segmenting at 5.7% is the scope boundary, and also a working negative control — the segmenter is not firing spuriously.
+- **`MEDICAL` is the surprise negative.** Pharmacopoeia/apothecary texts segment at just 5.5% (9/164), so the affliction side gets no help from this segmenter as built. Their structure is presumably carried by Latin headings or page/column layout lost in text extraction.
+- **The affliction side could not be tested at all.** Gold `context_text` is a KWIC snippet already cut around the food word (median 367 chars for these rows), so any governing header was truncated before segmentation sees it: 48 of 82 rows contain no detectable unit structure, and only 10 of 82 can be re-joined to their source chapter. Measurement D's 3.7% exact / 9.8% soft is that artifact, not a result. Note this also corrects the §9d framing: the food-anchored ±180 window *does* contain the gold affliction 58–73% of the time, so the window is not the bottleneck for afflictions — the "Hulpmiddelen voor den Hik" case at 657 chars was an outlier, not the norm.
+
+**Validity threat if the reframe is adopted — header inheritance is a semantic scope change, not an extraction win.** A chapter headed "Remedies voor de hik" covering 40 remedies makes the affliction constant within that chapter. Propagating it:
+
+1. *Inflates evaluation trivially.* Per-row `CURE_Affliction` accuracy would jump without anything being extracted — the same family of trap as §9b's blended 0.590 (free points for predicting empty) and §9d's 0.525 (free points for predicting empty more often), now on the non-empty side. Any future eval of a unit-based approach must score propagation per unit-group, not per row.
+2. *Changes what the annotation means.* Per-mention "this remedy treats X" becomes per-chapter "this chapter is about X". For the m10 goal (counts, trends, cross-era) that is a 40-fold over-count of one stated affliction, so a propagated value has to carry an inherited-vs-stated flag before it reaches `trifecta_analysis`. `goal_with_inheritance()` carries this warning in its docstring.
+3. *It also hands back treatments outside the dataset's scope.* A chapter header covers **every** remedy under it — bloodletting, poultices, mineral and charm remedies included — not only the food-based ones. TRIFECTA is food-scoped (Step A exists to validate `is_food_entity`), so a unit-based reframe has to decide explicitly whether a unit is "any remedy for X" (broader than the project's food focus, and arguably interesting context) or "food remedies for X" (requiring food filtering inside the unit). That is a decision about what the dataset *is*, not an implementation detail.
+
+**Recommendation.** Supported for the product/recipe side, untested for the affliction side, out of scope for literary/descriptive. The next step is a design decision, not more method tuning: either two-stage Step C (extract the unit goal first, from the unit including its header, then the trailing fields conditioned on it) or unit-based annotation for recipe genres only — and either way the inheritance scope question above has to be settled first, since it determines whether the resulting numbers mean anything. Testing the affliction side needs gold re-derived from source documents with wider windows — stored gold cannot answer it. See `project_discourse_structure_frame_evocation` memory.
+
+---
+
 ## 10. Implementation order (reference)
 
 1. I/O schemas + kwic adapter
