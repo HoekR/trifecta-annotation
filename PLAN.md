@@ -472,6 +472,47 @@ Key diagnostic: oracle coverage (is the correct answer *reachable* among generat
 
 ---
 
+## 9d. Exploration — grounding production Step C, and why not to ship it yet (16 Oct 2026)
+
+**Research question:** Does combining the §9c retrieval prototype with the production LLM (plans/steps/STEPC_GROUNDING.md) actually beat the LLM alone, and does it survive being tested at full gold scale rather than a small sample?
+
+**Method:** Four combinations re-scored against the existing `gold_predictions.jsonl` (no new LLM calls) via `trifecta_annotation/eval.py`'s real scoring (or a direct field-level equivalent): (1) **grounding** — anchor retrieval to the LLM's own drafted answer, replace only if a better literal span exists nearby; (2) **full replacement** — ignore the LLM, pure retrieval with its own presence threshold, proper leave-one-out (no held-out split needed); (3) **hybrid v2** — trust the LLM's presence/absence call, swap in retrieval's *independent* top pick as the value when the LLM says present; (4) **frame-selective** — LLM for `CURE`, retrieval for everything else.
+
+**Result 1 — grounding: confirmed negative, cleanly.**
+
+| threshold | joint | micro | soft_joint | soft_micro | replaced |
+|---|---:|---:|---:|---:|---:|
+| ungrounded (baseline) | 0.063 | 0.226 | 0.079 | 0.250 | 0 |
+| 0.75 | 0.047 | 0.221 | 0.063 | 0.246 | 74 |
+| 0.85 | 0.053 | 0.222 | 0.068 | 0.247 | 17 |
+| 0.90 | 0.058 | 0.224 | 0.074 | 0.249 | 3 |
+| ≥0.92 | 0.063 | 0.226 | 0.079 | 0.250 | 0 (= baseline) |
+
+At every threshold where it replaces anything, every metric gets worse; it only matches baseline once nothing gets replaced. No field showed even a directional win on a per-field soft-match check. Root cause: many non-literal LLM answers are legitimate paraphrases, and forcing them onto the nearest literal span substitutes a wrong-but-similar-looking span often enough to outweigh genuine hallucination fixes. **Not pursued further.**
+
+**Result 2 — full replacement / hybrid v2 / frame-selective, on the full pool (502 rows / 180 records, proper LOO):**
+
+| method | value P | value R | value F1 | 95% CI (F1, approx.) |
+|---|---:|---:|---:|---:|
+| LLM (baseline) | 0.268 | 0.288 | 0.277 | [0.212, 0.353] |
+| Full retrieval | 0.230 | 0.570 | 0.328 | [0.263, 0.400] |
+| Hybrid v2 | 0.274 | 0.293 | 0.283 | [0.217, 0.359] |
+| Frame-selective (LLM for CURE) | 0.281 | 0.552 | 0.372 | [0.304, 0.446] |
+
+Full retrieval's recall advantage over the LLM is **confirmed** — 95% Wilson CI [0.472, 0.663] vs LLM's [0.220, 0.366], non-overlapping. Precision differences between all four are *not* distinguishable (overlapping CIs). Hybrid v2 looked like a modest win on an earlier 39-row sample (F1 0.305 vs 0.276) but **that didn't survive scaling to the full pool** (0.283 vs 0.277 here) — a direct lesson that a small-sample "win" during this kind of comparison is not trustworthy on its own. Per-frame, hybrid v2 helps `COOKING_CREATION`/`INGESTION` (messy LLM answers get corrected) but is confirmed *worse* than the LLM alone on `PRESERVING` (tp 6 vs LLM's 9, n=56 — enough counts to trust the direction) because it blindly overrides already-correct short LLM answers via the same short-string embedding degeneracy found in §9c.
+
+The frame-selective CURE swap drives the best aggregate F1, but **the CURE-specific claim itself is not statistically confirmed**: McNemar's exact test on the paired CURE-only data (11 LLM-only-correct vs 4 retrieval-only-correct of 75 CURE rows, 15 discordant pairs) gives p=0.12. Directionally real, not proven.
+
+**Process note, worth stating plainly:** when scoping this work, hybrid grounding was recommended over a field/frame-selective split because it seemed like the more surgical fix for the diagnosed failure mode. That recommendation **was wrong in hindsight** — grounding is a clean negative, and frame-selective routing (closer to what was initially proposed and set aside) is the best-performing option, even though its central claim (route CURE to the LLM) isn't yet proven. Worth remembering next time a "more surgical" argument is used to prefer one approach over a simpler split.
+
+**Caveat on coverage:** `gold_predictions.jsonl` only overlaps 180 of the 676 records in the pooled `stepc_span` train+dev export — several merged sources (English IAA, Dutch INCEpTION-agreed) were added as Step C training/eval data but never run through the LLM batch pipeline, so this comparison is restricted to their intersection.
+
+**Open lead, not a finding (see `project_discourse_structure_frame_evocation` memory):** `CURE_Affliction` literal spans sit *before* `target_word` 71% of the time in Dutch sources (n=28) vs *after* 70% of the time in English sources (n=10) — consistent with Dutch remedy-book chapters stating the affliction once as a header and leaving it implicit for every sentence underneath, which English's sentence-by-sentence annotation doesn't exhibit. Real asymmetry, but on far too few examples to act on; would need new KWIC deliberately sampled on affliction/topic-naming constructions, not ingredient/treatment words, to validate or exploit.
+
+**Recommendation: no production change.** None of the four combinations clears the bar. If revisited, frame-selective routing is the most promising starting point, but needs more CURE-specific gold before the routing rule itself is trustworthy. `plans/steps/STEPC_GROUNDING.md` is closed per its own G2 gate (stop and document, don't ship on an unconfirmed result).
+
+---
+
 ## 10. Implementation order (reference)
 
 1. I/O schemas + kwic adapter

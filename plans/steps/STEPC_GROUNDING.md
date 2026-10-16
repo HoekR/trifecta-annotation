@@ -1,12 +1,12 @@
 # Ground production Step C with embedding retrieval (hybrid)
 
-**Status:** planned, not started · deferred to next session
+**Status:** CLOSED (16 Oct 2026) — stopped at G2, no production change. Full writeup: [PLAN.md §9d](../../PLAN.md), `docs/DECISIONS.md` and `docs/GOLD_LABELLING.md` (2026-10-16 entries), `project_stepc_grounding_frame_selective` memory.
 
 **Workflow:** After each G-step, stop and ask the operator for decisions. **Do not start the next step until the operator says `go`.**
 
 **Goal:** Reduce hallucinated-substitution misses in production Step C (LLM) by requiring the final field value to match a real literal span from `context_text` when one exists, using the embedding-exemplar-retrieval machinery from [PLAN.md §9c](../../PLAN.md) (`trifecta_annotation/stepc_embedding_retrieval.py`).
 
-**Out of scope for this track:** full replacement of the LLM for Step C (user decision: hybrid grounding, not replacement — avoids needing a calibrated empty-vs-answer threshold); any change to Step A/B.
+**Out of scope for this track (as scoped):** full replacement of the LLM for Step C (user decision: hybrid grounding, not replacement — avoids needing a calibrated empty-vs-answer threshold); any change to Step A/B. **Revisited anyway** once grounding failed (G2) — full replacement, a second hybrid variant, and frame-selective routing were tested too; see outcome below. Still out of scope: any change to Step A/B.
 
 ---
 
@@ -22,11 +22,11 @@ Production Step C flow today: `trifecta_annotation/pipeline.py` → `step_c/__in
 
 ## Steps
 
-### G0 — Threshold calibration — **TODO**
+### G0 — Threshold calibration — **DONE**
 
-Not guessed — same A/B method used for the sub-word-candidate penalty in §9c (try e.g. 0.0/0.75/0.85/0.92, measure against G1's eval, keep whichever wins). Must happen before G2 (wiring).
+Swept 0.75/0.80/0.85/0.90/0.92/0.95 against the full gold set via G1's harness. No threshold helped — see G2.
 
-### G1 — Grounding module + cheap verification — **TODO**
+### G1 — Grounding module + cheap verification — **DONE**
 
 New module `trifecta_annotation/step_c_grounding.py`:
 
@@ -40,13 +40,13 @@ New module `trifecta_annotation/step_c_grounding.py`:
 
 Script: `scripts/eval_stepc_grounding.py` — loads `gold_predictions`, applies grounding, writes the grounded predictions file, shells out to (or calls directly) the existing eval CLI so before/after print side by side in one run.
 
-### G2 — Adopt or stop — **TODO**
+### G2 — Adopt or stop — **STOPPED**
 
-Only if G1 shows a real improvement (not just plausible-sounding) does this proceed to wiring. If it doesn't help, stop here and document the negative result with the same discipline as §9a/§9b (PLAN.md), not a buried TODO.
+Grounding was a clean, confirmed negative at every threshold (see PLAN.md §9d). Revisited with three more combinations before fully closing: full replacement (confirmed recall advantage, CI non-overlapping with LLM), a second hybrid (trust LLM presence + retrieval value — washed out to statistically identical to the LLM alone at full scale, after looking like a win on a small sample), and frame-selective (best F1, but the CURE-routing claim behind it isn't statistically confirmed — McNemar p=0.12). **None cleared the bar for production.** Documented in PLAN.md §9d, docs/DECISIONS.md, docs/GOLD_LABELLING.md (2026-10-16 entries) and the `project_stepc_grounding_frame_selective` memory.
 
-### G3 — Wire into the live pipeline — **TODO, gated on G2**
+### G3 — Wire into the live pipeline — **NOT DONE (gated on G2, which said stop)**
 
-One hook point: `step_c/__init__.py::fill_qualia()` — after getting `qualia` from the frame-specific filler (unchanged), call `ground_frame_qualia` before returning. Thread a `ground: bool = True` parameter down through `fill_qualia` → `pipeline.annotate_record` so the un-grounded path stays available (e.g. for future re-comparison), defaulting to on once G2 approves it.
+Not attempted. If revisited later: one hook point (`step_c/__init__.py::fill_qualia()`), with frame-selective routing the most promising starting point — but only after gathering more CURE-specific gold to confirm the routing rule itself.
 
 ---
 
