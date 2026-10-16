@@ -93,6 +93,40 @@ def test_een_ander_marks_inheritance_and_carries_the_goal() -> None:
     assert "dronckenschap" in carried.norm
 
 
+FORMULARY = (
+    "Emplastrum Meliloti. Neemt Lythargirium met de Sevum hircinum, en wat water, tot "
+    "de dikte van een pleister. Sy is deftig om te doen cicatrizeren. "
+    "Oleum Ovorum. Neemt de doren van hard gesoden eyeren."
+)
+
+DICTIONARY_DIVIDERS = (
+    "O. Obligatie, een verbintenisse. Occasie, gelegenheyt. "
+    "E. Ecclesiastijck, kerckelijck. Elaboreren, uytwercken."
+)
+
+
+def test_formulary_entries_are_found_by_latin_preparation_name() -> None:
+    units = find_unit_boundaries(FORMULARY)
+    preparations = [u for u in units if u.signal == "latin_preparation"]
+    assert len(preparations) == 2
+    goal = extract_unit_goal(FORMULARY, preparations[0])
+    assert goal is not None
+    # A formulary is organised by preparation, not by affliction — the goal here
+    # is the product, with the indication sitting inside the body.
+    assert "emplastrum" in goal.norm
+
+
+def test_single_letter_dividers_are_not_unit_cues() -> None:
+    """A dictionary's "O." / "E." alphabet dividers must not read as sections.
+
+    Matching them made `Nederlandtsche woorden-schat` the highest-density work
+    in the corpus (24 cues/10k) — a false positive, since dictionary headwords
+    are lexical entries rather than goals.
+    """
+    kinds = {kind for _s, _e, kind in find_unit_signals(DICTIONARY_DIVIDERS)}
+    assert "roman" not in kinds
+
+
 def test_plain_prose_has_no_unit_structure() -> None:
     assert find_unit_boundaries(PLAIN_PROSE) == []
 

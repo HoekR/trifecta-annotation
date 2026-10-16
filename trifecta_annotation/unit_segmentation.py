@@ -24,7 +24,9 @@ own — the inheritance pattern this study exists to quantify.
 from __future__ import annotations
 
 import re
+from collections import Counter
 from dataclasses import dataclass
+from typing import Any
 
 from trifecta_annotation.frame_verbs import find_cure_indication_hits
 from trifecta_annotation.normalize import normalize_hist_dutch
@@ -34,7 +36,10 @@ from trifecta_annotation.normalize import normalize_hist_dutch
 _UNIT_CUE_PATTERNS: tuple[tuple[str, str], ...] = (
     # "67. Manieren van Stoven." / "XXX. Neemt een handvol Huisloock"
     (r"(?:(?<=^)|(?<=[.!?;:]\s)|(?<=[.!?;:]\s\s))\s*\d{1,3}\.\s+", "numbered"),
-    (r"(?:(?<=^)|(?<=[.!?;:]\s))\s*[IVXLC]{1,6}\.\s+", "roman"),
+    # Two or more numerals: a single "I."/"C."/"O." is as often an alphabetical
+    # divider in a dictionary as a section number, and matching those inflated
+    # `Nederlandtsche woorden-schat` to the highest cue density in the corpus.
+    (r"(?:(?<=^)|(?<=[.!?;:]\s))\s*[IVXLC]{2,6}\.\s+", "roman"),
     # "Om den Wijn te beletten sijn kracht te verliesen." — purpose header
     (r"(?:(?<=^)|(?<=[.!?;:]\s))\s*Om\s+(?=[^.!?]{3,120}?\bte\b)", "purpose_om"),
     # "Tegens de Dronckenschap." / "Voor de hoest"
@@ -44,6 +49,18 @@ _UNIT_CUE_PATTERNS: tuple[tuple[str, str], ...] = (
     # "Een ander." / "Item," — opens a unit that inherits the previous goal
     (r"(?:(?<=^)|(?<=[.!?;:]\s))\s*Een\s+ander\b", "inheritance"),
     (r"(?:(?<=^)|(?<=[.!?;:]\s))\s*Item\b", "inheritance"),
+    # "Emplastrum Meliloti." / "Oleum Ovorum." — pharmacopoeia entries are headed
+    # by a Latin preparation name, not by an affliction or a dish. Without this,
+    # formularies look completely unstructured (Pharmacopoea scored 0.0 cues/10k)
+    # even though they are rigidly organised. Note the goal here is the
+    # *preparation*, with the affliction stated in the body as an indication —
+    # the inverse of the remedy-collection layout. See PLAN.md §9e.
+    (
+        r"(?:(?<=^)|(?<=[.!?;:]\s))\s*(?:Emplastrum|Syrupus|Unguentum|Pulvis|Pulveres|"
+        r"Aqua|Oleum|Olea|Tinctura|Spiritus|Decoctum|Electuarium|Conserva|Species|"
+        r"Elixir|Balsamum|Extractum|Trochisci|Pilulae|Linimentum|Essentia)\s+[A-Z][a-z]+",
+        "latin_preparation",
+    ),
 )
 
 _INHERITANCE_SIGNALS = frozenset({"inheritance"})
@@ -55,7 +72,7 @@ _INHERITANCE_SIGNALS = frozenset({"inheritance"})
 # and the two languages can be measured identically for comparison.
 _UNIT_CUE_PATTERNS_EN: tuple[tuple[str, str], ...] = (
     (r"(?:(?<=^)|(?<=[.!?;:]\s))\s*\d{1,3}\.\s+", "numbered"),
-    (r"(?:(?<=^)|(?<=[.!?;:]\s))\s*[IVXLC]{1,6}\.\s+", "roman"),
+    (r"(?:(?<=^)|(?<=[.!?;:]\s))\s*[IVXLC]{2,6}\.\s+", "roman"),
     # "To make ONION SOOP." / "To preserve cherries" / "To cure a cough"
     (
         r"(?:(?<=^)|(?<=[.!?;:]\s))\s*To\s+(?:make|preserve|cure|dress|boil|roast|bake|stew|"
@@ -212,6 +229,8 @@ def extract_unit_goal(text: str, unit: UnitSpan) -> GoalCandidate | None:
         span = _goal_after_to_verb(header)
     elif unit.signal == "caps_title":
         span = _goal_from_caps_title(header)
+    elif unit.signal == "latin_preparation":
+        span = _np_after(header, 0, allow_determiner_only=True)
     elif unit.signal in {"tegens", "remedy_header", "indication"}:
         span = _goal_after_preposition(header)
     else:
@@ -355,6 +374,42 @@ def goal_body_reachability(text: str, *, language: str = "nl") -> dict[str, int]
             else:
                 counts["head_absent_truly"] += 1
     return counts
+
+
+def document_unit_profile(text: str, *, language: str = "nl") -> dict[str, Any]:
+    """Structural features of a document: cue density and signal mix.
+
+    Intended to be computed at ingestion (while the full document is still
+    available) and stored on the record, since unit structure cannot be measured
+    from a stored KWIC snippet.
+
+    **This is a diagnostic feature, not a genre classifier.** It was tried as one
+    and it does not work — measured on the 61 works in `food_snippets_long_kwic`:
+
+    - *False positive:* `Nederlandtsche woorden-schat`, a word-list, has the
+      highest density in the whole corpus (24.2 cues/10k) because dictionary
+      entries trip the same cues. A trade-dialogue book scores 6.1.
+    - *False negative:* `Pharmacopoea Amstelredamensis`, a genuine remedy
+      formulary, scored 0.0 before the `latin_preparation` cue existed.
+    - *Not comparable across genres:* a cookbook runs ~16 short recipes per 10k
+      chars, a formulary ~1-3 long preparations, so no single density threshold
+      separates them.
+
+    Use it to describe structure within a known genre, and take the genre from
+    `text_regime` (which carries explicit per-work overrides) instead of trying
+    to derive it from these numbers.
+    """
+    units = find_unit_boundaries(text, language=language)
+    chars = len(text)
+    signals = Counter(unit.signal for unit in units)
+    return {
+        "chars": chars,
+        "units": len(units),
+        "units_per_10k_chars": round(len(units) / (chars / 10000), 2) if chars else 0.0,
+        "inherited_units": sum(1 for unit in units if unit.inherits_goal),
+        "signals": dict(signals.most_common()),
+        "dominant_signal": signals.most_common(1)[0][0] if signals else None,
+    }
 
 
 def unit_for_position(units: list[UnitSpan], position: int) -> UnitSpan | None:
