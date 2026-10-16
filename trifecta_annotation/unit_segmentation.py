@@ -48,9 +48,47 @@ _UNIT_CUE_PATTERNS: tuple[tuple[str, str], ...] = (
 
 _INHERITANCE_SIGNALS = frozenset({"inheritance"})
 
+# English receipt/remedy books use the same organising structure with different
+# wording — "CUCUMBER SOOP." (all-caps product title) or "To make ONION SOOP."
+# followed by a "Take ..." ingredient body, and "Another"/"The same" as the
+# inheritance marker. Kept as a separate cue set so the Dutch path is untouched
+# and the two languages can be measured identically for comparison.
+_UNIT_CUE_PATTERNS_EN: tuple[tuple[str, str], ...] = (
+    (r"(?:(?<=^)|(?<=[.!?;:]\s))\s*\d{1,3}\.\s+", "numbered"),
+    (r"(?:(?<=^)|(?<=[.!?;:]\s))\s*[IVXLC]{1,6}\.\s+", "roman"),
+    # "To make ONION SOOP." / "To preserve cherries" / "To cure a cough"
+    (
+        r"(?:(?<=^)|(?<=[.!?;:]\s))\s*To\s+(?:make|preserve|cure|dress|boil|roast|bake|stew|"
+        r"pickle|keep|candy|dry|fry|prepare|remedy)\b",
+        "purpose_to",
+    ),
+    # "A remedy for the ague." / "Receipt for cramp"
+    (
+        r"(?:(?<=^)|(?<=[.!?;:]\s))\s*(?:An?\s+)?(?:remedy|receipt|recipe|cure|medicine)\s+"
+        r"(?:for|against)\b",
+        "remedy_header",
+    ),
+    # "For the hiccough." / "Against worms."
+    (r"(?:(?<=^)|(?<=[.!?;:]\s))\s*(?:For|Against)\s+(?:the|a|an)\b", "tegens"),
+    # "Another." / "The same." / "Ditto."
+    (r"(?:(?<=^)|(?<=[.!?;:]\s))\s*(?:Another|The\s+same|Ditto)\b", "inheritance"),
+    # "CUCUMBER SOOP." — an all-caps product title (two+ caps words, or one long one)
+    (
+        r"(?:(?<=^)|(?<=[.!?;:]\s))\s*(?:[A-Z][A-Z'&-]{2,}\s+){1,5}[A-Z][A-Z'&-]{2,}\s*\.",
+        "caps_title",
+    ),
+)
+
 _COMPILED_CUES = tuple(
     (re.compile(pattern), kind) for pattern, kind in _UNIT_CUE_PATTERNS
 )
+_COMPILED_CUES_EN = tuple(
+    (re.compile(pattern), kind) for pattern, kind in _UNIT_CUE_PATTERNS_EN
+)
+
+
+def _cue_set(language: str) -> tuple[tuple[re.Pattern[str], str], ...]:
+    return _COMPILED_CUES_EN if language.lower().startswith("en") else _COMPILED_CUES
 
 # Goal NP boundaries: stop at punctuation, coordination, or a clause break.
 _GOAL_STOP = re.compile(
@@ -88,19 +126,21 @@ class GoalCandidate:
     end: int
 
 
-def find_unit_signals(text: str) -> list[tuple[int, int, str]]:
+def find_unit_signals(text: str, *, language: str = "nl") -> list[tuple[int, int, str]]:
     """Return (start, end, kind) for every sentence-initial unit cue, in order."""
     if not text or not text.strip():
         return []
     hits: list[tuple[int, int, str]] = []
-    for pattern, kind in _COMPILED_CUES:
+    for pattern, kind in _cue_set(language):
         for match in pattern.finditer(text):
             hits.append((match.start(), match.end(), kind))
 
     # CURE indication constructions ("goed voor", "krachtig tegen", ...) already
     # have gated detection in frame_verbs — reuse rather than re-pattern them.
-    for hit in find_cure_indication_hits(text):
-        hits.append((hit.start, hit.end, "indication"))
+    # Dutch-only by construction.
+    if not language.lower().startswith("en"):
+        for hit in find_cure_indication_hits(text):
+            hits.append((hit.start, hit.end, "indication"))
 
     hits.sort(key=lambda item: (item[0], item[1]))
     # Drop cues that start inside an earlier cue's match.
@@ -112,15 +152,18 @@ def find_unit_signals(text: str) -> list[tuple[int, int, str]]:
     return deduped
 
 
-def find_unit_boundaries(text: str) -> list[UnitSpan]:
+def find_unit_boundaries(text: str, *, language: str = "nl") -> list[UnitSpan]:
     """Cut *text* into units, one per detected cue (cue start → next cue start)."""
-    signals = find_unit_signals(text)
+    signals = find_unit_signals(text, language=language)
     if not signals:
         return []
     units: list[UnitSpan] = []
     for index, (start, cue_end, kind) in enumerate(signals):
         end = signals[index + 1][0] if index + 1 < len(signals) else len(text)
-        header_end = _header_end(text, cue_end, end)
+        # A caps title cue already consumes its own terminating period, so the
+        # header is exactly the cue — extending to the next period would swallow
+        # the first body sentence and corrupt the body/header split.
+        header_end = cue_end if kind == "caps_title" else _header_end(text, cue_end, end)
         units.append(
             UnitSpan(
                 start=start,
@@ -157,6 +200,10 @@ def extract_unit_goal(text: str, unit: UnitSpan) -> GoalCandidate | None:
 
     if unit.signal == "purpose_om":
         span = _goal_after_om(header)
+    elif unit.signal == "purpose_to":
+        span = _goal_after_to_verb(header)
+    elif unit.signal == "caps_title":
+        span = _goal_from_caps_title(header)
     elif unit.signal in {"tegens", "remedy_header", "indication"}:
         span = _goal_after_preposition(header)
     else:
@@ -187,6 +234,23 @@ def _goal_after_om(header: str) -> tuple[int, int] | None:
     if te is None:
         return None
     return rest_start, rest_start + te.start()
+
+
+def _goal_after_to_verb(header: str) -> tuple[int, int] | None:
+    """``To make ONION SOOP`` → the NP after the infinitive verb."""
+    match = re.search(
+        r"\bTo\s+(?:make|preserve|cure|dress|boil|roast|bake|stew|pickle|keep|candy|dry|fry|prepare|remedy)\b",
+        header,
+        flags=re.IGNORECASE,
+    )
+    if match is None:
+        return None
+    return _np_after(header, match.end(), allow_determiner_only=False)
+
+
+def _goal_from_caps_title(header: str) -> tuple[int, int] | None:
+    """``CUCUMBER SOOP.`` → the title itself is the goal."""
+    return _np_after(header, 0, allow_determiner_only=True)
 
 
 def _goal_after_preposition(header: str) -> tuple[int, int] | None:
@@ -227,6 +291,53 @@ def _np_after(text: str, offset: int, *, allow_determiner_only: bool = False) ->
     if not kept:
         return None
     return offset + kept[0].start(), offset + kept[-1].end()
+
+
+def goal_body_reachability(text: str, *, language: str = "nl") -> dict[str, int]:
+    """Per unit: is the header's goal reachable from the unit's own body?
+
+    Computed identically for Dutch and English so the structural claim can be
+    compared across languages (and therefore across traditions) rather than
+    only within the Dutch corpus that produced it. Counts units, not documents.
+
+    Reported for two token choices, because they diverge sharply by language:
+    English receipt titles are compositional ("CUCUMBER SOOP" = ingredient +
+    dish type), so the *first* token is an ingredient that recurs in the body,
+    while the *head* noun ("soop") may not. Middle Dutch titles are often
+    opaque dish names ("blancmengier", "bruwet") where neither appears. Picking
+    one token silently decides the answer, so both are counted.
+    """
+    units = find_unit_boundaries(text, language=language)
+    counts = {
+        "units": len(units),
+        "with_goal": 0,
+        "inherited": 0,
+        "first_token_in_body": 0,
+        "first_token_absent": 0,
+        "head_token_in_body": 0,
+        "head_token_absent": 0,
+    }
+    for unit in units:
+        if unit.inherits_goal:
+            counts["inherited"] += 1
+            continue
+        goal = extract_unit_goal(text, unit)
+        if goal is None:
+            continue
+        counts["with_goal"] += 1
+        body_norm = normalize_hist_dutch(text[unit.header_end : unit.end])
+        tokens = goal.norm.split()
+        if not tokens:
+            continue
+        if tokens[0] in body_norm:
+            counts["first_token_in_body"] += 1
+        else:
+            counts["first_token_absent"] += 1
+        if tokens[-1] in body_norm:
+            counts["head_token_in_body"] += 1
+        else:
+            counts["head_token_absent"] += 1
+    return counts
 
 
 def unit_for_position(units: list[UnitSpan], position: int) -> UnitSpan | None:

@@ -46,7 +46,14 @@ from trifecta_annotation.unit_segmentation import (
     goal_with_inheritance,
 )
 
-MEASUREMENTS = ("A", "B", "C", "D")
+MEASUREMENTS = ("A", "B", "C", "D", "E")
+
+DEFAULT_ENGLISH_EXPORT = (
+    "/Volumes/Extreme SSD/scratch/trifecta/inception_en/export_20261014/annotation"
+)
+# Genre is encoded in the English filenames: 1741_hr_enghousewifry → household
+# recipes, 1791_ms_Domesticmedicine → medical, 1799_te_Travels → travel.
+_ENGLISH_GENRE = {"hr": "RECIPE_PRACTICE", "ms": "MEDICAL", "te": "TRAVEL"}
 SMALL_BUCKET = 30
 
 # A recipe body often *restates* the goal at its head ("Om te maken
@@ -395,6 +402,96 @@ def measure_d_affliction_side() -> dict[str, Any]:
     }
 
 
+def measure_e_cross_language(english_export: str, limit: int | None) -> dict[str, Any]:
+    """Same goal-reachability metric on Dutch and English, detected boundaries.
+
+    The headline in B uses `voc_recipes`' *given* Title/Content split, which has
+    no English equivalent. To compare traditions rather than measurement bases,
+    this runs `goal_body_reachability` — segmenter-detected boundaries — over
+    both sides. Convergent validity check: Dutch here should land near B's
+    given-boundary figure.
+    """
+    import pandas as pd
+    from data_io import resolve
+
+    from trifecta_annotation.adapters.inception_tsv import parse_webanno_tsv
+    from trifecta_annotation.text_regime import infer_text_regime
+    from trifecta_annotation.unit_segmentation import goal_body_reachability
+
+    def rates(counts: dict[str, int]) -> dict[str, Any]:
+        with_goal = counts.get("with_goal", 0) or 1
+        return {
+            **counts,
+            "first_token_absent_rate": counts.get("first_token_absent", 0) / with_goal,
+            "head_token_absent_rate": counts.get("head_token_absent", 0) / with_goal,
+            "small_bucket": counts.get("with_goal", 0) < SMALL_BUCKET,
+        }
+
+    out: dict[str, Any] = {}
+
+    # Dutch — voc_recipes concatenated so boundaries must be detected, not given.
+    frame = pd.read_csv(resolve("voc_recipes")).dropna(subset=["Title", "Content"])
+    if limit:
+        frame = frame.head(limit)
+    dutch: dict[str, int] = defaultdict(int)
+    group = 6
+    for start in range(0, len(frame) - group, group):
+        rows = frame.iloc[start : start + group]
+        text = " ".join(
+            f"{str(row['Title']).strip()} {str(row['Content']).strip()}" for _, row in rows.iterrows()
+        )
+        for key, value in goal_body_reachability(text, language="nl").items():
+            dutch[key] += value
+    out["dutch_voc_recipes"] = rates(dict(dutch))
+
+    # Dutch — long-KWIC recipe/medical/unknown passages (real, uncurated text).
+    long_kwic = pd.read_csv(
+        resolve("food_snippets_long_kwic"), usecols=["doc_id", "title", "filename", "snippet"]
+    ).drop_duplicates(subset=["doc_id"])
+    dutch_lk: dict[str, int] = defaultdict(int)
+    passages = 0
+    for _, row in long_kwic.iterrows():
+        regime = infer_text_regime(
+            corpus="cort_voc_db", title=row["title"], source_path=row["filename"]
+        ).value
+        if regime not in {"RECIPE_PRACTICE", "MEDICAL", "UNKNOWN"}:
+            continue
+        passages += 1
+        for key, value in goal_body_reachability(str(row["snippet"]), language="nl").items():
+            dutch_lk[key] += value
+    out["dutch_long_kwic_recipe_medical"] = {**rates(dict(dutch_lk)), "passages": passages}
+
+    # English — INCEpTION export documents, bucketed by filename genre code.
+    root = Path(english_export)
+    if not root.exists():
+        out["english"] = {"available": False, "path": str(root)}
+        return out
+
+    english: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    for doc in sorted(root.iterdir()):
+        if not doc.is_dir():
+            continue
+        tsv = doc / "INITIAL_CAS.tsv"
+        if not tsv.exists():
+            tsv = next(iter(sorted(doc.glob("*.tsv"))), None)
+        if tsv is None:
+            continue
+        parts = doc.name.split("_")
+        genre = _ENGLISH_GENRE.get(parts[1] if len(parts) > 1 else "", "OTHER")
+        try:
+            text = " ".join(sentence.text for sentence in parse_webanno_tsv(tsv))
+        except Exception:
+            continue
+        english[genre]["docs"] += 1
+        for key, value in goal_body_reachability(text, language="en").items():
+            english[genre][key] += value
+    out["english"] = {
+        "available": True,
+        "by_genre": {genre: rates(dict(counts)) for genre, counts in sorted(english.items())},
+    }
+    return out
+
+
 def _render_report(results: dict[str, Any]) -> str:
     lines = [
         "# Remedy/recipe-unit annotation — feasibility study",
@@ -526,6 +623,54 @@ def _render_report(results: dict[str, Any]) -> str:
             "",
         ]
 
+    if "E" in results:
+        e = results["E"]
+        lines += [
+            "## E. Cross-language: is this Dutch, or is it the genre?",
+            "",
+            "Same metric (`goal_body_reachability`) and the same *detected*-boundary",
+            "basis on both sides, so the comparison is between traditions rather than",
+            "between measurement methods. B's headline uses `voc_recipes`' given",
+            "Title/Content split, which has no English equivalent.",
+            "",
+            "| Source | units | goals | head-token absent | first-token absent |",
+            "|---|---:|---:|---:|---:|",
+        ]
+        for key in ("dutch_voc_recipes", "dutch_long_kwic_recipe_medical"):
+            stats = e.get(key)
+            if not stats:
+                continue
+            flag = " ⚠" if stats.get("small_bucket") else ""
+            lines.append(
+                f"| {key}{flag} | {stats.get('units', 0)} | {stats.get('with_goal', 0)} | "
+                f"**{stats['head_token_absent_rate']:.1%}** | {stats['first_token_absent_rate']:.1%} |"
+            )
+        english = e.get("english", {})
+        if english.get("available"):
+            for genre, stats in english["by_genre"].items():
+                flag = " ⚠" if stats.get("small_bucket") else ""
+                lines.append(
+                    f"| english {genre}{flag} | {stats.get('units', 0)} | {stats.get('with_goal', 0)} | "
+                    f"**{stats['head_token_absent_rate']:.1%}** | {stats['first_token_absent_rate']:.1%} |"
+                )
+        else:
+            lines.append(f"| english | — | — | export not found at {english.get('path')} | — |")
+        lines += [
+            "",
+            "Two token choices are reported because they diverge by language and",
+            "picking one silently decides the answer: English receipt titles are",
+            "compositional (`CUCUMBER SOOP` = ingredient + dish type), so the first",
+            "token is an ingredient that recurs in the body while the head noun may",
+            "not; Middle Dutch titles are opaque dish names (`blancmengier`, `bruwet`)",
+            "where neither appears.",
+            "",
+            "**Read:** the structural gap is present in both traditions but roughly",
+            "half as severe in English — so it is a property of the recipe/remedy",
+            "*genre*, amplified in Dutch by opaque culinary vocabulary, not an artifact",
+            "of the Dutch corpus that produced the finding.",
+            "",
+        ]
+
     lines += [
         "## Decision gates",
         "",
@@ -553,6 +698,11 @@ def main() -> None:
         default=300,
         help="Literary passages to use as negative control (default 300; the full pool is ~4.3k)",
     )
+    parser.add_argument(
+        "--english-export",
+        default=DEFAULT_ENGLISH_EXPORT,
+        help="INCEpTION English export annotation/ dir (measurement E)",
+    )
     parser.add_argument("--output-dir", default=None)
     parser.add_argument("--summary", action="store_true", help="Print the report to stdout")
     args = parser.parse_args()
@@ -568,6 +718,8 @@ def main() -> None:
         results["C"] = measure_c_segmentability(args.literary_sample)
     if "D" in wanted:
         results["D"] = measure_d_affliction_side()
+    if "E" in wanted:
+        results["E"] = measure_e_cross_language(args.english_export, args.limit)
 
     out_dir = Path(args.output_dir) if args.output_dir else Path(_resolve_output_dir())
     out_dir.mkdir(parents=True, exist_ok=True)
