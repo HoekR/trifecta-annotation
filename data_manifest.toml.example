@@ -19,6 +19,10 @@ mount_check = "/Volumes/your-warm-drive"
 root = "/Volumes/your-scratch-drive/scratch"
 mount_check = "/Volumes/your-scratch-drive"
 
+[tiers.local]
+root = "/path/to/trifecta-annotation/data_local"
+mount_check = ""
+
 # --- ontology (sibling repo, optional) ---
 
 [datasets.food_terms]
@@ -217,3 +221,43 @@ path = "trifecta/inception_annotations.jsonl"
 phase = "semi"
 description = "Silver TRIFECTA annotations from INCEpTION"
 parent = "inception_nl_export"
+
+[datasets.inception_nl_v2_iaa_agreed_gold]
+tier = "scratch"
+path = "trifecta/inception_nl_v2_iaa_agreed_gold.csv"
+phase = "frozen"
+description = "Dutch INCEpTION IAA-agreed gold (curated/easier slice)"
+parent = "kwic_inputs"
+
+# --- local mirrors of the critical-path chain (data governance) ---
+# Small, irreplaceable/load-bearing datasets also kept locally, DVC-tracked
+# for content hashing + staleness detection. See docs/DATA_LINEAGE.md.
+# Mirrors are snapshots alongside the scratch originals, not a replacement.
+
+[datasets.kwic_inputs_mirror]
+tier = "local"
+path = "kwic_inputs.jsonl"
+phase = "frozen"
+description = "Local DVC-tracked mirror of kwic_inputs"
+parent = "kwic_inputs"
+
+[datasets.trifecta_gold_csv_mirror]
+tier = "local"
+path = "gold_labelling.csv"
+phase = "frozen"
+description = "Local DVC-tracked mirror of trifecta_gold_csv"
+parent = "trifecta_gold_csv"
+
+[datasets.trifecta_annotations_mirror]
+tier = "local"
+path = "annotations.jsonl"
+phase = "frozen"
+description = "Local DVC-tracked mirror of trifecta_annotations"
+parent = "trifecta_annotations"
+
+[datasets.inception_nl_v2_iaa_agreed_gold_mirror]
+tier = "local"
+path = "inception_nl_v2_iaa_agreed_gold.csv"
+phase = "frozen"
+description = "Local DVC-tracked mirror of inception_nl_v2_iaa_agreed_gold"
+parent = "inception_nl_v2_iaa_agreed_gold"

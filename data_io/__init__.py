@@ -14,6 +14,7 @@ from data_io.manifest import (
     resolve,
     resolve_cli_path,
 )
+from data_io.lineage import append_lineage_log, check_staleness, overview
 from data_io.parquet_io import load_parquet, save_parquet
 from data_io.provenance import ProvenanceRecord
 
@@ -23,12 +24,15 @@ __all__ = [
     "ProvenanceRecord",
     "TierUnavailableError",
     "UnsetEnvPathError",
+    "append_lineage_log",
+    "check_staleness",
     "find_manifest_path",
     "get_manager",
     "load",
     "load_jsonl",
     "load_parquet",
     "looks_like_unset_env_path",
+    "overview",
     "reload_manager",
     "resolve",
     "resolve_cli_path",

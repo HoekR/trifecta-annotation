@@ -60,7 +60,19 @@ def run_check(manager: DataManager | None = None) -> int:
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(description="Verify data manifest tiers and dataset paths.")
-    parser.parse_args(argv)
+    subparsers = parser.add_subparsers(dest="command")
+    overview_parser = subparsers.add_parser(
+        "overview", help="Print the lineage chain + staleness status for one dataset."
+    )
+    overview_parser.add_argument("logical_name")
+    args = parser.parse_args(argv)
+
+    if args.command == "overview":
+        from data_io.lineage import overview as _overview
+
+        print(_overview(args.logical_name))
+        sys.exit(0)
+
     sys.exit(run_check())
 
 

@@ -32,7 +32,28 @@ def save_frame(frame: pd.DataFrame, path: Path | None = None, *, logical: str = 
     p.parent.mkdir(parents=True, exist_ok=True)
     out = frame.reindex(columns=GOLD_CSV_COLUMNS, fill_value="")
     out.to_csv(p, index=False)
+    _stamp_gold_lineage(logical)
     return p
+
+
+def _stamp_gold_lineage(logical: str) -> None:
+    """Record which kwic_inputs version this gold save was labelling against.
+
+    Gold's lineage breaks at its origin if this isn't captured here: an
+    export-time stamp alone can't say what the labeller was actually looking
+    at. Best-effort — never allowed to block a save.
+    """
+    try:
+        from data_io import append_lineage_log, get_manager
+        from data_io.lineage import dvc_hash_for, live_hash_for
+
+        manager = get_manager()
+        kwic_path = manager.resolve("kwic_inputs")
+        mirror_path = manager.resolve("kwic_inputs_mirror")
+        parent_hash = dvc_hash_for(mirror_path) or live_hash_for(kwic_path)
+        append_lineage_log(logical, parent_logical="kwic_inputs", parent_hash=parent_hash, manager=manager)
+    except Exception:  # noqa: BLE001
+        pass
 
 
 def rows_as_dicts(frame: pd.DataFrame) -> list[dict[str, str]]:

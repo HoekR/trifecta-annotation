@@ -156,8 +156,24 @@ class DataManager:
             )
 
         if dataset.path.is_absolute():
-            return dataset.path
-        return (tier.root / dataset.path).resolve()
+            result = dataset.path
+        else:
+            result = (tier.root / dataset.path).resolve()
+        self._maybe_warn_stale(logical_name)
+        return result
+
+    def _maybe_warn_stale(self, logical_name: str) -> None:
+        """Best-effort inline staleness check against a local DVC mirror, if any.
+
+        Never allowed to break resolve() — a missing/broken lineage check is
+        not a reason to fail a normal dataset lookup.
+        """
+        try:
+            from data_io.lineage import warn_if_stale
+
+            warn_if_stale(logical_name, self)
+        except Exception:  # noqa: BLE001
+            pass
 
     def dataset(self, logical_name: str) -> DatasetConfig:
         dataset = self.datasets.get(logical_name)
