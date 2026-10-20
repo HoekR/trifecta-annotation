@@ -14,7 +14,7 @@ from data_io.manifest import (
     resolve,
     resolve_cli_path,
 )
-from data_io.lineage import append_lineage_log, check_staleness, overview
+from data_io.lineage import append_lineage_log, check_staleness, overview, sync_mirrors
 from data_io.parquet_io import load_parquet, save_parquet
 from data_io.provenance import ProvenanceRecord
 
@@ -40,6 +40,7 @@ __all__ = [
     "save_jsonl",
     "save_parquet",
     "save_semi_structured",
+    "sync_mirrors",
 ]
 
 

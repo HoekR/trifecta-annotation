@@ -31,6 +31,7 @@ class DatasetConfig:
     phase: str = "explore"
     description: str = ""
     parent: str | None = None
+    mirror_of: str | None = None
 
 
 def _expand_path(value: str | None) -> Path | None:
@@ -129,6 +130,7 @@ class DataManager:
                 phase=str(cfg.get("phase", "explore")),
                 description=str(cfg.get("description", "")),
                 parent=cfg.get("parent") or None,
+                mirror_of=cfg.get("mirror_of") or None,
             )
         return datasets
 

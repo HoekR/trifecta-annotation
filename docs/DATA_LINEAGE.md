@@ -11,6 +11,16 @@ dates. This is the fix: a small, local, DVC-tracked mirror of the
 critical-path datasets, plus a lineage overview command and an inline
 staleness warning.
 
+The underlying mechanism (`mirror_of` manifest field, `python -m data_io
+overview`/`sync-mirrors`, inline staleness warning) lives in `data_io`
+itself and is generic — it's vendored from `dighum_template`
+(upstream: `republic_ner_matching/data_io`), not trifecta-specific code.
+See `dighum_template/docs/SYNC-PROJECT.md` before editing `data_io/` files
+directly: local changes there won't survive the next `--data-io` sync
+unless also ported upstream. What *is* trifecta-specific is which four
+datasets below declare a `mirror_of` entry, and the gold-save stamp in
+`gold_labeller/store.py`.
+
 This does **not** replace the scratch tier or the data manifest. Large raw
 corpora stay external/dispersed exactly as before. Only a handful of small,
 critical datasets get a local, content-hashed copy.
@@ -38,8 +48,8 @@ Run after re-running an ingest/export script that touches one of the four
 datasets above:
 
 ```
-python scripts/sync_dvc_mirrors.py          # re-add changed mirrors to DVC
-python scripts/sync_dvc_mirrors.py --push   # also dvc push to the scratch remote
+python -m data_io sync-mirrors          # re-add changed mirrors to DVC
+python -m data_io sync-mirrors --push   # also dvc push to the scratch remote
 ```
 
 It diffs each mirror's current DVC hash against the live scratch file's

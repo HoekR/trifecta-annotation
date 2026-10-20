@@ -65,12 +65,37 @@ def main(argv: list[str] | None = None) -> None:
         "overview", help="Print the lineage chain + staleness status for one dataset."
     )
     overview_parser.add_argument("logical_name")
+
+    sync_parser = subparsers.add_parser(
+        "sync-mirrors",
+        help="Refresh every `mirror_of` dataset from its live source, then `dvc add` changes.",
+    )
+    sync_parser.add_argument(
+        "--push", action="store_true", help="Also run `dvc push` after re-adding changed mirrors."
+    )
     args = parser.parse_args(argv)
 
     if args.command == "overview":
         from data_io.lineage import overview as _overview
 
         print(_overview(args.logical_name))
+        sys.exit(0)
+
+    if args.command == "sync-mirrors":
+        from data_io.lineage import sync_mirrors
+
+        manager = DataManager()
+        changed = sync_mirrors(manager)
+        if not changed:
+            print("No mirrors changed.")
+            sys.exit(0)
+        print(f"Changed: {', '.join(changed)}")
+        import subprocess
+
+        paths = [str(manager.resolve(name)) for name in changed]
+        subprocess.run(["dvc", "add", *paths], check=True)
+        if args.push:
+            subprocess.run(["dvc", "push"], check=True)
         sys.exit(0)
 
     sys.exit(run_check())

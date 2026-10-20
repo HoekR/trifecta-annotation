@@ -1,18 +1,34 @@
-"""Lineage overview + staleness surfacing for the local DVC-tracked mirrors.
+"""Lineage overview + staleness surfacing for DVC-tracked dataset mirrors.
 
-Context: a scratch-tier dataset (``kwic_inputs.jsonl``) was silently
-overwritten in October 2026, destroying the only record of the version that
-had fed an earlier GijsBERT training export. There was no system record of
-this happening. This module answers two questions `data_io.check` never
-could: "what produced this dataset" (lineage overview, walking the
-manifest's ``parent`` chain) and "has the thing I'm about to use drifted
-since it was last mirrored" (staleness check, surfaced inline from
-``resolve()``, not via a separate command someone has to remember to run).
+A dataset can declare, in ``data_manifest.toml``, a ``mirror_of`` field
+pointing at another logical name it is a (typically local, DVC-tracked)
+snapshot of::
 
-Scope is deliberately narrow: only the datasets with a ``<name>_mirror``
-entry in the manifest (the small, critical-path ones DVC-tracks locally via
-``data_local/``) participate. Everything else keeps behaving exactly as
-before.
+    [datasets.kwic_inputs_mirror]
+    tier = "local"
+    path = "kwic_inputs.jsonl"
+    mirror_of = "kwic_inputs"
+
+This module answers two questions plain ``resolve()`` never could: "what
+produced this dataset" (``overview``, walking the manifest's ``parent``
+chain) and "has the thing I'm about to use drifted since it was last
+mirrored" (``check_staleness``, surfaced inline from ``DataManager.resolve``,
+not via a separate command someone has to remember to run).
+
+Context: ``kwic_inputs.jsonl`` was silently overwritten on 2026-10-14,
+destroying the only record of the version that had fed the July 2026
+GijsBERT training export. Reconstructing what happened took manual
+cross-referencing of a ``.meta.toml`` timestamp, row counts, and git commit
+dates. See ``docs/DATA_LINEAGE.md``.
+
+Nothing here requires DVC to be installed at import time — DVC is only
+needed to actually run ``dvc add``/``dvc push``; reading a ``.dvc`` sidecar
+is just YAML. Projects that never declare a ``mirror_of`` entry pay for
+none of this: every function below is a no-op when there's nothing to
+check. This module originates in ``republic_ner_matching/data_io`` and is
+vendored here via ``dighum_template``'s sync mechanism — see
+``docs/DATA_LINEAGE.md`` before editing it directly, since local changes
+won't survive the next ``--data-io`` sync.
 """
 
 from __future__ import annotations
@@ -25,25 +41,28 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 
-import yaml
-
 from data_io.manifest import DataManager, DatasetNotFoundError
-
-# Canonical logical name -> its local DVC-tracked mirror's logical name.
-MIRROR_OF: dict[str, str] = {
-    "kwic_inputs": "kwic_inputs_mirror",
-    "trifecta_gold_csv": "trifecta_gold_csv_mirror",
-    "trifecta_annotations": "trifecta_annotations_mirror",
-    "inception_nl_v2_iaa_agreed_gold": "inception_nl_v2_iaa_agreed_gold_mirror",
-}
 
 _LINEAGE_LOG_NAME = "_lineage_log.jsonl"
 _checked_this_process: set[str] = set()
 
 
+def mirror_map(manager: DataManager) -> dict[str, str]:
+    """canonical logical name -> its mirror's logical name, from the manifest."""
+    return {
+        dataset.mirror_of: name
+        for name, dataset in manager.datasets.items()
+        if dataset.mirror_of
+    }
+
+
 def _repo_root() -> Path:
-    """The trifecta-annotation repo root (data_io always lives inside it)."""
-    return Path(__file__).resolve().parent.parent
+    """Best-effort project root: walk up from this file until a .git dir shows up."""
+    here = Path(__file__).resolve().parent
+    for candidate in (here, *here.parents):
+        if (candidate / ".git").exists():
+            return candidate
+    return here.parent
 
 
 def git_head(repo_root: Path | None = None) -> str | None:
@@ -69,6 +88,8 @@ def dvc_hash_for(data_path: Path) -> str | None:
     dvc_file = data_path.with_name(data_path.name + ".dvc")
     if not dvc_file.is_file():
         return None
+    import yaml
+
     try:
         doc = yaml.safe_load(dvc_file.read_text(encoding="utf-8"))
     except (OSError, yaml.YAMLError):
@@ -99,11 +120,11 @@ class ChainNode:
     path: Path
     exists: bool
     dvc_hash: str | None
-    mirror_of: str | None  # set when this node IS a mirror, naming what it mirrors
 
 
 def lineage_chain(manager: DataManager, logical_name: str) -> list[ChainNode]:
-    """Walk *logical_name*'s ``parent`` chain (child first), including its mirror if any."""
+    """Walk *logical_name*'s ``parent`` chain (child first), noting any mirror's DVC hash."""
+    mirrors = mirror_map(manager)
     chain: list[ChainNode] = []
     seen: set[str] = set()
     name: str | None = logical_name
@@ -114,7 +135,7 @@ def lineage_chain(manager: DataManager, logical_name: str) -> list[ChainNode]:
             resolved = manager.resolve(name)
         except (DatasetNotFoundError, Exception):  # noqa: BLE001 - tier may be unmounted
             break
-        mirror_name = MIRROR_OF.get(name)
+        mirror_name = mirrors.get(name)
         mirror_hash = None
         if mirror_name and mirror_name in manager.datasets:
             try:
@@ -130,7 +151,6 @@ def lineage_chain(manager: DataManager, logical_name: str) -> list[ChainNode]:
                 path=resolved,
                 exists=resolved.exists(),
                 dvc_hash=mirror_hash,
-                mirror_of=None,
             )
         )
         name = dataset.parent or None
@@ -145,7 +165,7 @@ def overview(logical_name: str, manager: DataManager | None = None) -> str:
         return f"No lineage found for {logical_name!r} (unknown dataset or tier unavailable)."
 
     lines = [
-        f"trifecta-annotation @ {git_head() or 'unknown commit'}",
+        f"repo @ {git_head() or 'unknown commit'}",
         f"Lineage for {logical_name!r}:",
     ]
     for depth, node in enumerate(chain):
@@ -164,17 +184,15 @@ def overview(logical_name: str, manager: DataManager | None = None) -> str:
 
 
 def check_staleness(logical_name: str, manager: DataManager | None = None) -> str | None:
-    """Compare a mirrored dataset's DVC hash to the live scratch file's current hash.
+    """Compare a mirrored dataset's DVC hash to the live source file's current hash.
 
     Returns a warning string if they differ (the mirror is stale relative to
-    the scratch original), else None. Cheap: only runs for datasets listed in
-    MIRROR_OF, and only hashes files once per process.
+    its source), else None. Only runs for datasets that have a `mirror_of`
+    sibling declared in the manifest; otherwise this is a no-op.
     """
-    mirror_name = MIRROR_OF.get(logical_name)
-    if mirror_name is None:
-        return None
     manager = manager or DataManager()
-    if mirror_name not in manager.datasets:
+    mirror_name = mirror_map(manager).get(logical_name)
+    if mirror_name is None or mirror_name not in manager.datasets:
         return None
     try:
         live_path = manager.resolve(logical_name)
@@ -189,10 +207,10 @@ def check_staleness(logical_name: str, manager: DataManager | None = None) -> st
     if live_hash is None or live_hash == tracked_hash:
         return None
     return (
-        f"{logical_name!r} has changed since its local mirror was last synced "
-        f"(live md5 {live_hash[:10]} != mirror md5 {tracked_hash[:10]}). "
-        f"Re-run scripts/sync_dvc_mirrors.py, and check whether anything built "
-        f"from the old version needs to know."
+        f"{logical_name!r} has changed since its mirror ({mirror_name!r}) was last "
+        f"synced (live md5 {live_hash[:10]} != mirror md5 {tracked_hash[:10]}). "
+        f"Re-sync the mirror (e.g. `python -m data_io sync-mirrors`), and check "
+        f"whether anything built from the old version needs to know."
     )
 
 
@@ -215,7 +233,7 @@ def append_lineage_log(
 ) -> None:
     """Append-only record: *child_logical* was written against *parent_logical*
     at the recorded hash. Intended for call sites that bypass the DVC mirrors
-    entirely (e.g. gold_labeller/store.py saving against a live kwic_inputs).
+    entirely (e.g. an interactive labelling tool saving against a live input).
     """
     manager = manager or DataManager()
     try:
@@ -233,3 +251,30 @@ def append_lineage_log(
     log_path = local_tier_root / _LINEAGE_LOG_NAME
     with log_path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
+
+def sync_mirrors(manager: DataManager | None = None, *, push: bool = False) -> list[str]:
+    """Refresh every mirror declared via `mirror_of` from its live source.
+
+    Copies each changed source into its mirror's path, returns the list of
+    logical mirror names that changed (ready for `dvc add`). Does not shell
+    out to `dvc` itself for the add step — callers (e.g. the `data_io`
+    CLI) own that so this stays testable without DVC installed.
+    """
+    manager = manager or DataManager()
+    changed: list[str] = []
+    for canonical, mirror_name in mirror_map(manager).items():
+        try:
+            live_path = manager.resolve(canonical)
+            mirror_path = manager.resolve(mirror_name)
+        except Exception:  # noqa: BLE001
+            continue
+        if not live_path.exists():
+            continue
+        old_hash = dvc_hash_for(mirror_path)
+        mirror_path.parent.mkdir(parents=True, exist_ok=True)
+        mirror_path.write_bytes(live_path.read_bytes())
+        new_hash = live_hash_for(mirror_path)
+        if old_hash != new_hash:
+            changed.append(mirror_name)
+    return changed

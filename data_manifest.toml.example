@@ -233,6 +233,8 @@ parent = "kwic_inputs"
 # Small, irreplaceable/load-bearing datasets also kept locally, DVC-tracked
 # for content hashing + staleness detection. See docs/DATA_LINEAGE.md.
 # Mirrors are snapshots alongside the scratch originals, not a replacement.
+# `mirror_of` is what data_io.lineage uses to find mirrors; `parent` is what
+# the plain ancestor-chain walk in `overview` uses.
 
 [datasets.kwic_inputs_mirror]
 tier = "local"
@@ -240,6 +242,7 @@ path = "kwic_inputs.jsonl"
 phase = "frozen"
 description = "Local DVC-tracked mirror of kwic_inputs"
 parent = "kwic_inputs"
+mirror_of = "kwic_inputs"
 
 [datasets.trifecta_gold_csv_mirror]
 tier = "local"
@@ -247,6 +250,7 @@ path = "gold_labelling.csv"
 phase = "frozen"
 description = "Local DVC-tracked mirror of trifecta_gold_csv"
 parent = "trifecta_gold_csv"
+mirror_of = "trifecta_gold_csv"
 
 [datasets.trifecta_annotations_mirror]
 tier = "local"
@@ -254,6 +258,7 @@ path = "annotations.jsonl"
 phase = "frozen"
 description = "Local DVC-tracked mirror of trifecta_annotations"
 parent = "trifecta_annotations"
+mirror_of = "trifecta_annotations"
 
 [datasets.inception_nl_v2_iaa_agreed_gold_mirror]
 tier = "local"
@@ -261,3 +266,4 @@ path = "inception_nl_v2_iaa_agreed_gold.csv"
 phase = "frozen"
 description = "Local DVC-tracked mirror of inception_nl_v2_iaa_agreed_gold"
 parent = "inception_nl_v2_iaa_agreed_gold"
+mirror_of = "inception_nl_v2_iaa_agreed_gold"
