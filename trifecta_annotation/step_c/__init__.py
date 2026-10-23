@@ -21,7 +21,7 @@ def fill_qualia(
     technique_hint: str | None = None,
 ) -> FrameQualia:
     """Fill frame-specific qualia roles for the macro-frame selected in Step B."""
-    if frame == TrifectaFrame.USING_CURE:
+    if frame == TrifectaFrame.CURE:
         return fill_using_cure(
             target_word,
             context_text,
@@ -39,7 +39,7 @@ def fill_qualia(
             base_url=base_url,
             client=client,
         )
-    if frame == TrifectaFrame.USING_INGESTION:
+    if frame == TrifectaFrame.INGESTION:
         return fill_using_ingestion(
             target_word,
             context_text,

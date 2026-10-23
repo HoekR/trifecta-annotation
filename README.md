@@ -53,10 +53,11 @@ uv run trifecta-eval --gold trifecta_gold --predictions trifecta_annotations
 
 ## Related data (sibling repos)
 
-| Repo | Manifest key |
+| Repo | Manifest key / role |
 |------|----------------|
 | `recepten-preservare-analysis` | `food_terms`, `voc_recipes`, `kwic_gold_review` |
 | `Dutch-historical-recipe-trends` | `recipe_web` |
+| `trifecta-span-lab` | English CoNLL BIO → span correction UI (no `data_io`; `make` / `uv run span-lab`) |
 
 ## Documentation
 

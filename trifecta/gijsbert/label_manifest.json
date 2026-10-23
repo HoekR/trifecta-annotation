@@ -1,0 +1,37 @@
+{
+  "labels": [
+    "COOKING_CREATION",
+    "CURE",
+    "INGESTION",
+    "PRESERVING",
+    "NONE"
+  ],
+  "label2id": {
+    "COOKING_CREATION": 0,
+    "CURE": 1,
+    "INGESTION": 2,
+    "PRESERVING": 3,
+    "NONE": 4
+  },
+  "id2label": {
+    "0": "COOKING_CREATION",
+    "1": "CURE",
+    "2": "INGESTION",
+    "3": "PRESERVING",
+    "4": "NONE"
+  },
+  "counts": {
+    "train": 2795,
+    "dev": 157
+  },
+  "target_markers": [
+    "[TGT]",
+    "[/TGT]"
+  ],
+  "verb_markers": [
+    "[VRB]",
+    "[/VRB]"
+  ],
+  "mark_mode": "both",
+  "model_base": "emanjavacas/gysbert"
+}

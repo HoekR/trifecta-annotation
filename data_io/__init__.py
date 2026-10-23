@@ -6,10 +6,15 @@ from data_io.manifest import (
     DataManager,
     DatasetNotFoundError,
     TierUnavailableError,
+    UnsetEnvPathError,
     find_manifest_path,
     get_manager,
+    looks_like_unset_env_path,
+    reload_manager,
     resolve,
+    resolve_cli_path,
 )
+from data_io.lineage import append_lineage_log, check_staleness, overview, sync_mirrors
 from data_io.parquet_io import load_parquet, save_parquet
 from data_io.provenance import ProvenanceRecord
 
@@ -18,16 +23,24 @@ __all__ = [
     "DatasetNotFoundError",
     "ProvenanceRecord",
     "TierUnavailableError",
+    "UnsetEnvPathError",
+    "append_lineage_log",
+    "check_staleness",
     "find_manifest_path",
     "get_manager",
     "load",
     "load_jsonl",
     "load_parquet",
+    "looks_like_unset_env_path",
+    "overview",
+    "reload_manager",
     "resolve",
+    "resolve_cli_path",
     "run_check",
     "save_jsonl",
     "save_parquet",
     "save_semi_structured",
+    "sync_mirrors",
 ]
 
 
