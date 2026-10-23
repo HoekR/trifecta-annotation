@@ -8,12 +8,16 @@ from pathlib import Path
 import pandas as pd
 from data_io import resolve
 
+from trifecta_annotation.corpus_genre_join import build_genre_index, lookup_for_filename
 from trifecta_annotation.text_regime import TextRegime, infer_text_regime
 
 OVERVIEW_COLUMNS = [
     "filename",
     "title",
     "text_regime",
+    "year",
+    "year_source",
+    "category",
     "snippet_rows",
     "distinct_doc_ids",
     "gold_rows",
@@ -53,8 +57,15 @@ def build_corpus_overview(
     snippets_path: str | Path | None = None,
     gold_csv_path: str | Path | None = None,
     gold_parquet_path: str | Path | None = None,
+    genre_index: dict | None = None,
 ) -> pd.DataFrame:
-    """Aggregate one row per source file from ``food_snippets`` (+ optional gold counts)."""
+    """Aggregate one row per source file from ``food_snippets`` (+ optional gold counts).
+
+    ``year``/``year_source``/``category`` come from ``dbnl_work_genre`` via
+    ``corpus_genre_join`` — see that module for how year and category are
+    chosen when sources disagree. Pass ``genre_index`` to avoid rebuilding it
+    (e.g. in a batch caller); it defaults to the registered sidecar.
+    """
     snippets_path = Path(snippets_path or resolve("food_snippets"))
     frame = pd.read_csv(
         snippets_path,
@@ -81,6 +92,12 @@ def build_corpus_overview(
         ).value,
         axis=1,
     )
+
+    index = genre_index if genre_index is not None else build_genre_index()
+    lookups = grouped["filename"].map(lambda f: lookup_for_filename(index, f))
+    grouped["year"] = [l.year for l in lookups]
+    grouped["year_source"] = [l.year_source for l in lookups]
+    grouped["category"] = [l.category for l in lookups]
 
     gold_counts: dict[str, int] = {}
     if gold_csv_path is not None:
@@ -119,4 +136,6 @@ def overview_summary(frame: pd.DataFrame) -> dict[str, object]:
         "works_in_gold": int(frame["in_gold"].sum()),
         "by_regime": by_regime,
         "unknown_works": int((frame["text_regime"] == TextRegime.UNKNOWN.value).sum()),
+        "works_with_year": int(frame["year"].notna().sum()),
+        "works_with_category": int(frame["category"].notna().sum()),
     }

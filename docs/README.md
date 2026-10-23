@@ -12,6 +12,7 @@ Reference material for TRIFECTA annotation work in this repository.
 | [ANNOTATION_STRATEGY.md](ANNOTATION_STRATEGY.md) | English | **Canonical guide** — gold policy, sampling, eval, three tracks |
 | [RESEARCH_STRATEGY_SUMMARY.md](RESEARCH_STRATEGY_SUMMARY.md) | English | English-track coordination brief only |
 | [DATA.md](DATA.md) | English | Data manifest bootstrap and dataset registry |
+| [CORPUS_ACQUISITION.md](CORPUS_ACQUISITION.md) | English | Genre sources (KB GOO/GGC, Gutenberg) and the hand-lookup wanted list |
 | [../PLAN.md](../PLAN.md) | English | Pipeline engineering (schemas, CLIs, HPC) — not gold policy |
 | [../plans/steps/EMBEDDING_CANDIDATES.md](../plans/steps/EMBEDDING_CANDIDATES.md) | English | Embedding hybrid candidate pilot (E0–E5) — parallel to Step 5 |
 

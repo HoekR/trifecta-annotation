@@ -44,8 +44,12 @@ def test_build_corpus_overview(tmp_path: Path) -> None:
         ],
     ).to_csv(gold, index=False)
 
-    frame = build_corpus_overview(snippets_path=snippets, gold_csv_path=gold)
+    frame = build_corpus_overview(snippets_path=snippets, gold_csv_path=gold, genre_index={})
     assert len(frame) == 2
+    # No genre_index rows for these filenames -> year/category stay empty rather
+    # than erroring, so the overview is still usable without the sidecar built.
+    assert frame["year"].isna().all()
+    assert frame["category"].isna().all()
     assert frame.loc[frame["filename"] == "recepten.txt", "snippet_rows"].iloc[0] == 2
     assert frame.loc[frame["filename"] == "recepten.txt", "gold_rows"].iloc[0] == 1
     assert (

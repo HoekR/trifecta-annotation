@@ -28,6 +28,7 @@ from collections import Counter
 from dataclasses import dataclass
 from typing import Any
 
+from trifecta_annotation.embedding_candidates import _sentence_spans
 from trifecta_annotation.frame_verbs import find_cure_indication_hits
 from trifecta_annotation.normalize import normalize_hist_dutch
 
@@ -446,4 +447,55 @@ def goal_with_inheritance(text: str, units: list[UnitSpan], index: int) -> GoalC
         goal = extract_unit_goal(text, units[back])
         if goal is not None:
             return goal
+    return None
+
+
+@dataclass(frozen=True)
+class TargetSentence:
+    """The sentence inside a KWIC window that actually contains the target word.
+
+    `context_text` is a ~180-char window cut around `target_word`, routinely
+    starting or ending mid-sentence (see PLAN.md §9e and the docstring at the
+    top of this module). A "sentence" deliverable needs the target's own
+    sentence carved out of that window, not the raw window — but the window
+    edge is not the sentence's real edge, so callers need to know when a
+    boundary was cut off rather than silently treat a half-sentence as whole.
+    """
+
+    text: str
+    start: int
+    end: int
+    truncated_left: bool
+    truncated_right: bool
+
+
+def target_sentence(context_text: str, target_word: str) -> TargetSentence | None:
+    """The sentence in *context_text* containing *target_word*'s first hit.
+
+    Reuses `embedding_candidates._sentence_spans` rather than a third splitter.
+    Returns None if *target_word* is not found at all (gold `lexical_unit`
+    sometimes paraphrases rather than quoting, in which case there is no
+    literal span to anchor a sentence on).
+    """
+    if not context_text or not target_word:
+        return None
+    match = re.search(re.escape(target_word), context_text, flags=re.IGNORECASE)
+    if match is None:
+        return None
+    spans = _sentence_spans(context_text)
+    for start, end in spans:
+        if start <= match.start() < end:
+            # The window carries no "start of text" marker to compare against,
+            # so truncation is judged by position: a sentence that begins
+            # exactly at char 0 or ends exactly at the window's last char is
+            # indistinguishable from one that was cut there by the KWIC radius.
+            truncated_left = start == 0
+            truncated_right = end == len(context_text)
+            text = context_text[start:end].strip()
+            if not text:
+                return None
+            return TargetSentence(
+                text=text, start=start, end=end,
+                truncated_left=truncated_left, truncated_right=truncated_right,
+            )
     return None

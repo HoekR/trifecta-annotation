@@ -12,6 +12,7 @@ from trifecta_annotation.unit_segmentation import (
     find_unit_boundaries,
     find_unit_signals,
     goal_with_inheritance,
+    target_sentence,
 )
 
 HIK_HEADER = (
@@ -134,3 +135,40 @@ def test_plain_prose_has_no_unit_structure() -> None:
 def test_empty_text_is_safe() -> None:
     assert find_unit_signals("") == []
     assert find_unit_boundaries("   ") == []
+
+
+def test_target_sentence_finds_the_sentence_containing_the_target() -> None:
+    context = "Men neemt de appelen. Men kookt ze met suycker. Daerna set mense wech."
+    hit = target_sentence(context, "kookt")
+    assert hit is not None
+    assert hit.text == "Men kookt ze met suycker."
+    assert hit.truncated_left is False
+    assert hit.truncated_right is False
+
+
+def test_target_sentence_flags_right_truncation() -> None:
+    """A ±180-char KWIC window routinely cuts off mid-sentence on the right —
+    the target's own sentence has no closing punctuation inside the window."""
+    context = "kere boffchen,en diepe grachten. Men kookt den appel met suycker. Daerna set mense het wech"
+    hit = target_sentence(context, "wech")
+    assert hit is not None
+    assert hit.truncated_left is False  # this sentence starts cleanly after the prior one
+    assert hit.truncated_right is True  # no closing punctuation before the window ends
+
+
+def test_target_sentence_flags_left_truncation() -> None:
+    """The window can equally start mid-sentence, with no leading context."""
+    context = "appel met suycker. Daerna set mense het wech"
+    hit = target_sentence(context, "appel")
+    assert hit is not None
+    assert hit.truncated_left is True  # the sentence's own opening was cut off
+    assert hit.truncated_right is False  # it does end cleanly at the period
+
+
+def test_target_sentence_none_when_target_absent() -> None:
+    assert target_sentence("Men kookt den appel.", "pekelharing") is None
+
+
+def test_target_sentence_none_on_empty_input() -> None:
+    assert target_sentence("", "kookt") is None
+    assert target_sentence("Men kookt den appel.", "") is None

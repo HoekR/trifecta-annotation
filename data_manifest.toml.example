@@ -267,3 +267,67 @@ phase = "frozen"
 description = "Local DVC-tracked mirror of inception_nl_v2_iaa_agreed_gold"
 parent = "inception_nl_v2_iaa_agreed_gold"
 mirror_of = "inception_nl_v2_iaa_agreed_gold"
+
+[datasets.dbnl_titels]
+tier = "warm"
+path = "datasets/trifecta/source/dbnl_titels_pd.csv"
+phase = "frozen"
+description = "DBNL public-domain title metadata (9,087 works; pipe-separated, 'sep=|' first line)"
+parent = ""
+
+[datasets.dbnl_xml]
+tier = "warm"
+path = "datasets/trifecta/source/dbnl_xml_pd.zip"
+phase = "frozen"
+description = "DBNL public-domain TEI texts (3,655 XML files; covers 58% of works dated 1500-1899)"
+parent = ""
+
+[datasets.dbnl_work_genre]
+tier = "scratch"
+path = "trifecta/dbnl_work_genre.jsonl"
+phase = "semi"
+description = "Per-work genre assertions with provenance (DBNL genre, KB GGC subjects/basisclassificatie, project text_regime, title screen)"
+parent = "dbnl_titels"
+
+[datasets.ggc_cache]
+tier = "scratch"
+path = "trifecta/ggc_cache"
+phase = "semi"
+description = "Cached KB GGC SRU responses, one XML per queried title (never re-query)"
+parent = ""
+
+[datasets.kb_titles_parsed]
+tier = "warm"
+path = "_overlap_quarantine_20260710/Trifecta Data/kb_titles_parsed.csv"
+phase = "frozen"
+description = "Earlier KB catalogue parse (7,545 rows): Trefwoord GOO 100%, Basisclassificatie 95%; culinary bibliography, 49.25 dominates"
+parent = ""
+
+[datasets.colonial_books]
+tier = "warm"
+path = "_overlap_quarantine_20260710/Trifecta Data/colonial_books"
+phase = "explore"
+description = "Leiden UB colonial books (OCR txt + PDF + OAI-DC records): Dodoens Cruydeboeck, Nuttige Indische planten, Reize naar Surinamen, specerijen, thee, Insulinde"
+parent = ""
+parent = ""
+
+[datasets.gutenberg_catalog]
+tier = "scratch"
+path = "trifecta/gutenberg/pg_catalog.csv"
+phase = "frozen"
+description = "Project Gutenberg catalogue feed (79,634 records; LoCC on 100%, LCSH Subjects on 99.9%; 1,114 Dutch, only 4 classed TX cookery)"
+parent = ""
+
+[datasets.colonial_books_ocr]
+tier = "scratch"
+path = "trifecta/colonial_ocr"
+phase = "semi"
+description = "Re-OCR of PDF-only colonial books (Tesseract frk --psm 3 for blackletter); per-page text plus a combined file"
+parent = "colonial_books"
+
+[datasets.frame_sentences]
+tier = "scratch"
+path = "trifecta/frame_sentences.jsonl"
+phase = "semi"
+description = "COOKING_CREATION/PRESERVING/CURE sentences with year + category, sorted by year"
+parent = "trifecta_annotations"
