@@ -216,12 +216,14 @@ dated.
 - **20th century is a bibliography, not a corpus.** `kb_titles_parsed` has 4,248
   rows dated 1900–1999 with full genre codes, but **only 14 carry an access URL**.
   Existing 20th-c. *text*: `ldk2025_cookbooks` (1910–1940) and `recipe_web`.
-- **Delpher is not reachable programmatically** from this setup. During the Oct
-  2026 PHP-vulnerability outages `dbnl.org`, `delpher.nl` and `kb.nl` all returned
-  503 while `jsru.kb.nl`, `data.bibliotheken.nl` and `resolver.kb.nl` stayed up.
-  Independently of the outage, KB resolver links lead to the OCLC catalogue, not
-  to Delpher text; getting Delpher text needs a browser, a KB API key, or a bulk
-  dataset request.
+- **Delpher full-text SRU exists but is access-gated**, confirmed 23 Oct 2026 via
+  KB's own API docs: "manuals for these APIs can be supplied once legal access
+  has been granted" — request via dataservices@kb.nl. Anonymous probes against
+  `jsru.kb.nl` with guessed collection codes (`DDD`, `DPO`, `jbc`, `ANP` with a
+  non-ANP query) all return 0 records; only `GGC` (catalogue metadata, no text)
+  is open without credentials. KB resolver links (`resolver.kb.nl/resolve?...`)
+  lead to the OCLC catalogue, not Delpher text. Getting Delpher text today needs
+  the web UI by hand, or requesting SRU access for bulk work.
 - **PRESERVING cannot be grown much by work selection.** DBNL's short titles name
   it twice; KB's full subtitles give 195 rows / 26 works, which is the lead above,
   but the frame stays structurally hard to find by title.

@@ -331,3 +331,59 @@ path = "trifecta/frame_sentences.jsonl"
 phase = "semi"
 description = "COOKING_CREATION/PRESERVING/CURE sentences with year + category, sorted by year"
 parent = "trifecta_annotations"
+
+[datasets.colonial_kwic_inputs]
+tier = "scratch"
+path = "trifecta/colonial_kwic_inputs.jsonl"
+phase = "semi"
+description = "KwicInput records from the 9 new-DBNL works and colonial books (not through Step A/B/C yet)"
+parent = "kwic_inputs"
+
+[datasets.colonial_annotations]
+tier = "scratch"
+path = "trifecta/colonial_annotations.jsonl"
+phase = "semi"
+description = "A->B->C annotations for the colonial_kwic_inputs validation batch (840 rows, 60/work)"
+parent = "colonial_kwic_inputs"
+
+[datasets.handdownload_kwic_inputs]
+tier = "scratch"
+path = "trifecta/handdownload_kwic_inputs.jsonl"
+phase = "semi"
+description = "KWIC from the hand-downloaded Tbouck van wondre (Frencken) and notabel boecxken (Jansen Sieben) scholarly editions"
+parent = ""
+
+[datasets.handdownload_annotations]
+tier = "scratch"
+path = "trifecta/handdownload_annotations.jsonl"
+phase = "semi"
+description = "A->B->C annotations for handdownload_kwic_inputs"
+parent = "handdownload_kwic_inputs"
+
+[datasets.foodstuff_occurrence_overview]
+tier = "scratch"
+path = "trifecta/foodstuff_occurrence_overview.csv"
+phase = "semi"
+description = "Uncapped lexical occurrence census (no LLM, no cap): foodstuff x work x year x category, from a full sweep of dbnl_xml + colonial_books"
+parent = "dbnl_work_genre"
+
+[datasets.foodstuff_frame_collocation_overview]
+tier = "scratch"
+path = "trifecta/foodstuff_frame_collocation_overview.csv"
+phase = "semi"
+description = "Verb/indication-anchored frame-relevant occurrence census (no LLM, no cap), reusing the sec9a verb-first lexicon"
+parent = "foodstuff_occurrence_overview"
+
+[datasets.dbnl_sweep_kwic_inputs]
+tier = "scratch"
+path = "trifecta/dbnl_sweep_kwic_inputs.jsonl"
+phase = "semi"
+description = "Genre-agnostic, capped (~10/work) KwicInput sweep over every DBNL PD work with TEI text not already ingested (H1)"
+parent = "kwic_inputs"
+
+[datasets.dbnl_sweep_annotations]
+tier = "scratch"
+path = "trifecta/dbnl_sweep_annotations.jsonl"
+phase = "semi"
+description = "A->B->C annotations for dbnl_sweep_kwic_inputs"
+parent = "dbnl_sweep_kwic_inputs"

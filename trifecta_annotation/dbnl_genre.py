@@ -161,6 +161,56 @@ def xml_stems(zip_path: str | Path) -> set[str]:
         }
 
 
+def xml_filenames_by_stem(zip_path: str | Path) -> dict[str, str]:
+    """stem -> actual zip entry filename (stems are lossy/truncated; the
+    filename is what `zipfile.read()` actually needs)."""
+    with zipfile.ZipFile(zip_path) as archive:
+        return {
+            work_stem(Path(name).stem): name
+            for name in archive.namelist()
+            if name.endswith(".xml")
+        }
+
+
+def sweep_candidates(
+    records: list[dict[str, Any]],
+    *,
+    filenames_by_stem: dict[str, str],
+    exclude_stems: set[str],
+) -> list[dict[str, Any]]:
+    """Every `dbnl_ti_id` record with TEI text, not already ingested.
+
+    Deliberately **no genre filter** — PLAN.md's own cautionary case
+    (`Huishoudelyk woordboek` filed as `sec - taalkunde`, 53% of the corpus)
+    is why genre must not gate which works get scanned; the Step A/B/C
+    cascade is what finds frame sentences inside a work, not its genre label.
+    One row per unique ti_id stem (a stem can have several catalogue rows —
+    reprints/duplicate title entries — only the text matters here).
+    """
+    seen: set[str] = set()
+    out: list[dict[str, Any]] = []
+    for record in records:
+        if record.get("id_scheme") != "dbnl_ti_id" or not record.get("has_xml"):
+            continue
+        stem = work_stem(record["ti_id"])
+        if stem in exclude_stems or stem in seen:
+            continue
+        filename = filenames_by_stem.get(stem)
+        if not filename:
+            continue
+        seen.add(stem)
+        out.append(
+            {
+                "ti_id": record["ti_id"],
+                "stem": stem,
+                "filename": filename,
+                "titel": record.get("titel") or "",
+                "year": record.get("year"),
+            }
+        )
+    return out
+
+
 def parse_ggc(xml: str) -> dict[str, Any]:
     """Subject terms and record count out of a cached GGC SRU response."""
     count = re.search(r"numberOfRecords>(\d+)", xml)

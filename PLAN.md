@@ -562,6 +562,49 @@ Second, and this is the frame-semantics consequence: **which frame element is st
 
 ---
 
+## 9f. Finding — the product-side header heuristic is a confirmed (if underpowered) negative on current gold (23 Oct 2026)
+
+**CORRECTED same day — the first pass had a real anchoring bug, not a structural finding.** It defaulted rows to position 0 (or "first occurrence of `target_word`") whenever it couldn't otherwise locate the target, which collapses to the *chapter's own start* whenever `context_text` already is the wide window — i.e. it would confidently pick the wrong unit for a reason that had nothing to do with whether headers work. Caught because Rik pushed back on the result not matching the already-established "Hulpmiddelen voor den Hik"-style header finding. Fixed by gating the measurement on locatability (below) instead of silently resolving it. Numbers in this section are the corrected ones; the retracted first-pass numbers are not reproduced here.
+
+**What this tests:** §9e called the product side ("supported," unlike the untested affliction side) the natural next step — either two-stage Step C or unit-based re-annotation. Before building either, measurement F (`scripts/measure_unit_feasibility.py --only F`) tests the specific mechanism directly: does `unit_segmentation.py`'s regex header detector recover gold `COOKING_CREATION_Food_Product` / `PR_Food_Patient` values, end to end, on the actual Step C gold pool? Scoped to `RECIPE_PRACTICE`/`UNKNOWN` per a scoping check first — the Van Lennep 1823 travel diary (447k chars, `colonial_books`, not yet in any corpus export) scores 0.31 unit-cues/10k chars with zero false positives from its dated entries, an order of magnitude below even the `LITERARY` control in §9e's measurement C. Confirms structural headings are a recipe-collection story, not a running-text one, as a real example rather than only the corpus-average numbers already in §9e.
+
+**A second, independent problem surfaced while fixing the first: `target_word` is frequently not a locatable literal span at all.** Of the 26 `RECIPE_PRACTICE` gold rows, 13 (all `preservare`-corpus) have **zero** case-insensitive occurrences of `target_word` in their own `context_text`, even after historical-spelling normalization (target `paling`, context spells it `palinck`/`palinc`; target `postelein`, context never uses that word at all). Of the remainder, several `cort_voc_db` rows have the target repeated many times across one shared chapter (`olie` ×13, `vet` ×8) with no char-offset stored anywhere in the schema to say which occurrence a given gold row is about. Measurement F now gates on **exactly one unambiguous occurrence** and reports the rest as `target_unlocatable`/`target_ambiguous` rather than guessing — this is a limitation of `target_word`-based position-finding generally (it will affect any future structure-aware mechanism built the same way), not specific to header extraction.
+
+**Unlike D, truncation is not the main constraint here.** `cort_voc_db` rows' `context_text` runs up to tens of thousands of chars (often the whole chapter already); only `inception_snippets` rows (99% of the `UNKNOWN` bucket) are short enough that a `food_snippets_long_kwic` rejoin was attempted, and that rejoin essentially never found a match. So — for the rows that survive the locatability gate — this measures the header-detection heuristic's own precision, not a data-availability gap.
+
+| Regime | n | target locatable | narrow window has gold value | no units (of locatable) | goal extracted | exact | soft |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| `RECIPE_PRACTICE` ⚠ | 26 | 8 (30.8%) | 30.8% | 50.0% | 37.5% | **0.0%** | **0.0%** |
+| `UNKNOWN` ⚠ | 196 | 55 (28.1%) | 33.2% | 98.2% | 1.8% | 0.0% | 0.0% |
+
+⚠ both buckets are now small on the metric that matters (locatable n = 8 and 55) — this is the honest-anchor result, but it is underpowered, not a confident negative the way the retracted first pass looked. Only ~30% of either pool is even scoreable at all; most of this table is really a finding about `target_word` locatability, not about headers.
+
+**Where a goal was extracted (3/8 `RECIPE_PRACTICE` rows), it was wrong every time** — not absent, wrong:
+
+- gold `soep` vs extracted `Snoek` (a numbered sub-entry naming a dish, not the chapter-level goal)
+- gold `vis` vs extracted `Aal` (a numbered sub-entry naming a different fish than the gold value)
+- gold `Kwik` vs extracted `de Sublimaat corrosief` (a `purpose_om` header for a neighboring passage)
+
+**Why this differs from §9e's own numbers.** §9e's 71% "unreachable" measurement (B) ran on `voc_recipes`' *given* Title/Content CSV columns — a clean, pre-segmented signal, with no locatability problem at all (Title and Content are already paired per row). This heuristic instead has to regex-detect the boundary inside raw flowing KWIC/chapter text *and* locate the right occurrence *and* pick the right field out of competing cue types, which is a materially harder task on every axis B didn't have to solve. The corpus-level structural claim (§9e) and this extraction mechanism's precision are different questions; this measurement answers the second one, on a small honestly-scoreable n: not promising, not yet proven either way.
+
+**Recommendation: do not build two-stage Step C or unit-based re-annotation on top of `unit_segmentation.py`'s current cue detector, and do not treat this measurement as the final word either — it's underpowered.** The underlying structural claim (§9e) stands. The rollout path, if pursued, needs (a) a real per-recipe title/header field sourced at ingestion from structured data like `voc_recipes` (given boundaries, not regex-detected ones) rather than raw KWIC/chapter text, which also sidesteps the locatability problem entirely, or (b) a smarter boundary+granularity model plus a stored char-offset for the target occurrence — not a tuning pass on the existing regex cues. No pipeline change made; this is a measurement only, same as §9d. See `project_frame_split_options` memory for the decision this bears on.
+
+---
+
+## 9g. Implemented — structural parse as a pre-Step-A stage, 2-way search, "detect but don't trust" (23 Oct 2026)
+
+Per-session follow-up to §9f, superseding (a) above: rather than sourcing a real title field from structured ingestion, implemented the structural parse directly against the new colonial/hand-download ingestion (`scripts/build_colonial_kwic.py`, `scripts/build_handdownload_kwic.py`), which already hold full document text before windowing — see `project_frame_split_options` memory for the design (2-way search: forward mention scan unchanged, backward lookup of the governing unit, "further parse" = widen `context_text` to the unit's span when trusted).
+
+**Shipped:** `trifecta_annotation/structural_parse.py` (new — `document_structural_units`, `unit_for_offset`, `DocumentUnit`), new optional fields on `KwicInput`/`AnnotationProvenance` (`unit_id`, `unit_start`/`unit_end`, `target_char_offset`, `structural_header`, `structural_goal`, `structural_goal_inherited`, `structural_signal`), wired through `pipeline.py`/`pipeline_verb.py`'s `_provenance_from_input`, and into both ingestion scripts behind a genre gate (`RECIPE_PRACTICE` only for now — `MEDICAL` deliberately deferred, see below) and a `trust_goals` flag that **defaults to False**: diagnostic fields always populate when a unit is detected, but `structural_goal` and the `context_text` widening stay off until a real precision check passes. No existing field changed type/name; the two live `trifecta-batch` jobs are unaffected.
+
+**Finding that shaped the trust gate, from inspecting real documents (not synthetic `voc_recipes`):** per-cue-type trust alone is insufficient. `_ams007amst01` ("De Amsterdamsze gaare-keuken", the one document currently gated into `RECIPE_PRACTICE`) produced exactly 2 "trusted" units by cue type — both wrong: lines of verse ("Voor de geen die ik bemin...", "Om daer te Trouwen zo 't behoort...") that happen to start with a trusted cue phrase, not recipe headers. Its unit density was 0.36/10k chars — statistically indistinguishable from the Van Lennep 1823 diary's 0.31/10k (§9f's confirmed pure-narrative negative control). By contrast, three formulary-style `MEDICAL` documents inspected cleanly at much higher density: `_pha002phar01` 6.8/10k (92/92 trusted, all genuine Latin preparation names), `krie024bata02` 15.7/10k, `verb122chir01` 11.0/10k. **Added a document-level density gate** (`_MIN_TRUSTED_DENSITY_PER_10K = 2.0` in `structural_parse.py`) on top of the per-cue-type check: a document can carry a correct genre tag and still be mostly non-recipe prose with only incidental cue matches, and density is what tells the two cases apart. After the gate, `_ams007amst01`'s false positives correctly drop to 0 trusted; the formularies are unaffected.
+
+**Consequence:** with the density gate, the currently-enabled scope (`RECIPE_PRACTICE` only, one document) produces zero trusted `structural_goal` values right now — fully inert in production, by design. The `MEDICAL` formularies look like the most promising near-term candidate for cautious extension (high density, clean inspection), but remain deferred pending their own validation pass (§4f of the implementation plan) and the still-open scheme-decision gate (§3 of the plan / `docs/DECISIONS.md`) before any Step C wiring happens.
+
+**Not yet done:** the formal 4f precision/recall measurement (hand-reviewed boundaries on real text, per cue type) — today's check was inspection-based, not a scored measurement; the scheme-decision sign-off; and the Step C wiring itself (held behind that sign-off). See `/Users/rikhoekstra/.claude/plans/snappy-squishing-bear.md` for the full plan.
+
+---
+
 ## 10. Implementation order (reference)
 
 1. I/O schemas + kwic adapter
