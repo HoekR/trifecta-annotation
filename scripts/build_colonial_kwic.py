@@ -104,6 +104,20 @@ KB_COOKBOOKS_2026: dict[str, tuple[str, int | None]] = {
     "mmsfkb02_000036589_pdf.pdf": ("Het nieuwste kookboek (kort)", None),
 }
 
+# 5 of the 7 above have a scrambled embedded text layer (words correct,
+# reading order nonsense, throughout the whole document — found during
+# SENTENCE_HARVEST.md's RECIPE_SIEVE position-check verification; `mmsfkb02*`
+# is unaffected). Re-OCR'd with `ocr_colonial_pdf.py` (-l nld --psm 3, which a
+# single-page proof-of-concept confirmed fixes the reading order). Maps
+# KB_COOKBOOKS_2026's filename to the re-OCR text's book slug.
+KB_COOKBOOKS_REOCR: dict[str, str] = {
+    "mmkb18_002953000_pdf.pdf": "visser",
+    "mmkb18a_013242000_pdf.pdf": "kwatta",
+    "mmkb18a_013925000_pdf.pdf": "nieuwste",
+    "mmkb18a_022522000_pdf.pdf": "geillustreerd",
+    "mmkb31_043972000_pdf.pdf": "oost_indisch",
+}
+
 # Google Books acquisitions 2026 (same acquisitions folder, different source/
 # producer than the KB/Delpher scans above). "Vervolg op M. Noël Chomel" is a
 # direct sequel to chom003huis01 (Huishoudelyk woordboek) — already the single
@@ -589,11 +603,19 @@ def main() -> None:
     kb_cookbook_dir = Path(resolve("colonial_books_ocr")) / "acquisitions"
     for filename, (title, year) in KB_COOKBOOKS_2026.items():
         t0 = time.monotonic()
-        pdf_path = kb_cookbook_dir / filename
-        if not pdf_path.exists():
-            print(f"  missing (skipped): {pdf_path}", flush=True)
-            continue
-        text = extract_pdf_text(pdf_path)
+        ocr_slug = KB_COOKBOOKS_REOCR.get(filename)
+        if ocr_slug:
+            text_path = Path(resolve("colonial_books_ocr")) / f"{ocr_slug}_nld.txt"
+            if not text_path.exists():
+                print(f"  missing re-OCR text (skipped): {text_path}", flush=True)
+                continue
+            text = text_path.read_text(encoding="utf-8", errors="replace")
+        else:
+            pdf_path = kb_cookbook_dir / filename
+            if not pdf_path.exists():
+                print(f"  missing (skipped): {pdf_path}", flush=True)
+                continue
+            text = extract_pdf_text(pdf_path)
         units = structural_units_for_document(
             text, title=title, source_path=filename, corpus="kb_cookbooks_2026"
         )

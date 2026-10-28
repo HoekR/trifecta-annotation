@@ -43,10 +43,16 @@ Known, accepted limits (see docs/CORPUS_ACQUISITION.md):
   entirely, not a parsing gap) — decided not to chase further.
 - One work (`Huishoudelyk woordboek`) dominates the original pool; the
   sidecar reports per-work counts so this stays visible rather than hidden.
-- Two `colonial_annotations` PDF sources (`mmkb*_pdf.pdf`) have scrambled
-  (not just noisy) OCR reading order — words correct, sequence nonsense. This
-  self-filters mostly via `no_sentence` (no coherent punctuation to anchor
-  on) rather than needing a separate exclusion here.
+- 5 of the 7 `KB_COOKBOOKS_2026` PDFs (`mmkb18*`/`mmkb31*`, not `mmsfkb02*`)
+  had scrambled (not just noisy) OCR reading order throughout the whole
+  document — words correct, sequence nonsense. Re-OCR'd (`ocr_colonial_pdf.py`,
+  `-l nld --psm 3`) after a RECIPE_SIEVE.md verification pass found it. Moot
+  for this export either way: all 7 `KB_COOKBOOKS_2026` works are 20th-century
+  (1907-1913, confirmed; the other 2 share the batch with no date on record)
+  — out of this deliverable's 16th-19th c. scope via `MAX_YEAR_EXCLUSIVE`
+  regardless of OCR quality. Left wired in rather than removed: harmless here,
+  and the now-correct text is available if some other analysis ever wants
+  this period.
 - This is LLM-assigned Step B/C silver, not hand gold — see `analysis_export.py`.
 
 Per H4, also writes a flat `frame_sentences.csv` sibling (same rows/fields,
