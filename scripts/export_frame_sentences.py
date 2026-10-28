@@ -1,7 +1,13 @@
-"""Export COOKING_CREATION / PRESERVING / CURE sentences, ordered by year.
+"""Export COOKING_CREATION / PRESERVING / CURE sentences, 16th c.-1919, ordered by year.
 
 The agreed deliverable: a sizable set of usable Dutch sentences for these three
-frames, 16th-19th century, ordered by year. The frame labelling already exists
+frames, 16th century through 1919, ordered by year. The upper bound moved from
+1900 to 1920 (28 Oct 2026, operator decision) specifically to admit the 7
+`KB_COOKBOOKS_2026` works (1907-1913, confirmed; the other 2 share the batch
+with no date on record) — the operator wants a later cookbook-lineage
+comparison (e.g. `Vervolg op M. Noël Chomel` vs. its parent `Huishoudelyk
+woordboek`) and these are worth keeping in scope for that, not just harmless
+dead weight. The frame labelling already exists
 in `trifecta_annotations` (10,537 records); this script adds the two things it
 was missing — a per-record year (via `corpus_genre_join` / `dbnl_work_genre`)
 and an actual sentence (via `unit_segmentation.target_sentence`) carved out of
@@ -29,10 +35,10 @@ known and deliberately not resolved here — this export carries the cascade's
 labels as-is.
 
 Nothing is silently dropped. A row with no resolvable year, where the target
-word can't be found to anchor a sentence on, or dated 1900 or later (out of
-this deliverable's 16th-19th century scope — modern KB catalogue/reprint
-years, not the underlying work's era) is excluded from the main export but
-counted in the sidecar report, not just discarded. A row whose sentence is
+word can't be found to anchor a sentence on, or dated 1920 or later (out of
+this deliverable's scope — modern KB catalogue/reprint years, not the
+underlying work's era) is excluded from the main export but counted in the
+sidecar report, not just discarded. A row whose sentence is
 truncated by the KWIC window edge is KEPT, with `truncated_left`/
 `truncated_right` flags — dropping those would lose real data (PLAN.md §9e:
 gold context_text is often passage-length, so most sentences are complete, but
@@ -46,13 +52,9 @@ Known, accepted limits (see docs/CORPUS_ACQUISITION.md):
 - 5 of the 7 `KB_COOKBOOKS_2026` PDFs (`mmkb18*`/`mmkb31*`, not `mmsfkb02*`)
   had scrambled (not just noisy) OCR reading order throughout the whole
   document — words correct, sequence nonsense. Re-OCR'd (`ocr_colonial_pdf.py`,
-  `-l nld --psm 3`) after a RECIPE_SIEVE.md verification pass found it. Moot
-  for this export either way: all 7 `KB_COOKBOOKS_2026` works are 20th-century
-  (1907-1913, confirmed; the other 2 share the batch with no date on record)
-  — out of this deliverable's 16th-19th c. scope via `MAX_YEAR_EXCLUSIVE`
-  regardless of OCR quality. Left wired in rather than removed: harmless here,
-  and the now-correct text is available if some other analysis ever wants
-  this period.
+  `-l nld --psm 3`) after a RECIPE_SIEVE.md verification pass found it;
+  without that fix these works would all have been excluded via `no_sentence`
+  regardless of the 1920 cutoff above.
 - This is LLM-assigned Step B/C silver, not hand gold — see `analysis_export.py`.
 
 Per H4, also writes a flat `frame_sentences.csv` sibling (same rows/fields,
@@ -95,7 +97,8 @@ SOURCE_LOGICALS = (
     "dbnl_sweep_annotations",
 )
 
-MAX_YEAR_EXCLUSIVE = 1900  # deliverable scope is 16th-19th century.
+MAX_YEAR_EXCLUSIVE = 1920  # deliverable scope is 16th c. through 1919 (raised
+# from 1900 on 28 Oct 2026 to admit KB_COOKBOOKS_2026, see module docstring).
 
 # H4 CSV sibling: fixed superset of columns, since STEP_C_FIELDS differs per
 # frame (COOKING_CREATION_*/CURE_*/PR_*) — DictWriter fills a row's missing
@@ -163,7 +166,7 @@ def build_export(
             counts["no_year"] += 1
             continue
         if year >= MAX_YEAR_EXCLUSIVE:
-            counts["year_out_of_scope_1900plus"] += 1
+            counts["year_out_of_scope"] += 1
             continue
         counts["has_year"] += 1
 
@@ -218,7 +221,7 @@ def _report(rows: list[dict], counts: Counter) -> str:
     lines.append("")
     lines.append("## Filter funnel")
     for key in ("total", "dropped_or_error", "three_frame", "has_year", "no_year",
-                "year_out_of_scope_1900plus", "has_sentence", "no_sentence", "truncated"):
+                "year_out_of_scope", "has_sentence", "no_sentence", "truncated"):
         lines.append(f"- {key}: {counts[key]}")
     lines.append("")
     lines.append(f"## Exported rows: {len(rows)}")

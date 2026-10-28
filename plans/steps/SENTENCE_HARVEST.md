@@ -1,6 +1,14 @@
-# Exhaustive 16th–19th c. sentence harvest + aggregative occurrence overview
+# Exhaustive 16th c.–1919 sentence harvest + aggregative occurrence overview
 
-**Status:** approved, not started (25 Oct 2026).
+**Status:** approved (25 Oct 2026); H0-H4 complete (28 Oct 2026).
+
+**Scope extension (28 Oct 2026, operator decision):** upper bound raised from
+1900 to 1920 to admit the 7 `KB_COOKBOOKS_2026` works (1907-1913) — the
+operator wants a later cookbook-lineage comparison (e.g. `Vervolg op M. Noël
+Chomel` vs. its parent `Huishoudelyk woordboek`) these feed into. This also
+followed from a RECIPE_SIEVE.md verification pass finding 5 of those 7 PDFs
+had scrambled OCR reading order throughout, fixed via re-OCR
+(`ocr_colonial_pdf.py`, `-l nld --psm 3`) before the scope question came up.
 
 **Workflow:** H0 (occurrence overview) and H2 (capped cascade batch) are both
 multi-hour-to-multi-day unattended runs with real compute/time cost. **After
@@ -8,7 +16,7 @@ each H-step, stop and report results before starting the next.** Do not
 start H2's batch run until the operator has reviewed H1's row counts.
 
 **Goal:** Ship a sentence-level dataset of COOKING_CREATION/PRESERVING/CURE
-sentences spanning the 16th–19th century, ordered by year, for aggregate
+sentences spanning the 16th century through 1919, ordered by year, for aggregate
 research on foodstuff occurrence by frame — plus a separate, uncapped
 occurrence census that answers "how often and where is each foodstuff
 mentioned" without needing the LLM cascade at all.
@@ -156,7 +164,7 @@ the lever, not lowering per-work coverage.
 - Category fallback: when no category, use `provenance.text_regime` with
   `category_scheme="text_regime"` (already a valid scheme name in
   `corpus_genre_join.py`'s `_CATEGORY_SCHEME_ORDER`).
-- Explicit `year < 1900` guard, counted not silently dropped.
+- Explicit `year < 1920` guard, counted not silently dropped.
 - New field `canonical_pref_label` (from `step_a.canonical_pref_label`,
   falling back to `target_word`) — the real join key for occurrence research;
   raw `target_word` keeps spelling variants separate and undercounts.
@@ -180,7 +188,7 @@ existing `ldk2025_analysis`/`ldk2025_analysis_csv` pair, `parent =
 - H1: row counts sane (~36,550 worst case) before any LLM spend.
 - H2: throughput tracked against measured 4–12 sec/row; row/frame counts
   reported before merging.
-- H3: `frame_sentences_report.md` year range ~1513–1882, non-zero
+- H3: `frame_sentences_report.md` year range ~1513–1913, non-zero
   1500s/1600s, all four source corpora represented, frame-scope caveat
   present.
 - H4: JSONL/CSV row-count parity; `canonical_pref_label` normalizes at least
