@@ -332,6 +332,13 @@ phase = "semi"
 description = "COOKING_CREATION/PRESERVING/CURE sentences with year + category, sorted by year"
 parent = "trifecta_annotations"
 
+[datasets.frame_sentences_csv]
+tier = "scratch"
+path = "trifecta/frame_sentences.csv"
+phase = "semi"
+description = "Flat CSV sibling of frame_sentences"
+parent = "frame_sentences"
+
 [datasets.colonial_kwic_inputs]
 tier = "scratch"
 path = "trifecta/colonial_kwic_inputs.jsonl"

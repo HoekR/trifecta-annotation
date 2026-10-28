@@ -49,18 +49,24 @@ Known, accepted limits (see docs/CORPUS_ACQUISITION.md):
   on) rather than needing a separate exclusion here.
 - This is LLM-assigned Step B/C silver, not hand gold — see `analysis_export.py`.
 
+Per H4, also writes a flat `frame_sentences.csv` sibling (same rows/fields,
+`STEP_C_FIELDS` flattened into a fixed superset of columns since they differ
+per frame) for row-count parity with the JSONL.
+
     uv run python scripts/export_frame_sentences.py --summary
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
 import json
 from collections import Counter
 from pathlib import Path
 
 from data_io import resolve
 from data_io.jsonl_io import save_semi_structured
+from data_io.provenance import ProvenanceRecord, git_commit_hash, write_sidecar
 
 from trifecta_annotation.corpus_genre_join import build_genre_index, lookup_for_filename
 from trifecta_annotation.eval import STEP_C_FIELDS
@@ -84,6 +90,27 @@ SOURCE_LOGICALS = (
 )
 
 MAX_YEAR_EXCLUSIVE = 1900  # deliverable scope is 16th-19th century.
+
+# H4 CSV sibling: fixed superset of columns, since STEP_C_FIELDS differs per
+# frame (COOKING_CREATION_*/CURE_*/PR_*) — DictWriter fills a row's missing
+# columns with "".
+CSV_FIELDS = [
+    "record_id",
+    "source_corpus",
+    "work_title",
+    "year",
+    "year_source",
+    "category",
+    "category_scheme",
+    "frame",
+    "target_word",
+    "canonical_pref_label",
+    "sentence",
+    "sentence_truncated_left",
+    "sentence_truncated_right",
+    "lexical_unit",
+    *(field for frame in THREE_FRAMES for field in STEP_C_FIELDS[frame]),
+]
 
 
 def _read_jsonl(path: Path) -> list[dict]:
@@ -229,6 +256,29 @@ def _report(rows: list[dict], counts: Counter) -> str:
     return "\n".join(lines) + "\n"
 
 
+def save_csv(rows: list[dict], *, logical_name: str, description: str, script: str) -> Path:
+    """H4: flat CSV sibling of the JSONL export, same fields, plain DictWriter."""
+    path = resolve(logical_name)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=CSV_FIELDS)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({k: row.get(k, "") for k in CSV_FIELDS})
+
+    record = ProvenanceRecord(
+        logical_name=logical_name,
+        phase="semi",
+        parent_sources=["frame_sentences"],
+        description=description,
+        created_by_script=script,
+        record_count=len(rows),
+        git_commit=git_commit_hash(path.parent),
+    )
+    write_sidecar(path, record)
+    return path
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--summary", action="store_true")
@@ -263,6 +313,14 @@ def main() -> None:
     report_path.write_text(_report(rows, counts), encoding="utf-8")
     print(f"wrote {len(rows)} rows -> {out}")
     print(f"report -> {report_path}")
+
+    csv_out = save_csv(
+        rows,
+        logical_name="frame_sentences_csv",
+        description="Flat CSV sibling of frame_sentences",
+        script="scripts/export_frame_sentences.py",
+    )
+    print(f"wrote {len(rows)} rows -> {csv_out}")
     if args.summary:
         print()
         print(_report(rows, counts))
