@@ -16,8 +16,22 @@ _SPEC.loader.exec_module(export_frame_sentences)
 build_export = export_frame_sentences.build_export
 
 
-def _annotation(frame, year_stem, target="bloed", context=None, source_path=None, dropped=False, error=None):
-    return {
+def _annotation(
+    frame,
+    year_stem,
+    target="bloed",
+    context=None,
+    source_path=None,
+    dropped=False,
+    error=None,
+    source_corpus="trifecta_annotations",
+):
+    """One (source_corpus, record) pair, the shape `build_export` consumes.
+
+    The tuple is part of the contract since H3 merged the four annotation
+    sources — each row is tagged with the corpus it came from.
+    """
+    return source_corpus, {
         "provenance": {
             "record_id": f"{year_stem}__{target}",
             "source_path": source_path or f"_{year_stem}_01.xml",
@@ -105,3 +119,18 @@ def test_step_c_fields_present_per_frame() -> None:
     rows, _ = build_export([_annotation("PRESERVING", "yro017work01")], _index())
     assert "PR_Technique" in rows[0]
     assert "CURE_Affliction" not in rows[0]
+
+
+def test_each_row_is_tagged_with_its_source_corpus() -> None:
+    """The H3 per-source tag, which nothing asserted on until now.
+
+    Its absence is why the fixtures could drift to the pre-H3 bare-dict shape
+    without any test noticing the contract had changed.
+    """
+    rows, _ = build_export([
+        _annotation("CURE", "yro017work01", source_corpus="dbnl_sweep_annotations"),
+        _annotation("PRESERVING", "yro017work01", source_corpus="colonial_annotations"),
+    ], _index())
+    assert [r["source_corpus"] for r in rows] == [
+        "dbnl_sweep_annotations", "colonial_annotations"
+    ]
