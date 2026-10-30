@@ -4,9 +4,44 @@ from __future__ import annotations
 
 from trifecta_annotation.tei_segmentation import (
     RUBRIC_LABELS,
+    editorial_heads,
     head_inventory,
     parse_entries,
 )
+
+WITH_APPARATUS = """<TEI.2><text><body>
+<div type="chapter"><head>Verantwoording van de digitale uitgave van het
+  Huishoudelyk woordboek door Noël Chomel (1743)</head>
+  <div type="section"><head>Gevolgde werkwijze bij het digitaliseren</head>
+    <p>Wij hebben de tekst gescand.</p></div>
+  <div type="section"><head>Zetfouten</head><p>Een lijst van zetfouten.</p></div>
+</div>
+<div type="chapter"><head>Voor-Reden des Autheurs.</head>
+  <div type="section"><head>Tot den Leser.</head><p>Beminde Leser.</p></div>
+</div>
+</body></text></TEI.2>"""
+
+
+def test_dbnl_digitisation_documentation_is_excluded():
+    entries = parse_entries(WITH_APPARATUS, work_id="w.xml")
+    heads = [e.head for e in entries]
+    assert "Gevolgde werkwijze bij het digitaliseren" not in heads
+    assert "Zetfouten" not in heads
+
+
+def test_historical_front_matter_is_kept():
+    """An author's preface is period text, not digitisation documentation."""
+    entries = parse_entries(WITH_APPARATUS, work_id="w.xml")
+    assert [e.head for e in entries] == ["Tot den Leser."]
+    assert entries[0].chapter_head == "Voor-Reden des Autheurs."
+
+
+def test_the_exclusion_can_be_inspected_and_disabled():
+    assert editorial_heads(WITH_APPARATUS) == [
+        "Gevolgde werkwijze bij het digitaliseren", "Zetfouten"
+    ]
+    kept = parse_entries(WITH_APPARATUS, work_id="w.xml", drop_editorial=False)
+    assert len(kept) == 3
 
 CHOMEL_LIKE = """<TEI.2><text><body>
 <div type="chapter"><head>B.</head>

@@ -30,6 +30,7 @@ from pathlib import Path
 from data_io import resolve
 
 from trifecta_annotation.tei_segmentation import (
+    editorial_heads,
     head_inventory,
     parse_entries,
     read_work_xml,
@@ -96,6 +97,13 @@ def main() -> None:
     rows = head_inventory(entries)
 
     print(f"{work_id}  ({len(xml):,} chars of XML)")
+    dropped = editorial_heads(xml)
+    if dropped:
+        print(
+            f"excluded {len(dropped)} DBNL digitisation-documentation sections: "
+            + ", ".join(repr(h[:34]) for h in dropped[:4])
+            + (" …" if len(dropped) > 4 else "")
+        )
     summarize(rows, sample=args.sample)
 
     if not args.out_dir:

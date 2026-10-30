@@ -61,6 +61,7 @@ __all__ = [
     "Anchor",
     "TeiEntry",
     "RUBRIC_LABELS",
+    "editorial_heads",
     "parse_entries",
     "read_work_xml",
     "head_inventory",
@@ -89,6 +90,20 @@ _BARE = re.compile(r"^\s*(een\s+ander|ander|andere|anders|noch\s+een\s+ander)\s*
 # `bare` because a divider supplies no scope to carry forward either — unlike
 # "Een ander.", which means "another one of the preceding kind".
 _DIVIDER = re.compile(r"^\s*[A-Z]\s*\.?\s*$")
+
+# DBNL's own modern editorial apparatus, carried as a chapter in some editions:
+# "Achtergrondinformatie", "Gevolgde werkwijze bij het digitaliseren",
+# "Zetfouten", "Medewerkers" and so on. It documents the digitisation rather
+# than belonging to the work, so it is excluded by default (operator decision,
+# 30 Oct 2026).
+#
+# Deliberately matches only this phrase. Historical front matter is *not*
+# editorial apparatus and must survive: `Het secreet-boek` opens with
+# "Voor-Reden des Autheurs." and the Roterodamensis with "Extract uit het
+# Previlegie.", both genuine period text. Rare in this dump — 0 of 60 sampled
+# works contain the phrase at all — so this is a narrow safety net, not a
+# general front-matter filter.
+_EDITORIAL_HEAD = re.compile(r"^\s*Verantwoording van de digitale uitgave", re.I)
 
 _UNDEFINED_ENTITY = re.compile(r"&([A-Za-z][A-Za-z0-9]*);")
 _XML_BUILTIN = frozenset({"amp", "lt", "gt", "quot", "apos"})
@@ -240,23 +255,54 @@ def read_work_xml(zip_path: str | Path, xml_name: str) -> str:
         return archive.read(xml_name).decode("utf-8", errors="replace")
 
 
-def parse_entries(xml: str, *, work_id: str) -> list[TeiEntry]:
+def editorial_heads(xml: str) -> list[str]:
+    """Heads of the sections `parse_entries` drops as DBNL editorial apparatus.
+
+    Provided so the exclusion can be inspected rather than taken on trust —
+    silent dropping is how this project lost provenance before.
+    """
+    root = ET.fromstring(_sanitize_entities(xml))
+    heads: list[str] = []
+    for chapter in root.iter("div"):
+        if chapter.get("type") != "chapter":
+            continue
+        head = chapter.find("head")
+        if head is None or not _EDITORIAL_HEAD.match(_text(head)):
+            continue
+        for section in chapter.iter("div"):
+            if section.get("type") == "section":
+                section_head = section.find("head")
+                heads.append(_text(section_head) if section_head is not None else "")
+    return heads
+
+
+def parse_entries(
+    xml: str, *, work_id: str, drop_editorial: bool = True
+) -> list[TeiEntry]:
     """Parse declared entries. Levels 3-4 are reported when present, else empty.
 
     Sections are read in document order. A section outside any chapter still
     yields an entry, with `chapter_index`/`chapter_head` as None.
+
+    `drop_editorial` excludes DBNL's digitisation documentation (see
+    `_EDITORIAL_HEAD`); pass False to see what is being dropped, or use
+    `editorial_heads`.
     """
     root = ET.fromstring(_sanitize_entities(xml))
 
     chapter_of: dict[ET.Element, tuple[int, str | None]] = {}
+    editorial: set[ET.Element] = set()
     for index, chapter in enumerate(root.iter("div")):
         if chapter.get("type") != "chapter":
             continue
         head = chapter.find("head")
         label = _text(head) if head is not None else None
+        is_editorial = label is not None and bool(_EDITORIAL_HEAD.match(label))
         for section in chapter.iter("div"):
             if section.get("type") == "section":
                 chapter_of[section] = (index, label)
+                if is_editorial:
+                    editorial.add(section)
 
     entries: list[TeiEntry] = []
     last_scope: str | None = None
@@ -265,6 +311,8 @@ def parse_entries(xml: str, *, work_id: str) -> list[TeiEntry]:
     for section_index, section in enumerate(
         s for s in root.iter("div") if s.get("type") == "section"
     ):
+        if drop_editorial and section in editorial:
+            continue
         head_element = section.find("head")
         section_head = _text(head_element) if head_element is not None else None
         body, anchors = _section_body(section)
