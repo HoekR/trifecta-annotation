@@ -605,6 +605,77 @@ Per-session follow-up to §9f, superseding (a) above: rather than sourcing a rea
 
 ---
 
+## 9h. Finding — Chomel's TEI declares the unit boundaries §9f asked for, in four levels, two of them hiding as typography (29 Oct 2026)
+
+**This is §9f's recommendation (a) — "a real per-recipe title/header field sourced at ingestion from structured data (given boundaries, not regex-detected ones)" — available as declared markup for the largest single source in `frame_sentences`.** §9g superseded (a) by implementing cue-regex detection against full document text instead; that path is currently inert in production (density gate, `trust_goals=False`, zero trusted goals). It also only covers the colonial/hand-download ingestion. The DBNL sweep — which contributes the rows discussed here — never received a structural parse at all.
+
+**Source.** `chom003huis01_01.xml` (Noël Chomel, *Huishoudelyk woordboek*, 1743), inside `dbnl_xml_pd.zip` on the 2tb disk. It is **2,679 of 7,447 pre-1850 `frame_sentences` rows (36%)**, and 2,679 of the 2,681 rows dated 1743. Parsing needs `recover=True`: the file uses undefined HTML entities (`&nbsp;`), which also leak into `frame_sentences.csv` as literal text.
+
+**The extractor reads the wrong level.** The file has `<div type="chapter">` × 40 and `<div type="section">` × 4,795. The chapters are **alphabet dividers** (`'B.'`, `'K.'`, `'H.'`); the sections are the lemma entries, 4,794 of which carry a `<head>`. Current `record_id`s key on chapter only — `chom003huis01_01.xml__ch10__abrikozen`, `__ch10__ajuin`, `__ch10__amandel` — so 100+ distinct entries collapse into one unit id and the entry head is discarded.
+
+**Four levels, two of them typographic.** `div` nesting is flat (all 4,795 sections at depth 1), but the hierarchy is not:
+
+| # | Carrier | Count | What it is |
+|---|---|---:|---|
+| 1 | `div[@type="chapter"]` | 40 | alphabet dividers |
+| 2 | `div[@type="section"]` + `<head>` | 4,795 | lemma entries (4,794 headed) |
+| 3 | `<hi rend="b">` at paragraph start | 3,354 | `trefwoorden`/`subtrefwoorden` keyword anchors |
+| 4 | `<hi rend="i">` rubric labels | 347 entries | materia-medica template |
+
+Levels 3–4 are recorded as **presentation, not semantics** — DBNL used no TEI dictionary elements (`<entryFree>`, `<term>`, `<label>`), so the structure survives only as bold and italic. Level 3's keywords read `'aal'`, `'aalbeziën'`, `'aamborstigheit'`, and `'aambyen'`/`'haemorrhoides'` (a cross-reference pair); position is load-bearing, since the 473 mid-paragraph bolds are *not* keyword anchors.
+
+**Level 4 is a grammar, established by order rather than by matching.** Frequency counts over italic strings (`Eigenschappen` 337, `Plaats` 302, `Beschryving` 151) show candidate markers only. The structural claim holds because the sequence is directional and recursive: `Beschryving > Plaats > Eigenschappen` in that exact order 71×, `Plaats` before `Eigenschappen` **188 vs 8**, `Beschryving` before `Plaats` **114 vs 13**, and the whole template cycles per described item — `(Beschryving Plaats Eigenschappen)+`. The rubrics are frame-determining: `Eigenschappen`/`Krachten`/`Dosis` carry medicinal action (CURE), while `Plaats` is habitat and `Beschryving` botanical description, which evoke no food frame.
+
+**Why no local-window method can recover this.** Audited sentences resolved against their governing `<head>`:
+
+| sentence | governing `<head>` | reads locally as | actually is |
+|---|---|---|---|
+| "In vyf pinten goeden Wyns doet… Honing, Snuiftabak, gekwetste Boomvaren, Alantwortel" | `'Andere manier om Aal te vangen.'` | medicinal tincture | **eel bait** |
+| "Zy zuiveren het Bloed, verzagten den Buik, openen de Lever en Milt" | `'Bezigheid in de Bloem-tuinen, omtrent deze Maand.'` | CURE | **flower-garden calendar** |
+| "men steekt welriekende Kruiden in brand… Thym, Lavendel, Rosmaryn" | `'Geheim, om te beletten, dat de Duiven haar Hok niet verlaten.'` | fumigation/remedy | **pigeon-coop trick** |
+
+Wine + honey + snuff tobacco + fern *is* materia medica as semantic content; it is fishing bait as structure. Level 3 would have caught it independently — the paragraph's keyword anchor is `aas` (bait). This is §9e's semantic-scope mismatch in a source where the scope marker was declared all along.
+
+**Against §9g's mechanism, this source needs none of the machinery that made §9g inert.** Boundaries are declared, so there are no cue regexes to tune, no per-cue trust classification, and no document-level density gate to separate real headers from incidental verse matches (§9g's `_ams007amst01` failure). Char offsets come free from the parse, which also sidesteps §9f's separate `target_word`-locatability problem (13/26 `RECIPE_PRACTICE` gold rows had zero literal occurrences of their target).
+
+**What still has to be built, and is not regex-shaped.** Hand-written head patterns reach ~10% of entries: `Middel` 363, `te vangen` 75, `Kweken|Planten|Zaaien` 44, `Voedzel` 5 — 487 of 4,794. The rest are heads like `'Andere Gekonfyte Abrikozen.'`, `'Andere Marmelade van Abrikozen.'`, `'Bezigheid in de Bloem-tuinen.'` So scope *classification* is a real task — but over 4,794 short, formulaic, self-contained strings rather than 2,679 sentences in context. **This is where an LLM is appropriate and currently is not applied:** a head is self-describing by construction, the inverse of the eel-bait problem, and the whole inventory is human-auditable in an afternoon. It also supplies the PRESERVING signal that `project_frame_split_options` deferred to a structure-aware Step C — `'Gekonfyte Abrikozen'` and `'Marmelade van Abrikozen'` name the *technique*, which the sentence bodies never do.
+
+**Chomel is internally heterogeneous, which pushes §9e's organizing-axis finding down a level.** Level 4 covers only 347 of 4,795 sections because one household encyclopedia mixes herbal entries (rubric template), `Middel tegens X` remedies, fishing entries, month-marked garden calendars, and confectionery recipes. The axis is per *entry type*, not per work, so scope resolution must identify the entry type before applying a template. §9e's three-work table recorded `Nederlandtsche woorden-schat` (dictionary) as having "nothing frame-relevant" in its headwords; Chomel is the opposite case, an *encyclopedic* dictionary whose entry heads are richly frame-relevant. "Lemma-oriented source" is therefore not one category.
+
+**Two levels is twice what conventional frame parsing admits.** Standard frame semantics is one-level — the lexical unit evokes the frame within its own sentence. Chomel needs at least two (head governs, sentence instantiates) and offers four. A frame inventory has nowhere to record the governing level, which is the same underspecification §9e flagged; it is not an engineering shortcut to be described as "a join".
+
+**Retracted in the same session: the precision audit that led here.** A hand audit of random `frame_sentences` rows produced 60% frame-correct for Chomel, 30% for other pre-1850, ~25% for post-1850, 45% pre-1850 overall. **Do not cite these.** They were produced by judging each sentence from its own text alone, which reproduces exactly the local-window error the pipeline makes — one local guess scored against another. Probing 8 of the judged sentences against their real heads got at least 3 badly wrong in both directions (the three rows in the table above are all mine). This is the fourth instance of the trap family in §9b/§9d/§9f: a semantic scorer over an inadequate input keeps finding ways to look informative. The only durable number from that audit is the corpus-composition one: Chomel is 36% of pre-1850 rows, so any pre/post-1850 comparison is a statement about source mix, not about period.
+
+**KB cookbook PDFs: latent, not absent.** The re-OCR'd PDFs (§ `scripts/ocr_colonial_pdf.py`) have no declared structure — broken text layer is why they needed re-OCR. But the pipeline already runs `tesseract --psm 3` (full automatic page segmentation), which computes blocks, paragraphs, lines and font sizes internally, and then writes plain `.txt`, discarding all of it (`ocr_page`, lines 113–118). Requesting `hocr`/`alto`/`tsv` output retains bounding boxes, font size and per-word confidence. That yields *inferred* scope (font-size clustering, indentation, running heads) rather than declared scope, so it needs a provenance flag distinguishing the two; it should not inherit TEI-level trust.
+
+**Carried-over constraints for any rollout.** From §9e's trap list: tag every scope-derived element `inherited` vs `stated` before it reaches `trifecta_analysis` (a 40-remedy chapter otherwise 40-fold over-counts one stated affliction), and score per unit-group rather than per row. Anaphoric heads need a carry-forward rule, but the need is per-source: 401 of Chomel's heads (8.4%) open with `Ander/Andere/Nog`, yet nearly all restate their scope anyway (`'Andere manier om Aal te vangen.'`), unlike `voc_recipes`' 218 bare `'Een ander.'` instances — and unlike `Het secreet-boek`, which has **112 bare `'Een ander.'` heads of 1,493** (see the generality check below).
+
+### Generality check across three more works (30 Oct 2026) — levels 1–2 are corpus-general, levels 3–4 are per-work
+
+Ran the same four checks on `bate002secr02_01.xml` (`Het secreet-boek`, 1694), `_pha002phar01_01.xml` (`Pharmacopoea Roterodamensis` — the formulary §9g inspected at 6.8 units/10k) and `_pha001phar02_01.xml` (`Pharmacopaea Amstelredamensis` — the one §9e profiled, and the one carrying rows: 98 vs Rotterdam's 6). **Design consequence: one reader for levels 1–2, per-work adapters for levels 3–4.**
+
+**Levels 1–2 generalize.** Every work has the identical skeleton — `div[@type="chapter"]` plus `div[@type="section"]` flat at depth 1 — with heads on essentially every div: 4,794/4,795 (Chomel), 1,493/1,494 (secreet-boek), 302/303 (Amsterdam), 260/261 (Rotterdam). The entry-head layer is therefore a corpus-wide property of the DBNL encoding, not a Chomel peculiarity, and it is where the value is.
+
+**Levels 3–4 do not generalize at all:**
+
+| work | content carrier | `rend="b"` | `rend="i"` function |
+|---|---|---|---|
+| Chomel | `<p>` | 3,354 keyword anchors | rubric template `(Beschryving Plaats Eigenschappen)+` |
+| `Het secreet-boek` | `<p>` | absent (4 total) | authorities + ingredients, two functions |
+| Pharmacopoeas | **`<item>`** (2,633) | absent | Latin quantity units (`unc`, `libr`, `sem`, `duas`) + `Dosis` ×42 |
+
+**Position disambiguates one marker carrying two functions** — the clearest quantitative support for the [[feedback_typography_hides_structure]] rule. In `Het secreet-boek`, italics mark both Renaissance authorities (`Mizaldus` ×101, `Cardanus` ×66, `Alexius` ×55) and ingredients (`Azijn` ×96, `Wijn` ×89, `Suycker` ×57, `Caneel` ×50). Mean fractional position within the paragraph separates them cleanly: **authorities 0.96** (attribution trailing the recipe, n=251) vs **ingredients 0.39** (inside the procedure, n=364). The italicised ingredients amount to a declared ingredient list, frame-element-relevant for `COOKING_CREATION_Food_Product` / `PR_Food_Patient` independently of the head layer.
+
+**Methodological bug in the checks themselves, worth not repeating:** the first pass was `<p>`-centric and would have reported the formularies as sparsely marked (713 and 559 italics in `<p>`), when they are the *most* densely marked of the three — 846 and 2,501 of their `hi` sit inside `<item>`, under 238 `<list>` elements. Any structural reader must enumerate content carriers rather than assume `<p>`.
+
+**Two caveats against over-optimism.** (1) Head *presence* is ~100% but head *informativeness* is not: the formularies' chapter heads are bare alphabet letters (`'B.'`, `'C.'`, `'D.'`), carrying no scope. (2) The formularies are internally heterogeneous like Chomel — 182/267 Amsterdam sections contain `<item>`s, and one section under head `'B.'` is a Latin→Dutch synonym glossary (`"Bardanae, oft Lappae Mai. klissen."`, `"Bistortae, Herts-tong."`), not a preparation. Head text alone will not tell a glossary section from a recipe section; the content carrier will.
+
+Heads also differ in kind exactly as §9e's three-work table predicted: Chomel's name topical lemmas, `Het secreet-boek`'s name purposes (`'Om te maken een Keersse die niet uyt te blasen en is.'`), the formularies' name preparations or bare letters.
+
+**No pipeline change made — measurement and source inspection only, same as §9d/§9f.** Re-deriving Chomel at entry granularity changes record identity (`__ch10__` → per-entry ids) and would invalidate existing `record_id`s, so it needs sign-off. Still open: the read-only segmenter (TEI → entry records with head, keyword anchor, rubric, sentences, char offsets) to make the head inventory human-auditable before any classification runs; and whether the remaining DBNL works fall into these three adapter shapes or add more.
+
+---
+
 ## 10. Implementation order (reference)
 
 1. I/O schemas + kwic adapter
