@@ -215,6 +215,19 @@ class KwicInput(BaseModel):
     )
     discovery_verb: str | None = None
     frame_hint: str | None = None
+    # Structural-parse fields (see trifecta_annotation/structural_parse.py). All
+    # optional/None by default — only populated for genre-gated, trusted units;
+    # every existing caller is unaffected. PLAN.md references this as the
+    # "2-way search" stage: find the mention forward (as today), then look
+    # backward for its governing structural unit.
+    unit_id: str | None = None
+    unit_start: int | None = None
+    unit_end: int | None = None
+    target_char_offset: int | None = None
+    structural_header: str | None = None
+    structural_goal: str | None = None
+    structural_goal_inherited: bool | None = None
+    structural_signal: str | None = None
 
 
 class AnnotationProvenance(BaseModel):
@@ -232,6 +245,14 @@ class AnnotationProvenance(BaseModel):
     kwic_batch: str | None = None
     discovery_verb: str | None = None
     frame_hint: str | None = None
+    unit_id: str | None = None
+    unit_start: int | None = None
+    unit_end: int | None = None
+    target_char_offset: int | None = None
+    structural_header: str | None = None
+    structural_goal: str | None = None
+    structural_goal_inherited: bool | None = None
+    structural_signal: str | None = None
 
 
 class TrifectaAnnotation(BaseModel):

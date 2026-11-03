@@ -28,6 +28,14 @@ def _provenance_from_input(inp: KwicInput) -> AnnotationProvenance:
         kwic_batch=inp.kwic_batch,
         text_regime=inp.text_regime,
         title=inp.title,
+        unit_id=inp.unit_id,
+        unit_start=inp.unit_start,
+        unit_end=inp.unit_end,
+        target_char_offset=inp.target_char_offset,
+        structural_header=inp.structural_header,
+        structural_goal=inp.structural_goal,
+        structural_goal_inherited=inp.structural_goal_inherited,
+        structural_signal=inp.structural_signal,
     )
 
 

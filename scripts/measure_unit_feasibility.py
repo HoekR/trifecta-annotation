@@ -21,6 +21,11 @@ Four measurements, no model inference and no LLM calls:
   D. affliction side — for gold rows with a non-empty CURE_Affliction, does
      unit-goal detection recover the hand-labelled value, versus the current
      food-anchored ±180 window baseline?
+  F. product side — the mirror of D for the field §9e calls *supported*
+     (`COOKING_CREATION_Food_Product` / `PR_Food_Patient`): for gold rows in
+     RECIPE_PRACTICE/UNKNOWN regimes, does unit-goal detection recover the
+     hand-labelled value from `context_text` (widened via `food_snippets_long_kwic`
+     rejoin when short enough that a header could have been truncated away)?
 
 Report n per bucket; anything under ~30 is indicative only (the explicit
 lesson from docs/DECISIONS.md 2026-10-16).
@@ -46,7 +51,22 @@ from trifecta_annotation.unit_segmentation import (
     goal_with_inheritance,
 )
 
-MEASUREMENTS = ("A", "B", "C", "D", "E")
+MEASUREMENTS = ("A", "B", "C", "D", "E", "F")
+
+# Product-side fields by frame — the mirror of measurement D's CURE_Affliction,
+# on the side §9e calls "supported" rather than untested.
+_PRODUCT_FIELD_BY_FRAME = {
+    "COOKING_CREATION": "COOKING_CREATION_Food_Product",
+    "PRESERVING": "PR_Food_Patient",
+}
+# §9e's own note: UNKNOWN is large because gold rows carry no document title,
+# so regime inference has little to work with there — those rows are mostly
+# recipe/remedy works in practice. Included as a second, less-trusted bucket.
+_PRODUCT_REGIMES = ("RECIPE_PRACTICE", "UNKNOWN")
+# context_text this long is routinely the whole chapter already (cort_voc_db
+# rows run up to tens of thousands of chars) — below this, a header could
+# plausibly have been truncated away and a rejoin is worth attempting.
+_REJOIN_THRESHOLD_CHARS = 800
 
 DEFAULT_ENGLISH_EXPORT = (
     "/Volumes/Extreme SSD/scratch/trifecta/inception_en/export_20261014/annotation"
@@ -402,6 +422,221 @@ def measure_d_affliction_side() -> dict[str, Any]:
     }
 
 
+def _target_occurrences(text: str, target: str) -> list[int]:
+    """All start positions of *target* in *text*, word-boundary preferred.
+
+    Mirrors `homonym_context._target_span`'s two-stage strategy (bounded
+    match, then a bare substring fallback) but returns every match rather
+    than just the first, so ambiguity (more than one occurrence) can be
+    detected rather than silently resolved by "take the first."
+    """
+    if not target:
+        return []
+    bounded = re.compile(rf"\b{re.escape(target)}\b", re.IGNORECASE)
+    matches = [m.start() for m in bounded.finditer(text)]
+    if matches:
+        return matches
+    bare = re.compile(re.escape(target), re.IGNORECASE)
+    return [m.start() for m in bare.finditer(text)]
+
+
+def measure_f_product_side() -> dict[str, Any]:
+    """Does unit-goal detection recover gold product/food-patient values?
+
+    The mirror of measurement D, on the field §9e's recommendation calls
+    *supported* rather than untested (`COOKING_CREATION_Food_Product` /
+    `PR_Food_Patient`), scoped to RECIPE_PRACTICE/UNKNOWN per Rik's steer that
+    structural headings are a recipe-collection story, not a running-text one
+    (confirmed separately: the Van Lennep 1823 travel diary, 447k chars,
+    scores 0.31 unit-cues/10k — an order of magnitude below the LITERARY
+    control in measurement C, with no false positives from its dated entries).
+
+    **Only scores rows where `target_word` is unambiguously locatable in
+    `context_text`** — exactly one case-insensitive occurrence (word-boundary
+    preferred, bare-substring fallback). An earlier version of this
+    measurement defaulted unlocatable/ambiguous rows to position 0 (or "first
+    occurrence"), which collapses to the chapter's own start whenever
+    `context_text` already *is* the wide window — a self-inflicted anchoring
+    bug, not a finding about structure. First pass over the pool found: 13/26
+    `RECIPE_PRACTICE` rows (all `preservare`-corpus) have *zero* literal
+    occurrences of `target_word` in their own `context_text` even after
+    historical-spelling normalization (e.g. target `paling`, context spells
+    it `palinck`/`palinc`); several `cort_voc_db` rows have the target word
+    repeated many times across a shared chapter (`olie` ×13, `vet` ×8) with
+    no stored char-offset anywhere in the schema to disambiguate. Rows this
+    happens to are counted and reported, never silently resolved.
+
+    Unlike D, `context_text` for this pool is not uniformly a narrow KWIC
+    window — `cort_voc_db` rows run up to tens of thousands of chars (often
+    already a full chapter), while `inception_snippets` rows (most of
+    UNKNOWN) are short. So this rejoins via `food_snippets_long_kwic` only
+    when `context_text` is short enough that a header could plausibly have
+    been truncated away, and uses `context_text` itself otherwise.
+    """
+    import pandas as pd
+    from data_io import resolve
+
+    from trifecta_annotation.gold_io import load_gold_records
+    from trifecta_annotation.schemas import TrifectaAnnotation
+    from trifecta_annotation.snippet_lookup import lookup_snippet_metadata
+
+    gold = load_gold_records()
+    long_kwic = pd.read_csv(
+        resolve("food_snippets_long_kwic"), dtype=str, usecols=["doc_id", "snippet"]
+    ).drop_duplicates(subset=["doc_id"])
+    long_kwic_by_doc = dict(zip(long_kwic["doc_id"], long_kwic["snippet"], strict=False))
+
+    per_regime: dict[str, dict[str, int]] = defaultdict(lambda: defaultdict(int))
+    mismatches: dict[str, list[dict[str, str]]] = defaultdict(list)
+
+    for record in gold:
+        try:
+            annotation = TrifectaAnnotation.model_validate(record)
+        except Exception:
+            continue
+        if annotation.step_c is None or annotation.step_b is None:
+            continue
+        frame = (
+            annotation.step_b.selected_frame.value if annotation.step_b.selected_frame else None
+        )
+        field = _PRODUCT_FIELD_BY_FRAME.get(frame or "")
+        if field is None:
+            continue
+        regime = (
+            annotation.provenance.text_regime.value
+            if annotation.provenance.text_regime
+            else "UNSET"
+        )
+        if regime not in _PRODUCT_REGIMES:
+            continue
+        values = annotation.step_c.model_dump(mode="json")
+        gold_value = str(values.get(field) or "").strip()
+        context = annotation.provenance.context_text or ""
+        target = annotation.provenance.target_word or ""
+        if not gold_value or not context:
+            continue
+
+        bucket = per_regime[regime]
+        bucket["n"] += 1
+        norm_gold = normalize_hist_dutch(gold_value)
+
+        narrow_hit = find_span(context, gold_value) is not None
+        if narrow_hit:
+            bucket["narrow_contains"] += 1
+
+        # Locatability gate — decided on `context` alone, before any rejoin,
+        # since rejoin only matters for rows we can actually anchor.
+        occurrences = _target_occurrences(context, target)
+        if not occurrences:
+            bucket["target_unlocatable"] += 1
+            continue
+        if len(occurrences) > 1:
+            bucket["target_ambiguous"] += 1
+            continue
+        bucket["target_locatable"] += 1
+        local_position = occurrences[0]
+
+        if len(context) >= _REJOIN_THRESHOLD_CHARS:
+            wide = context
+            position = local_position
+            bucket["context_already_wide"] += 1
+        else:
+            match = lookup_snippet_metadata(context)
+            rejoined = long_kwic_by_doc.get(match.doc_id) if match else None
+            if rejoined is None or len(rejoined) <= len(context):
+                bucket["rejoin_failed"] += 1
+                wide = context
+                position = local_position
+            else:
+                # Anchor using the raw text immediately around the target
+                # (not a prefix of `context`, which may start mid-sentence
+                # and needn't appear verbatim in the wider source) so a
+                # formatting mismatch elsewhere in `context` can't break it.
+                window = context[max(0, local_position - 25) : local_position + 25]
+                anchor = wide.find(window) if len(window) >= 15 else -1
+                if anchor == -1:
+                    bucket["rejoin_anchor_failed"] += 1
+                    wide = context
+                    position = local_position
+                else:
+                    bucket["rejoined"] += 1
+                    wide = rejoined
+                    position = anchor + min(25, local_position)
+
+        if find_span(wide, gold_value) is not None and not narrow_hit:
+            bucket["recovered_by_wider_window_alone"] += 1
+
+        units = find_unit_boundaries(wide)
+        if not units:
+            bucket["no_units_detected"] += 1
+            continue
+
+        index = next((i for i, u in enumerate(units) if u.start <= position < u.end), None)
+        if index is None:
+            index = 0 if position < units[0].start else len(units) - 1
+
+        goal = goal_with_inheritance(wide, units, index) or extract_unit_goal(wide, units[index])
+        if goal is None:
+            bucket["unit_found_no_goal"] += 1
+            continue
+
+        bucket["goal_extracted"] += 1
+        if goal.norm == norm_gold:
+            bucket["exact"] += 1
+            bucket["soft"] += 1
+        elif soft_qualia_match(norm_gold, goal.norm):
+            bucket["soft"] += 1
+        elif len(mismatches[regime]) < 8:
+            mismatches[regime].append(
+                {"gold": gold_value, "extracted": goal.text, "signal": goal.signal}
+            )
+
+    return {
+        "by_regime": {
+            regime: {
+                **counts,
+                "narrow_contains_rate": counts["narrow_contains"] / counts["n"] if counts["n"] else float("nan"),
+                "target_locatable_rate": counts["target_locatable"] / counts["n"] if counts["n"] else float("nan"),
+                "no_units_rate": (
+                    counts["no_units_detected"] / counts["target_locatable"]
+                    if counts["target_locatable"]
+                    else float("nan")
+                ),
+                "goal_extracted_rate": (
+                    counts["goal_extracted"] / counts["target_locatable"]
+                    if counts["target_locatable"]
+                    else float("nan")
+                ),
+                "exact_rate": (
+                    counts["exact"] / counts["target_locatable"]
+                    if counts["target_locatable"]
+                    else float("nan")
+                ),
+                "soft_rate": (
+                    counts["soft"] / counts["target_locatable"]
+                    if counts["target_locatable"]
+                    else float("nan")
+                ),
+                "small_bucket": counts["target_locatable"] < SMALL_BUCKET,
+            }
+            for regime, counts in sorted(per_regime.items())
+        },
+        "mismatches": mismatches,
+        "caveat": (
+            "Rates (no_units/goal_extracted/exact/soft) are computed over "
+            "target_locatable rows only — rows where target_word is not an "
+            "unambiguous single occurrence in context_text are excluded, not "
+            "scored as failures (see target_unlocatable/target_ambiguous counts). "
+            "RECIPE_PRACTICE context_text is sometimes already the full chapter "
+            "(cort_voc_db runs up to tens of thousands of chars) so truncation is not "
+            "the limiting factor here the way it is for D's affliction test — this "
+            "measures the header-detection heuristic itself, not data availability. "
+            "UNKNOWN is near-entirely `inception_snippets` rows (short, sentence-level "
+            "exports with no document structure available at all, by construction)."
+        ),
+    }
+
+
 def measure_e_cross_language(english_export: str, limit: int | None) -> dict[str, Any]:
     """Same goal-reachability metric on Dutch and English, detected boundaries.
 
@@ -646,6 +881,40 @@ def _render_report(results: dict[str, Any]) -> str:
             "",
         ]
 
+    if "F" in results:
+        f = results["F"]
+        lines += [
+            "## F. Product side (gold COOKING_CREATION_Food_Product / PR_Food_Patient)",
+            "",
+            f"> {f['caveat']}",
+            "",
+            "| Regime | n | target locatable | narrow window has it | no units (of locatable) | goal extracted | exact | soft |",
+            "|---|---:|---:|---:|---:|---:|---:|---:|",
+        ]
+        for regime, stats in f["by_regime"].items():
+            flag = " ⚠" if stats["small_bucket"] else ""
+            lines.append(
+                f"| {regime}{flag} | {stats['n']} | {stats['target_locatable']} "
+                f"({stats['target_locatable_rate']:.1%}) | {stats['narrow_contains_rate']:.1%} | "
+                f"{stats['no_units_rate']:.1%} | {stats['goal_extracted_rate']:.1%} | "
+                f"{stats['exact_rate']:.1%} | {stats['soft_rate']:.1%} |"
+            )
+        lines += [
+            "",
+            "⚠ = under 30 locatable rows, indicative only. 'target locatable' = exactly one "
+            "unambiguous occurrence of `target_word` in `context_text`; all rate columns to its "
+            "right are computed over that subset only (see caveat).",
+            "",
+        ]
+        for regime, examples in f.get("mismatches", {}).items():
+            if not examples:
+                continue
+            lines.append(f"Mismatches ({regime}):")
+            lines.append("")
+            for ex in examples:
+                lines.append(f"- gold `{ex['gold']}` vs extracted `{ex['extracted']}` (signal: {ex['signal']})")
+            lines.append("")
+
     if "E" in results:
         e = results["E"]
         lines += [
@@ -751,6 +1020,8 @@ def main() -> None:
         results["C"] = measure_c_segmentability(args.literary_sample)
     if "D" in wanted:
         results["D"] = measure_d_affliction_side()
+    if "F" in wanted:
+        results["F"] = measure_f_product_side()
     if "E" in wanted:
         results["E"] = measure_e_cross_language(args.english_export, args.limit)
 

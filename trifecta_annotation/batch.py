@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,10 @@ from trifecta_annotation.english_hint import (
 )
 from trifecta_annotation.pipeline import annotate_record, annotate_step_a
 from trifecta_annotation.schemas import KwicInput, TrifectaAnnotation
+
+# How often `annotate_batch` prints a plain progress line, independent of
+# tqdm's bar — see that function's docstring for why.
+_REPORT_EVERY = 25
 
 
 def _load_existing_ids(output_path: Path) -> set[str]:
@@ -249,8 +254,26 @@ def run_batch(
     english_hint: bool = False,
     api_key: str | None = None,
 ) -> Path:
-    """Annotate KwicInput rows; append each result incrementally with tqdm progress."""
+    """Annotate KwicInput rows; append each result incrementally with tqdm progress.
+
+    Also prints a plain, flushed progress line every `_REPORT_EVERY` rows —
+    tqdm's `\r`-only bar renders fine in a terminal but goes silent for
+    minutes at a time when captured through a pipe like `| tail -5` (which
+    buffers until EOF) or a background-task log, which cost real monitoring
+    time on this run. Mirrors the periodic-print convention already used in
+    `scripts/ocr_colonial_pdf.py` and `scripts/build_colonial_kwic.py`.
+    """
     from tqdm import tqdm
+
+    started = time.monotonic()
+
+    def _report(done: int, total: int) -> None:
+        if total == 0 or (done % _REPORT_EVERY and done != total):
+            return
+        elapsed = time.monotonic() - started
+        rate = done / elapsed if elapsed else 0
+        eta_min = (total - done) / rate / 60 if rate else 0
+        print(f"  {done}/{total} rows  {rate:.2f} row/s  ~{eta_min:.0f} min left", flush=True)
 
     hint_lookup = default_review_hint_lookup() if english_hint else None
     instructor_client = make_instructor_client(base_url=base_url, api_key=api_key)
@@ -279,8 +302,9 @@ def run_batch(
         with path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(record, ensure_ascii=False) + "\n")
 
+    total = len(pending)
     if concurrency <= 1:
-        for record in tqdm(pending, desc="TRIFECTA A→B→C", unit="row"):
+        for done, record in enumerate(tqdm(pending, desc="TRIFECTA A→B→C", unit="row"), start=1):
             _write(
                 _annotate_one(
                     record,
@@ -290,6 +314,7 @@ def run_batch(
                     english_hint_lookup=hint_lookup,
                 ),
             )
+            _report(done, total)
     else:
         with ThreadPoolExecutor(max_workers=concurrency) as executor:
             futures = [
@@ -303,13 +328,12 @@ def run_batch(
                 )
                 for record in pending
             ]
-            for future in tqdm(
-                as_completed(futures),
-                total=len(futures),
-                desc="TRIFECTA A→B→C",
-                unit="row",
+            for done, future in enumerate(
+                tqdm(as_completed(futures), total=len(futures), desc="TRIFECTA A→B→C", unit="row"),
+                start=1,
             ):
                 _write(future.result())
+                _report(done, total)
 
     total_rows = sum(1 for line in path.open(encoding="utf-8") if line.strip())
     _write_batch_sidecar(

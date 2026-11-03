@@ -113,6 +113,32 @@ _WORK_REGIME: dict[str, TextRegime] = {
     "koer001bloe01_01": TextRegime.LITERARY,
     "daum001hoeh01_01": TextRegime.LITERARY,  # Daum (ps. Maurits), Indies novel
     "bosb002medi02_01": TextRegime.LITERARY,  # Bosboom-Toussaint (was ADMIN_TRADE: "vredehandel")
+    # --- hand-downloaded scholarly editions, 2026 session (build_handdownload_kwic.py) ---
+    # "Een notabel boecxken van cokeryen" (ca. 1514) is a cookery book by its own
+    # title, but "cokeryen" doesn't match the RECIPE_PRACTICE keyword pattern
+    # (ko[oc]+k expects a doubled o/c, not this spelling) — an explicit call
+    # rather than relying on fragile keyword inference, per this table's own
+    # stated rationale above.
+    "_not001nota01_01": TextRegime.RECIPE_PRACTICE,
+    # "Tbouck van wondre" (1513, "Book of Wonders") deliberately left unclassified
+    # (falls through to UNKNOWN) — plausibly a secrets/household-recipe-adjacent
+    # genre like bate002secr02_01, but not confirmed; UNKNOWN safely keeps it out
+    # of the structural-parse gate rather than guessing it in.
+
+    # --- H1 full-sweep false positives (2026): keuken/huishoud-themed titles that
+    # matched the RECIPE_PRACTICE keyword pattern but are verse, not recipe prose.
+    # Confirmed two ways: TEI tag counts are <l>/<lg>-dominant (verse/stanza), not
+    # <p>+<head> (recipe prose with a dish-name header per entry); and DBNL's own
+    # `dbnl_genre` column (unused by keyword inference) tags 4 of these 5 "poëzie"
+    # outright. Mapped to LITERARY rather than UNKNOWN since they ARE poetry/song,
+    # confirmed, not merely unclassified; this also keeps them out of the
+    # structural-parse gate (RECIPE_PRACTICE-only), which would otherwise have
+    # tried to read a dish-name header structure out of verse.
+    "_ams007amst03_01": TextRegime.LITERARY,  # De Amsterdamse gaare-keuken (songbook; "gaare-keuken" = tavern setting, not a cookbook)
+    "_nie060nieu01_01": TextRegime.LITERARY,  # Nieuw lied van Mietje de keukenmeid (ballad)
+    "_nie175nieu01_01": TextRegime.LITERARY,  # De nieuwe vermaakelyke gaare-keuken (pastoral verse)
+    "_ver055verk01_01": TextRegime.LITERARY,  # Het verkeerde huishouden (comedic verse/play)
+    "bell002proe01_01": TextRegime.LITERARY,  # Proeven voor het verstand, den smaak en het hart (literary essays, DBNL genre "proza")
 }
 
 _WORK_KEY_RE = re.compile(r"\s*\(\d+\)")

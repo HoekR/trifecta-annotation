@@ -19,3 +19,6 @@ docs/*.pdf
 # Generated / reviewed frame-verb corpus (scripts/build_frame_verb_lexicon.py)
 trifecta_frame_verb_corpus.csv
 *.parquet
+
+# Background job logs from long-running batch/training runs
+.claude_bg_*.log

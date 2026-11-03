@@ -11,6 +11,11 @@ SYSTEM_PROMPT = (
     "Extract CURE_Affliction (the illness, symptom, or ailment being treated) and "
     "CURE_Food_Treatment (how the food/substance is applied or administered, e.g. drinken, innemen, gorgelen, wasschen, pleister). "
     "Use empty string when a field is not stated in the context.\n\n"
+    "All extracted field values must be in Dutch, quoted or closely "
+    "paraphrased from the context -- never translate into English or any "
+    "other language, and never mix English words into a Dutch span. If no "
+    "Dutch wording in the context supports a field, use empty string rather "
+    "than an English gloss.\n\n"
     "{few_shots}"
 )
 

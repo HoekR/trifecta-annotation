@@ -11,6 +11,17 @@ The decisive property of `frk` is that it emits the real long s `ſ`, which
 `normalize_hist_dutch` already maps; every non-Fraktur model emits `f` instead,
 which cannot be repaired downstream.
 
+5 of the 7 `KB_COOKBOOKS_2026` acquisitions (`mmkb18*`/`mmkb31*`, not
+`mmsfkb02*`) have a different problem, found during `SENTENCE_HARVEST.md`'s
+RECIPE_SIEVE verification: the embedded text layer's *words* are correct but
+its reading order is scrambled throughout the entire document (not an early-
+pages issue) — `pdftotext` emits one word per line in roughly random order.
+A single-page proof-of-concept (`-l nld --psm 3`, the plain modern-Dutch
+model, no blackletter) on the rendered page image produces clean, correctly-
+ordered text instead, confirming the problem is the existing layer's stored
+order, not image quality or OCR accuracy. These 5 live under
+`colonial_books_ocr/acquisitions`, not `colonial_books`, hence `source_dir`.
+
 Pages are rendered one at a time and the PNG is deleted immediately: at 300 dpi
 a page is ~5 MB, so keeping 776 of them would cost ~4 GB for no benefit. The run
 is resumable — a page whose text file already exists is skipped — because a full
@@ -31,14 +42,46 @@ from pathlib import Path
 
 from data_io import resolve
 
-# Books in `colonial_books` that have no usable text, with the language the
-# engine comparison selected for each. Only Dodoens is blackletter; the rest of
-# the collection already has a usable embedded layer and must not be re-OCRed.
+# Books with no usable embedded text layer, with the language/source the
+# engine comparison (or, for the KB cookbooks, the scrambled-reading-order
+# finding above) selected for each. "source_dir" picks where `filename` lives
+# relative to the `colonial_books_ocr` dataset root; default is
+# `colonial_books` (resolved separately, the original PDF corpus).
 BOOKS: dict[str, dict[str, str]] = {
     "dodoens": {
         "filename": "Crŭÿde boeck_Dodoens_mobot31753000817624.pdf",
         "lang": "frk",
         "psm": "3",
+    },
+    "oost_indisch": {
+        "filename": "mmkb31_043972000_pdf.pdf",
+        "lang": "nld",
+        "psm": "3",
+        "source_dir": "acquisitions",
+    },
+    "visser": {
+        "filename": "mmkb18_002953000_pdf.pdf",
+        "lang": "nld",
+        "psm": "3",
+        "source_dir": "acquisitions",
+    },
+    "kwatta": {
+        "filename": "mmkb18a_013242000_pdf.pdf",
+        "lang": "nld",
+        "psm": "3",
+        "source_dir": "acquisitions",
+    },
+    "nieuwste": {
+        "filename": "mmkb18a_013925000_pdf.pdf",
+        "lang": "nld",
+        "psm": "3",
+        "source_dir": "acquisitions",
+    },
+    "geillustreerd": {
+        "filename": "mmkb18a_022522000_pdf.pdf",
+        "lang": "nld",
+        "psm": "3",
+        "source_dir": "acquisitions",
     },
 }
 
@@ -83,7 +126,11 @@ def main() -> None:
     args = parser.parse_args()
 
     spec = BOOKS[args.book]
-    pdf = Path(resolve("colonial_books")) / spec["filename"]
+    source_dir = spec.get("source_dir")
+    if source_dir:
+        pdf = Path(resolve("colonial_books_ocr")) / source_dir / spec["filename"]
+    else:
+        pdf = Path(resolve("colonial_books")) / spec["filename"]
     if not pdf.exists():
         raise SystemExit(f"missing source: {pdf}")
 
@@ -120,7 +167,7 @@ def main() -> None:
             left = (last - page) / rate if rate else 0
             print(f"  {page}/{last}  {rate:.2f} pages/s  ~{left/60:.0f} min left", flush=True)
 
-    combined = out_dir.parent / f"{args.book}_frk.txt"
+    combined = out_dir.parent / f"{args.book}_{spec['lang']}.txt"
     parts = sorted(out_dir.glob("page_*.txt"))
     with combined.open("w", encoding="utf-8") as fh:
         for part in parts:

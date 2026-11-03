@@ -11,6 +11,11 @@ SYSTEM_PROMPT = (
     "Extract COOKING_CREATION_Method, COOKING_CREATION_Process, and COOKING_CREATION_Food_Product. "
     "Prefer concise spans from the context; longer multi-step Methods are fine when the text "
     "lists them. Use empty string when a field is not stated.\n\n"
+    "All extracted field values must be in Dutch, quoted or closely "
+    "paraphrased from the context -- never translate into English or any "
+    "other language, and never mix English words into a Dutch span. If no "
+    "Dutch wording in the context supports a field, use empty string rather "
+    "than an English gloss.\n\n"
     "{few_shots}"
 )
 
