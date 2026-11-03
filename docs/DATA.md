@@ -23,12 +23,14 @@ This project uses the **DH data template**: `data_manifest.toml` + `data_io/` fo
 
 | Logical name | Phase | Description |
 |--------------|-------|-------------|
-| `food_terms` | frozen | `Food_terms.csv` from preservare |
+| `food_terms` | frozen | `Food_terms.csv` from preservare (+ `tabak` stimulant entry) |
 | `voc_recipes` | frozen | VOC recipe corpus |
 | `recipe_web` | frozen | 20th-c. newspaper recipes |
 | `kwic_gold_review` | semi | KWIC calibration pool |
 | `food_snippets_source` | frozen | OneDrive CSV (canonical, ~31k rows) |
 | `food_snippets` | frozen | Scratch copy of food snippets CSV |
+| `food_snippets_kwic` | frozen | KWIC xlsx wide copy (`manual_labels`) |
+| `food_snippets_long_kwic` | frozen | Deduped KWIC long CSV (`kwic_batch`) |
 | `food_snippets_manual` | semi | Scratch copy of manual annotation txt (~106) |
 | `kwic_inputs` | semi | Normalized `KwicInput` JSONL (write) |
 | `trifecta_gold_csv` | semi | Gold labelling spreadsheet (CSV) |
@@ -37,6 +39,18 @@ This project uses the **DH data template**: `data_manifest.toml` + `data_io/` fo
 | `frame_classifications` | semi | Step B outputs (write) |
 | `trifecta_annotations` | semi | Full A→B→C outputs (write) |
 | `eval_reports` | semi | Eval metrics and markdown reports (write) |
+| `verb_spike_candidates` | semi | Verb-KWIC candidates for the verb-first spike (scratch) |
+| `verb_phase2a_gold` | semi | Phase 2a verb-KWIC gold worksheet (scratch) |
+| `verb_phase2a_inputs` | semi | Phase 2a verb-KWIC annotation inputs (scratch) |
+| `verb_phase2a_predictions` | semi | Phase 2a verb-first predictions (scratch) |
+| `verb_phase2a_eval` | semi | Phase 2a verb-versus-noun evaluation report (scratch) |
+| `embedding_exemplars` | semi | Per-frame gold exemplars for embedding retrieval (E2) |
+| `embedding_candidates` | semi | Hybrid embedding KwicInput candidates (E3) |
+| `embedding_candidates_semantic_only` | semi | Embedding hits without LU anchor (E3) |
+| `embedding_chunk_index` | semi | Chunk metadata for embedding pilot (E3) |
+| `embedding_kwic_reranked` | semi | KWIC re-ranked by embedding + NONE margin (E5a) |
+
+The active Phase 2a worksheet is on scratch at `/Volumes/Extreme SSD/scratch/trifecta/verb_phase2a/gold.csv`; use `resolve("verb_phase2a_gold")` in code rather than hard-coding this path.
 
 ## Code usage
 

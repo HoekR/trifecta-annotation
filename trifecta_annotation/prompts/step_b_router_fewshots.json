@@ -1,0 +1,35 @@
+{
+  "examples": [
+    {
+      "target_word": "biet",
+      "context_text": "…re weert, Die niet en pot-lijst aenden heert. Een man die sich noeyt vreucht en biet Daer aen sijn vrouwe leet geschiet. Een man, die door een malle dracht Geen wijf en vordert inde pracht.",
+      "output": "{\"group\": \"OTHER\", \"lexical_unit\": \"\", \"reasoning\": \"biet is offer here, not food related at all\"}"
+    },
+    {
+      "target_word": "uijen",
+      "context_text": "…iep hij ons aanmoedigend toe, wanneer wij voor zijn dunne koolsoep of sterk met uijen, ja zelfs met een soupçon d'ail, gekruide pied de mouton den neus optrokken en voorwendden geen honger te hebben…",
+      "output": "{\"group\": \"OTHER\", \"lexical_unit\": \"neus optrokken\", \"reasoning\": \"refusal to eat, not preparation/preservation/treatment\"}"
+    },
+    {
+      "target_word": "Wyn",
+      "context_text": "…Scolopender-blad, rode Cicers, de middelbast van Fleer; of laten weken in witte Wyn, Wortels van wilde Fleer en daar van een uur voor de Koors een slok, of twee van drinken.",
+      "output": "{\"group\": \"TRANSFORM\", \"lexical_unit\": \"weken\", \"reasoning\": \"steps for making an infusion — preparation, not mere consumption\"}"
+    },
+    {
+      "target_word": "Snyboonen",
+      "context_text": "…legze voords in een steenen pot, met wat heele witte peperkorrels, foely, en laurierbladen er tusschen: neem voords goeden wynazyn, kook denzelven af, en giet hem dan over de boonen; bind de pot met een blaas toe, en laatze dus 8 of 10 dagen staan…",
+      "output": "{\"group\": \"TRANSFORM\", \"lexical_unit\": \"leggen\", \"reasoning\": \"pickling for long-term keeping\"}"
+    },
+    {
+      "target_word": "Drankje",
+      "context_text": "Velen zyn door het volgende Drankje, in 't midden van de Koors genomen, in korten tyd genezen geworden. Een Drankje voor de Alledaagse Koors.",
+      "output": "{\"group\": \"TRANSFORM\", \"lexical_unit\": \"genezen\", \"reasoning\": \"remedy for an explicit affliction\"}"
+    },
+    {
+      "target_word": "thee",
+      "context_text": "… ongestelde maag, zekere gele bloemen, die men altijd in de bosschen vindt, als thee te laten trekken, en daarvan veel te drinken. ik had naauwelijks dien wensch te kennen gegeven, of er was een glans van vreugde…",
+      "output": "{\"group\": \"OTHER\", \"lexical_unit\": \"drinken\", \"reasoning\": \"direct drinking, no preparation/preservation/affliction framing in this snippet\"}"
+    }
+  ],
+  "notes": "EXPERIMENTAL (2026-10-13): coarse router few-shots for the 2-stage Step B split prototype. Binary decision only: TRANSFORM (COOKING_CREATION/PRESERVING/CURE) vs OTHER (INGESTION/NONE)."
+}

@@ -1,0 +1,35 @@
+{
+  "examples": [
+    {
+      "target_word": "Wyn",
+      "context_text": "…Scolopender-blad, rode Cicers, de middelbast van Fleer; of laten weken in witte Wyn, Wortels van wilde Fleer en daar van een uur voor de Koors een slok, of twee van drinken.",
+      "output": "{\"selected_frame\": \"COOKING_CREATION\", \"lexical_unit\": \"weken\", \"reasoning\": \"is a recipe for making an infusion\"}"
+    },
+    {
+      "target_word": "Oesters",
+      "context_text": "Snoeck op sijn Frans te koken.110. Hoemen Vorschen koken sal.111. Hoemen d'Oesters koken sal.111. Maniere om 'tFruyt te dienen.112.",
+      "output": "{\"selected_frame\": \"COOKING_CREATION\", \"lexical_unit\": \"koken\", \"reasoning\": \"recipe title: how to cook oysters\"}"
+    },
+    {
+      "target_word": "Kriecken",
+      "context_text": "Maeckt u sirope van het beste suycker dat ghy vinden cont, ende laet dit dickachtich sieden, neempt daer af naer de quantiteyt vande kriecken, datse wel ruym moghen sieden, doeter die kriecken in, ende laetse soo langhe op een koolvier sieden tot datse ghenoech sijn, behoudende altoos soo veel sirope, datse overdeckt moghen blijven ligghen.",
+      "output": "{\"selected_frame\": \"PRESERVING\", \"lexical_unit\": \"confijten\", \"reasoning\": \"cherries cooked and kept covered in sugar syrup for long-term keeping, not an immediate dish\"}"
+    },
+    {
+      "target_word": "Snyboonen",
+      "context_text": "…legze voords in een steenen pot, met wat heele witte peperkorrels, foely, en laurierbladen er tusschen: neem voords goeden wynazyn, kook denzelven af, en giet hem dan over de boonen; bind de pot met een blaas toe, en laatze dus 8 of 10 dagen staan…",
+      "output": "{\"selected_frame\": \"PRESERVING\", \"lexical_unit\": \"leggen\", \"reasoning\": \"beans packed in a sealed pot with vinegar poured over, to keep a year long — pickling, not preparation of a dish to eat now\"}"
+    },
+    {
+      "target_word": "Drankje",
+      "context_text": "Velen zyn door het volgende Drankje, in 't midden van de Koors genomen, in korten tyd genezen geworden. Een Drankje voor de Alledaagse Koors.",
+      "output": "{\"selected_frame\": \"CURE\", \"lexical_unit\": \"genezen\", \"reasoning\": \"a drink taken during a fever to cure it, framed explicitly as a remedy for an affliction (Koors)\"}"
+    },
+    {
+      "target_word": "Kaneel",
+      "context_text": "Om de verstoppingen der Stonden te genezen, moet men Suiker, Kaneel, en Sap van Hyssoop by de zelfde menigte doen. Men geeft'er zwangere Vrouwen niet meer dan een drup van.",
+      "output": "{\"selected_frame\": \"CURE\", \"lexical_unit\": \"genezen\", \"reasoning\": \"cinnamon mixed with sugar and hyssop juice to cure menstrual blockages (verstoppingen der stonden) — an explicit affliction + treatment\"}"
+    }
+  ],
+  "notes": "EXPERIMENTAL (2026-10-13): stage-1 few-shots for the transformation-frame classifier (COOKING_CREATION / PRESERVING / CURE only), part of the 2-stage Step B split prototype. Isolated from step_b_fewshots.json — never mixed with INGESTION/NONE examples in the same prompt, which is the specific thing that broke the flat additive/balanced attempts (see project memory project_step_b_fewshot_regression)."
+}

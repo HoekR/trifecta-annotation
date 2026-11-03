@@ -1,0 +1,159 @@
+# Trifecta Step 5 / m10 — iteration gates (project-local)
+# Wisdom: dighum_template/wisdom/topics/iteration-decision-framework.md
+#
+# Usage:
+#   uv run --directory ~/develop/dighum_template/packages/workflow_mcp \
+#     workflow-orchestrator advise --project-root . --concern fewshot_preserving
+#
+# Flip [facts] / stage.done / concern.done as you progress. Do not chase
+# step_c_exact_micro once soft scoring is the agreed bar.
+
+[meta]
+version = 1
+description = "Qualia for analysis: gold → Step C eval → few-shot calibrate → analysis notebooks"
+
+[facts]
+has_step_c_gold = true
+soft_step_c_metric = true
+cooking_fewshots_wired = true
+all_frame_fewshots_wired = true
+analysis_export_ready = true
+step_b_frozen_baseline = true
+
+[[stages]]
+id = "gold_quota"
+done = true
+done_when = "Quota Step C gold imported (multi-frame; currently ~93 Step C / ~308 gold)"
+requires_facts = []
+requires_stages = []
+
+[[stages]]
+id = "baseline_eval"
+done = true
+done_when = "trifecta-eval (exact + soft) on gold_predictions; report in eval/"
+requires_facts = ["has_step_c_gold", "soft_step_c_metric"]
+requires_stages = ["gold_quota"]
+
+[[stages]]
+id = "prompt_calibrate"
+done = false
+done_when = "Per-frame few-shots reviewed; gold re-batch shows soft micro worth keeping"
+requires_facts = ["has_step_c_gold", "soft_step_c_metric"]
+requires_stages = ["baseline_eval"]
+
+[[stages]]
+id = "analysis_use"
+done = false
+done_when = "Notebooks on trifecta_analysis with uncertainty_note; exploratory only"
+requires_facts = ["analysis_export_ready"]
+requires_stages = ["prompt_calibrate"]
+
+[[stages]]
+id = "corpus_expand"
+done = false
+done_when = "New corpus slice (e.g. DBNL) preprocessed and registered in manifest"
+requires_facts = []
+requires_stages = ["analysis_use"]
+
+# --- concerns (active loops) ---
+
+[[concerns]]
+id = "step_c_exact_micro"
+stage = "prompt_calibrate"
+max_attempts = 2
+escalate_to = "change_success_criteria"
+done = true
+done_when = "Prefer soft micro; do not burn passes on exact-match"
+
+[[concerns]]
+id = "fewshot_cooking"
+stage = "prompt_calibrate"
+max_attempts = 2
+escalate_to = "ask_human"
+done = true
+done_when = "COOKING few-shots wired and re-batched"
+
+[[concerns]]
+id = "fewshot_preserving"
+stage = "prompt_calibrate"
+max_attempts = 3
+escalate_to = "ask_human"
+done = false
+done_when = "PRESERVING few-shots reviewed against soft Step C; re-batch once"
+
+[[concerns]]
+id = "fewshot_cure"
+stage = "prompt_calibrate"
+max_attempts = 3
+escalate_to = "ask_human"
+done = false
+done_when = "CURE few-shots reviewed; COOKING vs CURE rule reflected"
+
+[[concerns]]
+id = "fewshot_ingestion"
+stage = "prompt_calibrate"
+max_attempts = 3
+escalate_to = "ask_human"
+done = false
+done_when = "INGESTION few-shots reviewed; schema-enrich deferred unless blocked"
+
+[[concerns]]
+id = "soft_micro_chase"
+stage = "prompt_calibrate"
+max_attempts = 3
+escalate_to = "change_success_criteria"
+done = false
+done_when = "Soft micro plateau accepted or more gold preferred over another prompt pass"
+
+[[concerns]]
+id = "ingestion_schema_enrich"
+stage = "prompt_calibrate"
+max_attempts = 2
+escalate_to = "defer"
+done = false
+reopen = false
+done_when = "Optional IngestionQualia slots decided (or explicitly deferred)"
+
+[[concerns]]
+id = "analysis_notebooks"
+stage = "analysis_use"
+max_attempts = 2
+escalate_to = "ask_human"
+done = false
+done_when = "At least one notebook reads trifecta_analysis with regime filters + uncertainty"
+
+[[concerns]]
+id = "gold_wording"
+stage = "gold_quota"
+max_attempts = 2
+escalate_to = "escalate_upstream"
+done = true
+done_when = "Longer pred spans acceptable; soft match is the review bar"
+
+[[concerns]]
+id = "eval_strictness"
+stage = "baseline_eval"
+max_attempts = 2
+escalate_to = "change_success_criteria"
+done = true
+done_when = "Exact kept for strict report; soft for judgment / few-shot picking"
+
+[[interlocks]]
+a = "gold_wording"
+b = "eval_strictness"
+blocking = true
+
+[[interlocks]]
+a = "fewshot_preserving"
+b = "soft_micro_chase"
+blocking = false
+
+[[interlocks]]
+a = "fewshot_cure"
+b = "soft_micro_chase"
+blocking = false
+
+[[interlocks]]
+a = "fewshot_ingestion"
+b = "ingestion_schema_enrich"
+blocking = false

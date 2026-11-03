@@ -1,0 +1,5 @@
+[core]
+    analytics = false
+    remote = scratch_remote
+['remote "scratch_remote"']
+    url = /Volumes/Extreme SSD/scratch/trifecta/.dvc_remote

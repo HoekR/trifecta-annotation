@@ -1,0 +1,5 @@
+outs:
+- md5: 81330cbd2e3226c94c12d5467840f0de
+  size: 2413095
+  hash: md5
+  path: kwic_inputs.jsonl

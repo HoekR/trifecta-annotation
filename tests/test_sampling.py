@@ -25,7 +25,7 @@ def test_stratified_row_indices_spreads_works() -> None:
     assert len(works) == 3
 
 
-def test_row_has_target_via_indices() -> None:
+def test_row_has_target_wide_format() -> None:
     frame = pd.DataFrame(
         [
             {
@@ -46,3 +46,26 @@ def test_row_has_target_via_indices() -> None:
     )
     indices = stratified_row_indices(frame, limit=5, seed=0)
     assert list(indices) == [1]
+
+
+def test_row_has_target_long_format() -> None:
+    frame = pd.DataFrame(
+        [
+            {
+                "doc_id": "1",
+                "filename": "a.xml",
+                "title": "A",
+                "snippet": "met zout en peper",
+                "matched_term": "peper",
+            },
+            {
+                "doc_id": "2",
+                "filename": "b.xml",
+                "title": "B",
+                "snippet": "geen voedsel",
+                "matched_term": "zout",
+            },
+        ],
+    )
+    indices = stratified_row_indices(frame, limit=5, seed=0)
+    assert list(indices) == [0]

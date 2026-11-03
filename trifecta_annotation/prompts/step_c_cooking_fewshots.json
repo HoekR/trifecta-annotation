@@ -1,0 +1,73 @@
+{
+  "examples": [
+    {
+      "target_word": "sap",
+      "context_text": "… booter, wat gekapte petercelie, zout en notemuscaat: en op het laatste doet men 'er een ey klein geklopt met wat Limoensap onder, dan schud men het door een, en men laat het een quartier braaf door stooven. Op dezelve wyze kan men het ingewand der kreeften en uitgepelde garnaalen stooven is zeer smakelyk. 22. Hoenders, hoe men die stooven zal. Neemt een koppel…",
+      "output": "{\"frame\": \"COOKING_CREATION\", \"COOKING_CREATION_Method\": \"\", \"COOKING_CREATION_Process\": \"stooven\", \"COOKING_CREATION_Food_Product\": \"\", \"lexical_unit\": \"stooven\"}"
+    },
+    {
+      "target_word": "vlees",
+      "context_text": "…yn goede soldaten, en dapperder, als de Sinezen, slapen tegen de aerde aen, op een kleet of tapyt: braden en kooken hun vlees, doch niet recht gaer: scheppen in de jagt groot vermaek, eeten kemels en paerden vleesch, en weten bier te brouwen. Veele onder hen hebben weinig Godtsdienst, zyn heidenen, en offeren steets met byzondere gebaren. Hunne geestelyke prieste…",
+      "output": "{\"frame\": \"COOKING_CREATION\", \"COOKING_CREATION_Method\": \"braden en kooken hun vlees\", \"COOKING_CREATION_Process\": \"\", \"COOKING_CREATION_Food_Product\": \"vlees\", \"lexical_unit\": \"braden en kooken hun vlees\"}"
+    },
+    {
+      "target_word": "Neuten-olie",
+      "context_text": "Dit gedaan zynde, laat men ze door een Lywaat lopen, daar na laat men’er zout in smelten, daar men Honig en Olyven-, of Neuten-olie by doet. Als alles is met den anderen gemengd, zet men’er het Paard een Klisteer van. Daar na neemt men een stok, waar mede men den buik van ’t Paard styf vryft.",
+      "output": "{\"frame\": \"COOKING_CREATION\", \"COOKING_CREATION_Method\": \"smelten, by doen\", \"COOKING_CREATION_Process\": \"Lywaat lopen, zout smelten, Honig en Olyven-, of Neuten-olie toevoegen, Paard klisteren, buik vryften met stok\", \"COOKING_CREATION_Food_Product\": \"\", \"lexical_unit\": \"doet\"}"
+    },
+    {
+      "target_word": "aardappelen",
+      "context_text": "…. Dan verhief zij zich kaarsrecht van de rustbank, keek hem strak in de oogen en antwoordde plechtig: ‘Reginald, ik kan aardappelen koken op vijftien verschillende manieren!’ Dan legde zij haar hoofd weder aan zijn borst en in haar rose oor klonk als een gehuil van vreugde. Zacht daalde de zon aan de kim.",
+      "output": "{\"frame\": \"COOKING_CREATION\", \"COOKING_CREATION_Method\": \"aardappelen koken op vijftien verschillende manieren\", \"COOKING_CREATION_Process\": \"\", \"COOKING_CREATION_Food_Product\": \"aardappelen\", \"lexical_unit\": \"koken\"}"
+    },
+    {
+      "target_word": "koe",
+      "context_text": "Steert van eenen Hamel.67. Manieren van Stoven. Lendenen van eenen Os oft Koe.67. Kalfs-borst te stoven.69. Capuynen ende Hinnen.69.",
+      "output": "{\"frame\": \"COOKING_CREATION\", \"COOKING_CREATION_Method\": \"\", \"COOKING_CREATION_Process\": \"stoving\", \"COOKING_CREATION_Food_Product\": \"Kalfs-borst\", \"lexical_unit\": \"stoven\"}"
+    },
+    {
+      "target_word": "oesters",
+      "context_text": "Snoeck op sijn Frans te koken.110. Hoemen Vorschen koken sal.111. Hoemen d'Oesters koken sal.111. Maniere om 'tFruyt te dienen.112.",
+      "output": "{\"frame\": \"COOKING_CREATION\", \"COOKING_CREATION_Method\": \"Hoemen d'Oesters koken sal.\", \"COOKING_CREATION_Process\": \"\", \"COOKING_CREATION_Food_Product\": \"Oesters\", \"lexical_unit\": \"koken\"}"
+    },
+    {
+      "target_word": "olie",
+      "context_text": "Uitgeperste Olien. Oleum Amygdalarum Dulcium. NEemt drooge, soete Amandelen, die niet rans en zyn, soo veel gy wilt. Kleen gestooten zynde, doetse in een grove kaasdoek, en perst daar, sonder warm te maken, de olie uyt. Een once versch ingenomen dryft de n…",
+      "output": "{\"frame\": \"COOKING_CREATION\", \"COOKING_CREATION_Method\": \"Persting\", \"COOKING_CREATION_Process\": \"Verwarmen, persten\", \"COOKING_CREATION_Food_Product\": \"Olie\", \"lexical_unit\": \"olie\"}"
+    },
+    {
+      "target_word": "vlees",
+      "context_text": "…de droocht allen de vochticheyt dier noch soude mogen in wesen, maer men moet wel toe sien dat het yser nievers aen het vlees en raeckt, want men doet dit maer om hem van binnen drooch te maecken, ende eenen gaelschen reuck die hy gemeynelijck heeft te nemen, wiltmen hem vullen dat machmen doen met eenige vande vulsels, oft men mach hem wat bestroyen van binnen m…",
+      "output": "{\"frame\": \"COOKING_CREATION\", \"COOKING_CREATION_Method\": \"broeyen, plucken, drooch, vullen met vulsels, broeyen, steecken in warm water, cout worden, lardeert met speck, steeckt tusschen nagelen, braden aen lancksamich vier\", \"COOKING_CREATION_Process\": \"thermal process applied during cooking\", \"COOKING_CREATION_Food_Product\": \"cooked meat product\", \"lexical_unit\": \"braden\"}"
+    },
+    {
+      "target_word": "olie",
+      "context_text": "…en af te wissen. Daar en boven om te maken, dat de Wyn niet Kanig werde, giet ene, of twee lepelen heete, of koude Boom-olie, daar op; Maar, zo de Wyn bereids Kanig is geworden, neem een stuk van den bast van een Elzenboom, schrap de buitenste weg, en laat de binnenste droog worden, hangt ze daar na bloot in den Wyn, zo trekt zy alle Kaan volkomen na zich, en do…",
+      "output": "{\"frame\": \"COOKING_CREATION\", \"COOKING_CREATION_Method\": \"branden\", \"COOKING_CREATION_Process\": \"\", \"COOKING_CREATION_Food_Product\": \"\", \"lexical_unit\": \"branden\"}"
+    },
+    {
+      "target_word": "Wyn",
+      "context_text": "… Ramenas-, Aspersie-wortel, Beteunie en Scolopender-blad, rode Cicers, de middelbast van Fleer; of laten weken in witte Wyn, Wortels van wilde Fleer en daar van een uur voor de Koors een slok, of twee van drinken.",
+      "output": "{\"frame\": \"COOKING_CREATION\", \"COOKING_CREATION_Method\": \"Weken in witte Wyn\", \"COOKING_CREATION_Process\": \"\", \"COOKING_CREATION_Food_Product\": \"Sap van Beteunie en Weegbree, Eppe, Pieterseli-, Ramenas-, Aspersie-wortel, Beteunie en Scolopender-blad, rode Cicers, middelbast van Fleer\", \"lexical_unit\": \"weken\"}"
+    },
+    {
+      "target_word": "vet",
+      "context_text": "…on, of op den ooven droogen, maar dan zyn ze zo goed niet. 7. Ganzen, hoe men die voor de winter zal inzouten. Dewyl de vetten Ganzen, in het Najaar en tegen de maand December redelyk van prys, en des winters zeer duur zyn, zo kan men die op deeze wyze inzouten: Men haalt ze wel uit, en bewaart het vet; dan wryft men ze ter deegen met zout, daar een klein Met h…",
+      "output": "{\"frame\": \"COOKING_CREATION\", \"COOKING_CREATION_Method\": \"kookt ze een welletje op\", \"COOKING_CREATION_Process\": \"\", \"COOKING_CREATION_Food_Product\": \"\", \"lexical_unit\": \"kookt ze een welletje op\"}"
+    }
+  ],
+  "record_ids": [
+    "_vol002volm01_01.xml__ch18__v_trekken__sap",
+    "wits008noor02_01.xml__ch4__v_braden__vlees",
+    "inception_nl__selected_texts_txt__dekker__s39__11396__neuten_olie",
+    "_hui002189901_01.xml__ch117__v_koken__aardappelen",
+    "magi007kooc02_01.xml__ch15__v_stoven__koe",
+    "magi007kooc02_01.xml__ch15__v_koken__oesters",
+    "_pha001phar05_01.xml__ch28__v_maken__olie",
+    "magi007kooc02_01.xml__ch8__v_broeyen__vlees",
+    "chom003huis01_01.xml__ch13__v_maken__olie",
+    "inception_nl__selected_texts_txt__dekker__s30__9204__wyn",
+    "_vol002volm01_01.xml__ch17__vet"
+  ],
+  "notes": "COOKING_CREATION Step C few-shots from step_c_review indices [1, 5, 6, 7, 8, 9, 10, 11, 22, 23, 26] (2026-07-16). Prefer pred fields (longer wording). Skipped non-COOKING indices [0, 2, 3, 4]. Indices 22/23/26: gold was CURE/INGESTION/PRESERVING; adopted COOKING pred."
+}

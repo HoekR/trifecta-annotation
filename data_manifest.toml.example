@@ -19,11 +19,15 @@ mount_check = "/Volumes/your-warm-drive"
 root = "/Volumes/your-scratch-drive/scratch"
 mount_check = "/Volumes/your-scratch-drive"
 
+[tiers.local]
+root = "/path/to/trifecta-annotation/data_local"
+mount_check = ""
+
 # --- ontology (sibling repo, optional) ---
 
 [datasets.food_terms]
-tier = "hot"
-path = "recepten-preservare-analysis/source_data/Food_terms.csv"
+tier = "warm"
+path = "reference/Food_terms.csv"
 phase = "frozen"
 description = "TRIFECTA food ontology"
 parent = ""
@@ -35,6 +39,13 @@ tier = "hot"
 path = "/path/to/OneDrive/data/trifecta/cort_voc_db/processed_outputs/food_snippets_for_annotation.csv"
 phase = "frozen"
 description = "Canonical food snippets CSV on OneDrive"
+parent = ""
+
+[datasets.food_snippets_long_source]
+tier = "hot"
+path = "/path/to/OneDrive/data/trifecta/cort_voc_db/processed_outputs/food_snippets_long.csv"
+phase = "frozen"
+description = "Exploded food snippets — one row per matched keyword"
 parent = ""
 
 [datasets.food_snippets_manual_source]
@@ -53,12 +64,40 @@ phase = "frozen"
 description = "Working copy of food snippets CSV"
 parent = "food_snippets_source"
 
+[datasets.food_snippets_long]
+tier = "scratch"
+path = "trifecta/food_snippets_long.csv"
+phase = "frozen"
+description = "Working copy of exploded food snippets (one keyword per row)"
+parent = "food_snippets_long_source"
+
 [datasets.food_snippets_manual]
 tier = "scratch"
 path = "trifecta/snippets_for_annotation.txt"
 phase = "semi"
 description = "Working copy of manual annotation snippets txt"
 parent = "food_snippets_manual_source"
+
+[datasets.food_snippets_kwic_xlsx_source]
+tier = "hot"
+path = "/path/to/Downloads/food_snippets_for_annotation.xlsx"
+phase = "frozen"
+description = "KWIC batch xlsx with manual_labels"
+parent = ""
+
+[datasets.food_snippets_kwic]
+tier = "scratch"
+path = "trifecta/food_snippets_kwic.csv"
+phase = "frozen"
+description = "KWIC wide CSV with manual_labels"
+parent = "food_snippets_kwic_xlsx_source"
+
+[datasets.food_snippets_long_kwic]
+tier = "scratch"
+path = "trifecta/food_snippets_long_kwic.csv"
+phase = "frozen"
+description = "Deduped exploded KWIC snippets (kwic_batch column)"
+parent = "food_snippets_kwic"
 
 # --- other corpora (optional sibling repos) ---
 
@@ -71,12 +110,47 @@ parent = ""
 
 # --- pipeline outputs (scratch tier; gitignored under trifecta/) ---
 
+[datasets.trifecta_thesaurus]
+tier = "scratch"
+path = "trifecta/trifecta_thesaurus.csv"
+phase = "semi"
+description = "Merged food thesaurus (pref_label + aliases + keep flags)"
+parent = "food_terms"
+
+[datasets.trifecta_thesaurus_glossary]
+tier = "scratch"
+path = "trifecta/trifecta_thesaurus_glossary.csv"
+phase = "semi"
+description = "Top pref_labels with English glosses for reviewer review"
+parent = "trifecta_thesaurus"
+
+[datasets.trifecta_gijsbert]
+tier = "scratch"
+path = "trifecta/gijsbert"
+phase = "semi"
+description = "GijsBERT frame-classification export (train/dev JSONL)"
+parent = "trifecta_annotations"
+
+[datasets.trifecta_hf_hub]
+tier = "scratch"
+path = "trifecta/models/hub"
+phase = "frozen"
+description = "HuggingFace hub cache (GysBERT, GysBERT-v2, historic-dutch BERT)"
+parent = ""
+
+[datasets.trifecta_gijsbert_models]
+tier = "scratch"
+path = "trifecta/gijsbert/models"
+phase = "semi"
+description = "Fine-tuned frame classifiers + comparison logs"
+parent = "trifecta_gijsbert"
+
 [datasets.kwic_inputs]
 tier = "scratch"
 path = "trifecta/kwic_inputs.jsonl"
 phase = "semi"
 description = "Normalized KwicInput records"
-parent = "food_snippets"
+parent = "food_snippets_long"
 
 [datasets.trifecta_gold_csv]
 tier = "scratch"
@@ -119,3 +193,141 @@ path = "trifecta/eval"
 phase = "semi"
 description = "Evaluation reports"
 parent = "trifecta_gold"
+
+[datasets.trifecta_analysis]
+tier = "scratch"
+path = "trifecta/analysis/annotations.parquet"
+phase = "frozen"
+description = "Flat A→B→C analysis table (LLM hypotheses)"
+parent = "trifecta_annotations"
+
+[datasets.inception_nl_export]
+tier = "scratch"
+path = "trifecta/inception_nl/export_20260703"
+phase = "semi"
+description = "Unzipped INCEpTION Dutch WebAnno export"
+parent = ""
+
+[datasets.inception_kwic_inputs]
+tier = "scratch"
+path = "trifecta/inception_kwic_inputs.jsonl"
+phase = "semi"
+description = "KwicInput records from INCEpTION WebAnno TSV"
+parent = "inception_nl_export"
+
+[datasets.inception_annotations]
+tier = "scratch"
+path = "trifecta/inception_annotations.jsonl"
+phase = "semi"
+description = "Silver TRIFECTA annotations from INCEpTION"
+parent = "inception_nl_export"
+
+[datasets.inception_nl_v2_iaa_agreed_gold]
+tier = "scratch"
+path = "trifecta/inception_nl_v2_iaa_agreed_gold.csv"
+phase = "frozen"
+description = "Dutch INCEpTION IAA-agreed gold (curated/easier slice)"
+parent = "kwic_inputs"
+
+# --- local mirrors of the critical-path chain (data governance) ---
+# Small, irreplaceable/load-bearing datasets also kept locally, DVC-tracked
+# for content hashing + staleness detection. See docs/DATA_LINEAGE.md.
+# Mirrors are snapshots alongside the scratch originals, not a replacement.
+# `mirror_of` is what data_io.lineage uses to find mirrors; `parent` is what
+# the plain ancestor-chain walk in `overview` uses.
+
+[datasets.kwic_inputs_mirror]
+tier = "local"
+path = "kwic_inputs.jsonl"
+phase = "frozen"
+description = "Local DVC-tracked mirror of kwic_inputs"
+parent = "kwic_inputs"
+mirror_of = "kwic_inputs"
+
+[datasets.trifecta_gold_csv_mirror]
+tier = "local"
+path = "gold_labelling.csv"
+phase = "frozen"
+description = "Local DVC-tracked mirror of trifecta_gold_csv"
+parent = "trifecta_gold_csv"
+mirror_of = "trifecta_gold_csv"
+
+[datasets.trifecta_annotations_mirror]
+tier = "local"
+path = "annotations.jsonl"
+phase = "frozen"
+description = "Local DVC-tracked mirror of trifecta_annotations"
+parent = "trifecta_annotations"
+mirror_of = "trifecta_annotations"
+
+[datasets.inception_nl_v2_iaa_agreed_gold_mirror]
+tier = "local"
+path = "inception_nl_v2_iaa_agreed_gold.csv"
+phase = "frozen"
+description = "Local DVC-tracked mirror of inception_nl_v2_iaa_agreed_gold"
+parent = "inception_nl_v2_iaa_agreed_gold"
+mirror_of = "inception_nl_v2_iaa_agreed_gold"
+
+[datasets.dbnl_titels]
+tier = "warm"
+path = "datasets/trifecta/source/dbnl_titels_pd.csv"
+phase = "frozen"
+description = "DBNL public-domain title metadata (9,087 works; pipe-separated, 'sep=|' first line)"
+parent = ""
+
+[datasets.dbnl_xml]
+tier = "warm"
+path = "datasets/trifecta/source/dbnl_xml_pd.zip"
+phase = "frozen"
+description = "DBNL public-domain TEI texts (3,655 XML files; covers 58% of works dated 1500-1899)"
+parent = ""
+
+[datasets.dbnl_work_genre]
+tier = "scratch"
+path = "trifecta/dbnl_work_genre.jsonl"
+phase = "semi"
+description = "Per-work genre assertions with provenance (DBNL genre, KB GGC subjects/basisclassificatie, project text_regime, title screen)"
+parent = "dbnl_titels"
+
+[datasets.ggc_cache]
+tier = "scratch"
+path = "trifecta/ggc_cache"
+phase = "semi"
+description = "Cached KB GGC SRU responses, one XML per queried title (never re-query)"
+parent = ""
+
+[datasets.kb_titles_parsed]
+tier = "warm"
+path = "_overlap_quarantine_20260710/Trifecta Data/kb_titles_parsed.csv"
+phase = "frozen"
+description = "Earlier KB catalogue parse (7,545 rows): Trefwoord GOO 100%, Basisclassificatie 95%; culinary bibliography, 49.25 dominates"
+parent = ""
+
+[datasets.colonial_books]
+tier = "warm"
+path = "_overlap_quarantine_20260710/Trifecta Data/colonial_books"
+phase = "explore"
+description = "Leiden UB colonial books (OCR txt + PDF + OAI-DC records): Dodoens Cruydeboeck, Nuttige Indische planten, Reize naar Surinamen, specerijen, thee, Insulinde"
+parent = ""
+parent = ""
+
+[datasets.gutenberg_catalog]
+tier = "scratch"
+path = "trifecta/gutenberg/pg_catalog.csv"
+phase = "frozen"
+description = "Project Gutenberg catalogue feed (79,634 records; LoCC on 100%, LCSH Subjects on 99.9%; 1,114 Dutch, only 4 classed TX cookery)"
+parent = ""
+
+[datasets.colonial_books_ocr]
+tier = "scratch"
+path = "trifecta/colonial_ocr"
+phase = "semi"
+description = "Re-OCR of PDF-only colonial books (Tesseract frk --psm 3 for blackletter); per-page text plus a combined file"
+parent = "colonial_books"
+
+[datasets.frame_sentences]
+tier = "scratch"
+path = "trifecta/frame_sentences.jsonl"
+phase = "semi"
+description = "COOKING_CREATION/PRESERVING/CURE sentences with year + category, sorted by year"
+parent = "trifecta_annotations"

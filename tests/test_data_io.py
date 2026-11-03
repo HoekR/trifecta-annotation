@@ -64,6 +64,34 @@ def test_resolve_paths(manifest_dir: Path) -> None:
     assert manager.resolve("sample_jsonl") == manifest_dir / "scratch" / "out" / "sample.jsonl"
 
 
+def test_looks_like_unset_env_path() -> None:
+    from data_io import looks_like_unset_env_path
+
+    assert looks_like_unset_env_path("/eval/cure_stepc_batch.csv")
+    assert looks_like_unset_env_path("/eval/foo")
+    assert looks_like_unset_env_path("/scratch/trifecta/x.csv")
+    assert not looks_like_unset_env_path("/")
+    assert not looks_like_unset_env_path("/Volumes/Extreme SSD/scratch/trifecta/eval/x.csv")
+    assert not looks_like_unset_env_path("/Users/me/scratch/x.csv")
+    assert not looks_like_unset_env_path("eval/relative.csv")
+
+
+def test_resolve_cli_path_refuses_unset_scratch(manifest_dir: Path) -> None:
+    import os
+
+    from data_io import UnsetEnvPathError, resolve_cli_path
+
+    os.chdir(manifest_dir)
+    with pytest.raises(UnsetEnvPathError, match="unset env"):
+        resolve_cli_path(
+            logical="sample_jsonl",
+            path="/eval/cure_stepc_batch.csv",
+            what="output path",
+        )
+    ok = resolve_cli_path(logical="sample_jsonl", path=None)
+    assert ok == manifest_dir / "scratch" / "out" / "sample.jsonl"
+
+
 def test_tier_unavailable_raises(tmp_path: Path) -> None:
     manifest = tmp_path / "data_manifest.toml"
     missing = tmp_path / "missing_volume"
