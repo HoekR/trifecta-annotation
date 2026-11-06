@@ -688,6 +688,105 @@ Counts: Chomel 7,136 units (4,795 section heads + 2,341 lemma anchors), `Het sec
 
 ---
 
+## 9i. Finding — pipeline economics: where the LLM budget actually goes, and the three cheap levers that move it (6 Nov 2026)
+
+**Measurement only, no pipeline change.** All figures aggregate the four annotation sources (`annotations`, `dbnl_sweep_annotations`, `colonial_annotations`, `handdownload_annotations`), error rows excluded.
+
+### Cost structure
+
+Step A runs on every candidate; Step B only if A does not drop; Step C only on a non-`NONE` frame ([pipeline.py](../trifecta_annotation/pipeline.py) `annotate_record`).
+
+| stage | calls | share |
+|---|---:|---:|
+| Step A | 40,715 | **54.7%** |
+| Step B | 19,567 | 26.3% |
+| Step C | 14,089 | 18.9% |
+| **total** | **74,371** | |
+
+**14,089 usable frame rows from 74,371 calls = 5.28 calls per output row**, and 34.6% of candidates entering the pipeline survive to a real frame. Over half the budget is Step A, and 51.9% of Step A calls end in a drop — i.e. roughly a quarter of all spend buys nothing but a "no." That is the inefficiency any tuning should target first.
+
+### `text_regime` already predicts Step A's verdict — for free
+
+The field is computed at harvest and stored on every candidate; nothing downstream routes on it.
+
+| regime | n | Step A drop | survives |
+|---|---:|---:|---:|
+| `RECIPE_PRACTICE` | 4,126 | **12.6%** | 87% |
+| `MEDICAL` | 697 | **19.7%** | 80% |
+| `LITERARY` | 4,322 | 44.3% | 56% |
+| `UNKNOWN` | 14,319 | 49.9% | 50% |
+| absent | 15,572 | **68.5%** | 31% |
+
+Routing tradeoffs, measured against the full run:
+
+| routing | calls | yield | calls/row | spend | output kept |
+|---|---:|---:|---:|---:|---:|
+| everything (current) | 74,371 | 14,089 | 5.28 | 100% | 100% |
+| `RECIPE_PRACTICE`+`MEDICAL` | 12,655 | 3,664 | 3.45 | 17% | 26% |
+| + `LITERARY` | 21,353 | 5,634 | 3.79 | 29% | 40% |
+| **exclude absent-regime** | 51,779 | 11,976 | 4.32 | **70%** | **85%** |
+
+### Candidate-selection mode — and the `text_regime` bug that made the first two attempts wrong
+
+**Bug first, because it invalidates any naive reading of `text_regime`.** `capped_candidates` computes `regime = infer_text_regime(...)` and passes it to `verb_first_hits`, which writes `text_regime` on every row — but it does **not** pass it to `scan_text`, and `scan_text` never writes the field ([build_colonial_kwic.py](../scripts/build_colonial_kwic.py), `scan_text` row construction vs `verb_first_hits`). Therefore:
+
+> **`text_regime == absent` means "produced by the noun fallback", not "genre inference failed."**
+
+In `dbnl_sweep` the two are perfectly confounded — all 12,206+ `verb_food` rows carry a regime, all 15,418 `noun_fallback` rows are `absent`, zero exceptions. Any table that treats `absent` as a genre stratum is really reporting a *mode* effect. **Fix: pass `regime` into `scan_text` and write it to the row.** One line; costs nothing; required before regime can be trusted as a routing key.
+
+`infer_text_regime` is a pure function of `(corpus, title, source_path)`, all present in provenance, so the missing regimes are recoverable retrospectively. Recovered, the absent bucket is **92% `UNKNOWN`** (14,214 of 15,418), plus 851 `LITERARY`, 171 `TRAVEL`, 133 `ADMIN_TRADE`, 48 `SCIENTIFIC`, 1 `MEDICAL`, and **no `RECIPE_PRACTICE` at all** — so it is not hidden good material being wasted; it is genuinely weak material.
+
+**The clean comparison.** Holding source file *and* regime fixed (`dbnl_sweep` only, regimes recovered for noun rows), `verb_food` beats `noun_fallback` in every stratum:
+
+| regime | `verb_food` | `noun_fallback` | verb advantage (percentage points) |
+|---|---:|---:|---:|
+| `TRAVEL` | 30.3% (n=175) | 72.5% (n=171) | **+42.2** |
+| `LITERARY` | 33.9% (n=1,783) | 69.9% (n=851) | **+36.0** |
+| `UNKNOWN` | 52.6% (n=12,206) | 68.8% (n=14,214) | **+16.2** |
+| `ADMIN_TRADE` | 52.5% (n=80) | 66.9% (n=133) | +14.4 |
+| `SCIENTIFIC` | 43.6% (n=39) | 52.1% (n=48) | +8.5 |
+
+**Two earlier readings of this data were wrong and are retracted.** (1) A first pass claimed `verb_food` *underperforms* the plain noun regex in recipe/medical genres — that compared the old hand-curated `annotations.jsonl` (all the noun and embedding rows) against the newer sweeps (all the verb rows), zero overlap, pure corpus-era artifact. (2) A second pass treated `absent` as a failed-inference genre bucket and proposed fixing genre inference to recover it — wrong premise, per the bug above. The corrected direction is the opposite of (1): **`verb_food` is the stronger selector, consistently.**
+
+**Residual confound, not removable observationally.** `noun_fallback` only fills position bins where *no* verb-food collocation existed (verb candidates always outrank it, `_NOUN_FALLBACK_SCORE = -1.0`), so the two modes describe different material by construction. The 5-stratum consistency and large n make the direction credible, but a pure method test still requires a designed experiment: one fixed candidate pool from one work, selected by each mode, Step A survival compared on the same material.
+
+**Status of the embedding claim.** `embedding_rerank` 4.3% vs `noun_fallback` 13.3% within `RECIPE_PRACTICE` is same-file and same-era (both `annotations.jsonl`), but its 533 rows are concentrated in Chomel (264) and De volmaakte Hollandsche keuken-meid (134), so work selection is uncontrolled — **suggestive, not established**. It covers 1.3% of candidates. Note the corrected baseline: embedding must now be benchmarked against `verb_food`, the stronger mode, not against `noun_fallback`.
+
+### Sieve, don't discard — the acceptable false-drop rate depends on the counterfactual
+
+The absent-regime bucket is **15,572 candidates, 22,592 calls (30% of spend), 2,113 usable rows (15% of output)**, 31.5% surviving Step A.
+
+The GloBERTise (`globertise-balanced-none`) measured NOT_NONE recall of **0.752** (confusion matrix over the 432-row dev set) was correctly damning for a *universal* pre-filter: against "run everything," silently destroying 24.8% of real frame rows is unacceptable. Against "discard this bucket entirely," the same classifier retains ~1,585 of 2,113 rows while cutting most of 22,592 calls. Same number, opposite verdict, purely because the baseline moved from keep-all to keep-none. **Operating-point decisions must state their counterfactual.**
+
+Caveat on reuse: GloBERTise was trained on the Step B 5-way frame task and only collapsed post-hoc into a NONE filter. The right target for a Step A sieve is Step A's own keep/drop verdict, for which **40,715 labelled rows exist at 51.9/48.1 balance** (15,572 of them inside the absent bucket) — in-domain, on-target, and `gijsbert_train.py` already provides the harness. Choose the threshold by recall, not accuracy.
+
+### Why "absent regime" is a bug to fix — but not the bug first assumed
+
+Absent regime is 38% of all candidates, and it *is* a bug to fix, but the fix is the one-line `scan_text` omission above, not genre inference. An earlier draft invoked the `project_genre_predicate` memory (keyword genre inference fails silently on historical Dutch, needing per-work overrides) as the explanation. That memory is real but **does not apply here** — inference ran fine and its result was simply never written to noun-fallback rows.
+
+Consequence for routing: "exclude absent-regime, save 30% of spend for 15% of output" is really **"exclude noun-fallback candidates."** The arithmetic stands, the mechanism was misattributed — and since the clean comparison above shows `noun_fallback` genuinely is the weaker mode in every stratum, the filter is defensible on its merits. It is a mode-quality decision, not a genre decision, and should be described as one.
+
+**Two distinct problems were being conflated, and both are real:**
+
+| symptom | cause | fix |
+|---|---|---|
+| `text_regime` **absent** (15,418 rows) | `scan_text` never writes the field | one line: pass `regime` in, write it |
+| `text_regime` **`UNKNOWN`** (12,206 rows, **2,039 distinct works**, median 6 rows each) | genuine genre-inference failure — the `project_genre_predicate` problem, since per-work overrides exist only for the original 61 works, not the ~2,800 sweep works | no cheap fix at work level |
+
+The second is the one that matters strategically. Work-level regime inference **cannot** classify 2,039 of the sweep works, and hand-writing overrides for ~2,800 works is not realistic. That is the strongest argument for §9h's entry-head scope: for TEI works it supplies a *per-entry* signal precisely where *per-work* inference returns `UNKNOWN`, and the absent/UNKNOWN material is 99.9% TEI.
+
+**Related, still unwired: §9h's `tei_segmentation.py` gives per-entry scope, which is strictly better than work-level regime.** An entry headed `'Middel tegens de Aamborstigheit'` is in scope; `'Andere manier om Aal te vangen'` is not. For works with TEI that is a routing decision available *before any LLM call*, attacking the same domain-mismatch class that `verb_food` scoring and Step A currently adjudicate one sentence at a time.
+
+### Context: the cap=50 headroom test that prompted this (6 Nov 2026)
+
+Raising the per-work candidate cap from 10 to 50 on the five works measured richest (Chomel 22,168 verb+food collocations uncapped vs a cap of 10, etc.) harvested 248 candidates; a stratified sample across all five works returned **0 of 21 surviving Step A**. Offsets were verified to span 0.5–98% of each document, so this is not an early-pages sampling artifact. Nearly all the weak candidates came through the scored `verb_food` path, not the unscored fallback — meaning `score_snippet_for_frame`'s homonym penalty passed them: `assess_homonym_context` catches *lexical* homonyms (`mede` = conjunction vs mead) but has no mechanism for *domain* mismatch (`huid`/`maag`/`oogen` genuinely mean skin/stomach/eyes, just about animals or anatomy rather than human food practice).
+
+Honest limits: n=21 with 0 survivors is consistent with a true keep rate up to roughly 10–14%, so "worse than cap=10" is supported, "yields nothing" is not. Also, the 20% drop rate initially used as the comparison baseline was **not** like-for-like — it came from the original hand-curated 61-work corpus, which predates `stratify_by_position`. The correct same-mechanism cap=10 baseline is the 29,784-row H2 sweep at **59.7% drop** (dominated by `metaphor`, 15,760 of 17,785 — genre dilution, consistent with §9e).
+
+**Infrastructure note.** This run used a rented Lyceum L40S serving Qwen2.5-32B-Instruct-AWQ, then Qwen2.5-Coder-32B-Instruct-AWQ, via vLLM in Docker (`$2.22/h`, ~$1 spent). Both models produced the same ~100% drop rate, ruling out model choice as the cause. A persistent ~50% HTTP 401 rate affected only *new* TCP connections while reused connections always succeeded — a Lyceum edge/networking flake, not an auth problem; `run_batch(resume=True)` absorbs it via `_strip_retry_errors`. Pointing the pipeline at a remote endpoint needs no code change (`OLLAMA_BASE_URL`/`TRIFECTA_MODEL`/`TRIFECTA_API_KEY`); `scripts/check_remote_endpoint.py` verifies one through the real `structured_completion` path. The `TRIFECTA_REMOTE_*` names in `model_compare.env` are reference profiles that **no code reads**.
+
+---
+
 ## 10. Implementation order (reference)
 
 1. I/O schemas + kwic adapter

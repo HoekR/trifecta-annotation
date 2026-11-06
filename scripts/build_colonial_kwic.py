@@ -277,6 +277,7 @@ def scan_text(
     title: str,
     corpus: str,
     date: str | None,
+    regime: TextRegime | None = None,
     radius: int = DEFAULT_KWIC_CONTEXT_RADIUS,
     units: list[DocumentUnit] | None = None,
     trust_goals: bool = False,
@@ -326,6 +327,12 @@ def scan_text(
             # every candidate, verb-scored or noun-fallback. See
             # plans/steps/RECIPE_SIEVE.md.
             "target_char_offset": span[0],
+            # `verb_first_hits` has always written this; `scan_text` never did,
+            # so every noun-fallback row shipped with no regime. That made
+            # `text_regime == absent` read as "genre inference failed" when it
+            # actually meant "noun-fallback row" — the two were perfectly
+            # confounded in dbnl_sweep (PLAN.md §9i).
+            "text_regime": regime.value if regime is not None else None,
         }
         if unit is not None:
             row["unit_id"] = unit.unit_id
@@ -506,7 +513,7 @@ def capped_candidates(
     noun_hits = scan_text(
         text, pattern=pattern, canonical=canonical,
         source_path=source_path, title=title, corpus=corpus, date=date,
-        units=units, trust_goals=trust_goals,
+        regime=regime, units=units, trust_goals=trust_goals,
     )
     pool = list(verb_scored)
     pool.extend(

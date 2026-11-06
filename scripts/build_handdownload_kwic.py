@@ -19,6 +19,7 @@ from pathlib import Path
 from data_io.jsonl_io import save_semi_structured
 
 from scripts.build_colonial_kwic import build_term_pattern, scan_text, strip_tei, structural_units_for_document
+from trifecta_annotation.text_regime import infer_text_regime
 from trifecta_annotation.vocabulary import alt_label_index, load_food_terms
 
 WORKS: dict[str, tuple[str, int]] = {
@@ -49,7 +50,13 @@ def main() -> None:
         hits = scan_text(
             text, pattern=pattern, canonical=canonical,
             source_path=f"{work_id}_01.xml", title=title,
-            corpus="dbnl_hand_download_2026", date=str(year), units=units,
+            corpus="dbnl_hand_download_2026", date=str(year),
+            regime=infer_text_regime(
+                corpus="dbnl_hand_download_2026",
+                title=title,
+                source_path=f"{work_id}_01.xml",
+            ),
+            units=units,
         )[:60]
         rows.extend(hits)
         print(f"  {len(hits):4d}  {title}")
