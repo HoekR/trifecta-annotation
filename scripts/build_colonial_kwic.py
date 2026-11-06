@@ -100,8 +100,26 @@ KB_COOKBOOKS_2026: dict[str, tuple[str, int | None]] = {
     "mmkb18a_013925000_pdf.pdf": ("Het nieuwste kookboek", 1907),
     "mmkb18a_022522000_pdf.pdf": ("Geïllustreerd kookboek", 1909),
     "mmkb31_043972000_pdf.pdf": ("Oost-Indisch kookboek", 1913),
-    "mmsfkb02_000035287_pdf.pdf": ("Kookboek voor de fijnere keuken", None),
-    "mmsfkb02_000036589_pdf.pdf": ("Het nieuwste kookboek (kort)", None),
+    # Dated 6 Nov 2026 (previously None). Full title "Kookboek voor de fijnere
+    # keuken, Nieuw Haagsch Kookboek" by Mevr. C. M. Wilderink-Jansen (Van
+    # Holkema & Warendorf). Preface in the scanned text itself is signed "DEN
+    # HAAG, October 1900", corroborated by three independent antiquarian
+    # listings (AbeBooks, antiqbook.nl, egidiusamsterdam.com) describing a
+    # "1900 First Edition". Delpher's own catalog record for this exact scan
+    # (MMSFKB02:000035287) gives "[1890]" — square brackets mean an *estimated*
+    # date, and it is a year before the book's own signed preface, so treated
+    # here as a probable cataloging error rather than used.
+    "mmsfkb02_000035287_pdf.pdf": ("Kookboek voor de fijnere keuken", 1900),
+    # Dated 6 Nov 2026 (previously None). A distinct work from the 1907
+    # "Het nieuwste kookboek" above despite the identical generic title — a
+    # different, shorter booklet with different regional advertisers (Delft vs.
+    # Rotterdam/Den Haag), by a different author. Its own cover states "Premie
+    # op Warendorfs Geïll. familie-Kalender voor 1906" (a premium given away
+    # with the 1906 illustrated family calendar); web search independently
+    # identifies this edition as by M.M. Gunst-van Houten, Van Holkema &
+    # Warendorf, 1906, confirming the cover date rather than the calendar's
+    # usual autumn-before-cover-year print convention.
+    "mmsfkb02_000036589_pdf.pdf": ("Het nieuwste kookboek (kort)", 1906),
 }
 
 # 5 of the 7 above have a scrambled embedded text layer (words correct,
