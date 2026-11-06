@@ -59,6 +59,7 @@ def _cmd_batch(args: argparse.Namespace) -> None:
         description=args.description,
         script=__file__,
         english_hint=args.english_hint,
+        step_a_sieve_model=args.step_a_sieve_model,
     )
     records = load_jsonl(path)
     ok = sum(1 for record in records if not record.get("error"))
@@ -110,6 +111,11 @@ def build_parser() -> argparse.ArgumentParser:
     batch.add_argument("--resume", action="store_true")
     batch.add_argument("--concurrency", type=int, default=1)
     batch.add_argument("--english-hint", action="store_true")
+    batch.add_argument(
+        "--step-a-sieve-model",
+        default=None,
+        help="Fine-tuned KEEP/DROP model dir; sieves LITERARY/TRAVEL/UNKNOWN/… before LLM Step A",
+    )
     batch.add_argument("--parent-sources", nargs="*", default=None)
     batch.add_argument("--description", default="TRIFECTA batch annotation run")
     batch.set_defaults(func=_cmd_batch)

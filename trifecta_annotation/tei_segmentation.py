@@ -366,6 +366,97 @@ def parse_entries(
     return entries
 
 
+_ANCHOR_LEN = 40
+
+
+def locate_in_stripped_text(
+    entries: list[TeiEntry], stripped_text: str
+) -> list[tuple[int, TeiEntry]]:
+    """Find each entry's start offset within `strip_tei(xml)`'s text, not
+    this module's own `_text()` reconstruction of it.
+
+    The two renderings of the same document are NOT the same string — on
+    Chomel they differ by ~5% in length (different whitespace/entity
+    handling) — so entry offsets computed from `parse_entries`' own text
+    cannot be used to look up a `target_char_offset` from the harvester,
+    which is measured against `strip_tei`'s output. This anchors each
+    entry's text into that string instead, by searching forward from the end
+    of the previous match so repeated phrases resolve in document order.
+
+    Entries whose anchor text cannot be found (rare — collapsed whitespace
+    edge cases) are dropped from the returned list, not silently misaligned;
+    callers needing every entry should check `len(result) == len(entries)`.
+    """
+    located: list[tuple[int, TeiEntry]] = []
+    cursor = 0
+    for entry in entries:
+        anchor = entry.text[:_ANCHOR_LEN].strip()
+        if not anchor:
+            continue
+        pos = stripped_text.find(anchor, cursor)
+        if pos == -1:
+            continue
+        located.append((pos, entry))
+        cursor = pos + len(anchor)
+    return located
+
+
+def entry_for_offset(
+    located: list[tuple[int, TeiEntry]], offset: int
+) -> TeiEntry | None:
+    """The entry governing `offset`, given `locate_in_stripped_text`'s output
+    (must be sorted by position, which it is by construction)."""
+    governing: TeiEntry | None = None
+    for pos, entry in located:
+        if pos > offset:
+            break
+        governing = entry
+    return governing
+
+
+def attach_tei_scope_to_rows(
+    rows: list[dict],
+    *,
+    xml: str,
+    stripped_text: str,
+    work_id: str,
+) -> list[dict]:
+    """Stamp ``tei_scope_head`` (and upgrade UNKNOWN ``text_regime``) on harvest rows.
+
+    Pre-LLM route for works whose work-level regime is UNKNOWN (PLAN.md §9i):
+    an entry headed like a remedy/recipe is treated as MEDICAL/RECIPE_PRACTICE
+    for sieve routing without rewriting the cascade.
+    """
+    from trifecta_annotation.regime_routing import regime_from_tei_scope_head
+    from trifecta_annotation.text_regime import TextRegime
+
+    entries = parse_entries(xml, work_id=work_id)
+    located = locate_in_stripped_text(entries, stripped_text)
+    if not located:
+        return rows
+    out: list[dict] = []
+    for row in rows:
+        updated = dict(row)
+        offset = updated.get("target_char_offset")
+        if offset is None:
+            out.append(updated)
+            continue
+        entry = entry_for_offset(located, int(offset))
+        if entry is None:
+            out.append(updated)
+            continue
+        scope = entry.scope_head or entry.head
+        if scope:
+            updated["tei_scope_head"] = scope
+            regime = updated.get("text_regime")
+            if regime in (None, "", TextRegime.UNKNOWN.value):
+                upgraded = regime_from_tei_scope_head(scope)
+                if upgraded is not None:
+                    updated["text_regime"] = upgraded.value
+        out.append(updated)
+    return out
+
+
 def head_inventory(entries: list[TeiEntry]) -> list[dict[str, object]]:
     """Flat rows for human review of the head list — the point of this module.
 

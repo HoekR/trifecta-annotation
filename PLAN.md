@@ -766,16 +766,20 @@ Absent regime is 38% of all candidates, and it *is* a bug to fix, but the fix is
 
 Consequence for routing: "exclude absent-regime, save 30% of spend for 15% of output" is really **"exclude noun-fallback candidates."** The arithmetic stands, the mechanism was misattributed — and since the clean comparison above shows `noun_fallback` genuinely is the weaker mode in every stratum, the filter is defensible on its merits. It is a mode-quality decision, not a genre decision, and should be described as one.
 
+**Shipped (6 Nov 2026, forward-looking harvest only):** `scan_text` now writes `kwic_mode="noun_fallback"` (with `text_regime`), and `capped_candidates` **defaults to verb-food only** — counterfactual = discard noun-fallback, not "run everything." Escape hatch `--include-noun-fallback` restores the old top-up for ablation; optional `--regimes RECIPE_PRACTICE,MEDICAL` is a document-level allow-list **off by default** so UNKNOWN TEI sweep material is not silently killed. Does not rewrite already-cascaded annotation JSONL.
+
+**Genre-routed sieves (2026-11-06, wired):** route by `text_regime` after TEI entry-scope upgrade — see [docs/DECISIONS.md](docs/DECISIONS.md). Harvest stays verb-food; weak regimes may run a binary Step A KEEP/DROP encoder before LLM A (`trifecta-batch --step-a-sieve-model …`); RECIPE/MEDICAL go straight to LLM. Export/train: `scripts/export_step_a_keepdrop.py`, `scripts/train_step_a_keepdrop.py` (user-run GPU). TEI: `attach_tei_scope_to_rows` stamps `tei_scope_head` and may upgrade UNKNOWN → MEDICAL/RECIPE from entry heads.
+
+**Still deferred:** (1) training/adopting a production keep/drop checkpoint (export+train harness ready; threshold by keep-recall per regime); (2) Step B NONE encoder gate on weak-regime A-survivors only; (3) domain-mismatch scoring beyond lexical `assess_homonym_context`.
+
 **Two distinct problems were being conflated, and both are real:**
 
 | symptom | cause | fix |
 |---|---|---|
-| `text_regime` **absent** (15,418 rows) | `scan_text` never writes the field | one line: pass `regime` in, write it |
-| `text_regime` **`UNKNOWN`** (12,206 rows, **2,039 distinct works**, median 6 rows each) | genuine genre-inference failure — the `project_genre_predicate` problem, since per-work overrides exist only for the original 61 works, not the ~2,800 sweep works | no cheap fix at work level |
+| `text_regime` **absent** (15,418 rows) | `scan_text` never writes the field | one line: pass `regime` in, write it — **done** |
+| `text_regime` **`UNKNOWN`** (12,206 rows, **2,039 distinct works**, median 6 rows each) | genuine genre-inference failure — the `project_genre_predicate` problem, since per-work overrides exist only for the original 61 works, not the ~2,800 sweep works | TEI entry-scope upgrade at harvest — **wired**; no cheap work-level fix |
 
-The second is the one that matters strategically. Work-level regime inference **cannot** classify 2,039 of the sweep works, and hand-writing overrides for ~2,800 works is not realistic. That is the strongest argument for §9h's entry-head scope: for TEI works it supplies a *per-entry* signal precisely where *per-work* inference returns `UNKNOWN`, and the absent/UNKNOWN material is 99.9% TEI.
-
-**Related, still unwired: §9h's `tei_segmentation.py` gives per-entry scope, which is strictly better than work-level regime.** An entry headed `'Middel tegens de Aamborstigheit'` is in scope; `'Andere manier om Aal te vangen'` is not. For works with TEI that is a routing decision available *before any LLM call*, attacking the same domain-mismatch class that `verb_food` scoring and Step A currently adjudicate one sentence at a time.
+The second is the one that matters strategically. Work-level regime inference **cannot** classify 2,039 of the sweep works, and hand-writing overrides for ~2,800 works is not realistic. §9h's entry-head scope supplies a *per-entry* signal precisely where *per-work* inference returns `UNKNOWN` — now stamped on harvest rows via `attach_tei_scope_to_rows`.
 
 ### Context: the cap=50 headroom test that prompted this (6 Nov 2026)
 

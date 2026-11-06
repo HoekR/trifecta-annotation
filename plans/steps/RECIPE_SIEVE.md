@@ -1,6 +1,9 @@
 # Stratified harvest-and-sieve sampling for the Step A→B→C cascade
 
-**Status:** approved, not started (27 Oct 2026).
+**Status:** done (implemented in `scripts/build_colonial_kwic.py`:
+`stratify_by_position`, raised `max_scored`, position bins). Follow-on mode
+sieve (verb-food default, optional `--regimes`) landed with PLAN.md §9i —
+same file, not a re-open of this track.
 
 **Depends on:** `plans/steps/SENTENCE_HARVEST.md` (H1/H2) — this refines those two
 steps' per-work candidate *selection* method. It does not change their scope,

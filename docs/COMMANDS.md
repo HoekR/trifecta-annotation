@@ -164,6 +164,6 @@ uv run python scripts/train_gijsbert.py
 2. **Batching Strategy for Large Corpora:**
    - **E5a embedding re-rank (preferred KWIC path):** `make rerank-kwic` / `make batch-kwic-reranked` before heavy A→B→C — cuts Step A waste vs raw KWIC.
    - **Step A pre-filtering:** Run lightweight Step A across the corpus first to discard non-food/metaphors (~20–40% early exit) before triggering heavier Step B & C calls.
-   - **GijsBERT pre-filter:** Use fine-tuned GijsBERT locally for high-throughput NONE filtering before calling Ollama (still deferred for Step B replacement).
+   - **Genre-routed Step A sieve:** Export/train keep/drop (`scripts/export_step_a_keepdrop.py`, `scripts/train_step_a_keepdrop.py`), then `trifecta-batch --step-a-sieve-model <model_dir>` — sieves LITERARY/TRAVEL/UNKNOWN/… before LLM A; RECIPE/MEDICAL skip the encoder. Step B NONE pre-filter still deferred.
 3. **Data Integrity & Paths:**
    - Never use ad-hoc hardcoded paths; always use `data_io.resolve(...)` backed by `data_manifest.toml`.

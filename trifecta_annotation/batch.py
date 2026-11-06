@@ -44,6 +44,7 @@ def _annotate_one(
     base_url: str | None,
     client=None,
     english_hint_lookup: dict[str, str] | None = None,
+    step_a_sieve=None,
 ) -> dict[str, Any]:
     inp = KwicInput.model_validate(record)
     english_hint = None
@@ -56,6 +57,7 @@ def _annotate_one(
             base_url=base_url,
             client=client,
             english_hint=english_hint,
+            step_a_sieve=step_a_sieve,
         )
         return result.model_dump(mode="json")
     except Exception as exc:  # noqa: BLE001 — per-record batch resilience
@@ -82,6 +84,7 @@ def _annotate_step_a_one(
     base_url: str | None,
     client=None,
     english_hint_lookup: dict[str, str] | None = None,
+    step_a_sieve=None,
 ) -> dict[str, Any]:
     inp = KwicInput.model_validate(record)
     english_hint = None
@@ -94,6 +97,7 @@ def _annotate_step_a_one(
             base_url=base_url,
             client=client,
             english_hint=english_hint,
+            step_a_sieve=step_a_sieve,
         )
         return result.model_dump(mode="json")
     except Exception as exc:  # noqa: BLE001
@@ -253,6 +257,7 @@ def run_batch(
     script: str | None = None,
     english_hint: bool = False,
     api_key: str | None = None,
+    step_a_sieve_model: str | Path | None = None,
 ) -> Path:
     """Annotate KwicInput rows; append each result incrementally with tqdm progress.
 
@@ -277,6 +282,12 @@ def run_batch(
 
     hint_lookup = default_review_hint_lookup() if english_hint else None
     instructor_client = make_instructor_client(base_url=base_url, api_key=api_key)
+    step_a_sieve = None
+    if step_a_sieve_model:
+        from trifecta_annotation.step_a_keepdrop import HfStepAKeepDropSieve
+
+        step_a_sieve = HfStepAKeepDropSieve(step_a_sieve_model)
+        print(f"Step A keep/drop sieve: {step_a_sieve.path} (weak regimes only)", flush=True)
     if output_path is not None:
         path = Path(output_path).expanduser().resolve()
     else:
@@ -312,6 +323,7 @@ def run_batch(
                     base_url=base_url,
                     client=instructor_client,
                     english_hint_lookup=hint_lookup,
+                    step_a_sieve=step_a_sieve,
                 ),
             )
             _report(done, total)
@@ -325,6 +337,7 @@ def run_batch(
                     base_url=base_url,
                     client=instructor_client,
                     english_hint_lookup=hint_lookup,
+                    step_a_sieve=step_a_sieve,
                 )
                 for record in pending
             ]

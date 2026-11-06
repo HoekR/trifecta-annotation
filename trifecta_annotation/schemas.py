@@ -228,6 +228,9 @@ class KwicInput(BaseModel):
     structural_goal: str | None = None
     structural_goal_inherited: bool | None = None
     structural_signal: str | None = None
+    # TEI entry scope (PLAN.md §9h/§9i): head that governs this offset when the
+    # work-level text_regime is UNKNOWN; used by regime_routing to upgrade path.
+    tei_scope_head: str | None = None
 
 
 class AnnotationProvenance(BaseModel):
@@ -253,6 +256,7 @@ class AnnotationProvenance(BaseModel):
     structural_goal: str | None = None
     structural_goal_inherited: bool | None = None
     structural_signal: str | None = None
+    tei_scope_head: str | None = None
 
 
 class TrifectaAnnotation(BaseModel):
@@ -267,6 +271,7 @@ class TrifectaAnnotation(BaseModel):
     error: str | None = None
     model: str | None = None
     annotation_type: str | None = None
+    sieve_model: str | None = None
     coarse_frame: str | None = None
     annotator: str | None = None
 

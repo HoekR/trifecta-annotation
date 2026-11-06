@@ -12,6 +12,15 @@ Record durable methodological and architectural decisions here. Keep entries sho
 
 ---
 
+### 2026-11-06: Genre-routed Step A/B sieves (not one method globally)
+
+- **Context:** Pipeline economics (§9i): 5.28 LLM calls per usable row; Step A is 54.7% of spend and drops ~52% of candidates. Drop rates vary sharply by `text_regime` (RECIPE 12.6% vs LITERARY 44% / UNKNOWN 50%). Collocation cannot auto-label Step B ([COLLOCATION.md §6](COLLOCATION.md)); reusing Step-B GloBERTise as a universal NONE filter kills ~25% of real frames vs keep-all.
+- **Decision:** Route by regime (after TEI entry-scope upgrade for UNKNOWN): **collocation/verb-food at harvest only**; **newly trained binary Step A KEEP/DROP encoder** on weak regimes (LITERARY / TRAVEL / ADMIN / SCIENTIFIC / UNKNOWN); **LLM Step A+B** on RECIPE_PRACTICE / MEDICAL and on encoder-kept weak rows. Wire via `--step-a-sieve-model` on `trifecta-batch`. Do not train the A sieve on Step B labels.
+- **Reason:** Same operating point is wrong for all genres; encoder is a sieve not the analyst; TEI entry heads supply the missing work-level regime signal for the sweep’s UNKNOWN mass.
+- **Ops:** `scripts/export_step_a_keepdrop.py`, `scripts/train_step_a_keepdrop.py`, `trifecta_annotation/regime_routing.py`, harvest `attach_tei_scope_to_rows`.
+
+---
+
 ### 2026-09-16: Embedding hybrid candidates (not pure KWIC, not LU-free)
 
 - **Context:** KWIC thesaurus matching feeds the batch pool but yields ~33% Step A dropout (homographs, travel/catalog, false hits). Dissatisfaction with lexical-only discovery.

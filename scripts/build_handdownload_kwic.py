@@ -19,6 +19,7 @@ from pathlib import Path
 from data_io.jsonl_io import save_semi_structured
 
 from scripts.build_colonial_kwic import build_term_pattern, scan_text, strip_tei, structural_units_for_document
+from trifecta_annotation.tei_segmentation import attach_tei_scope_to_rows
 from trifecta_annotation.text_regime import infer_text_regime
 from trifecta_annotation.vocabulary import alt_label_index, load_food_terms
 
@@ -42,7 +43,8 @@ def main() -> None:
         if not xml_path.exists():
             print(f"missing: {xml_path}")
             continue
-        text = strip_tei(xml_path.read_text(encoding="utf-8", errors="replace"))
+        xml = xml_path.read_text(encoding="utf-8", errors="replace")
+        text = strip_tei(xml)
         units = structural_units_for_document(
             text, title=title, source_path=f"{work_id}_01.xml",
             corpus="dbnl_hand_download_2026",
@@ -58,6 +60,9 @@ def main() -> None:
             ),
             units=units,
         )[:60]
+        hits = attach_tei_scope_to_rows(
+            hits, xml=xml, stripped_text=text, work_id=f"{work_id}_01.xml",
+        )
         rows.extend(hits)
         print(f"  {len(hits):4d}  {title}")
 

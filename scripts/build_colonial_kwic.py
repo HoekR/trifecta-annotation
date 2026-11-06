@@ -40,6 +40,7 @@ from trifecta_annotation.corpus_genre_join import load_genre_records
 from trifecta_annotation.dbnl_genre import sweep_candidates, work_stem, xml_filenames_by_stem
 from trifecta_annotation.frame_verbs import find_frame_verbs_in_text
 from trifecta_annotation.structural_parse import DocumentUnit, document_structural_units, unit_for_offset
+from trifecta_annotation.tei_segmentation import attach_tei_scope_to_rows
 from trifecta_annotation.text_regime import TextRegime, infer_text_regime
 from trifecta_annotation.vocabulary import alt_label_index, load_food_terms
 
@@ -333,6 +334,9 @@ def scan_text(
             # actually meant "noun-fallback row" — the two were perfectly
             # confounded in dbnl_sweep (PLAN.md §9i).
             "text_regime": regime.value if regime is not None else None,
+            # Same confounding for mode: without this tag, "exclude
+            # noun-fallback" could only be inferred from a missing field.
+            "kwic_mode": "noun_fallback",
         }
         if unit is not None:
             row["unit_id"] = unit.unit_id
@@ -495,33 +499,59 @@ def capped_candidates(
     units: list[DocumentUnit] | None = None,
     trust_goals: bool = False,
     cap: int,
+    include_noun_fallback: bool = False,
+    allowed_regimes: frozenset[TextRegime] | None = None,
 ) -> list[dict]:
-    """Harvest the whole document (verb-scored candidates, topped up with
-    plain noun hits where no frame verb fires nearby — every work still gets
-    *some* candidates, matching the "cascade discovers, nothing gated out"
-    principle the noun-only sweep was already built on), then sieve down to
-    `cap` by document position rather than by score alone. See
-    plans/steps/RECIPE_SIEVE.md for the measured problem this replaces.
+    """Harvest the whole document, then sieve down to `cap` by document
+    position rather than by score alone. See plans/steps/RECIPE_SIEVE.md.
+
+    Default pool is verb-food only (PLAN.md §9i): noun-fallback survived Step A
+    at ~31% vs much higher for verb_food in every regime stratum, so topping up
+    with unscored noun hits burned ~30% of LLM spend for ~15% of usable output.
+    Pass ``include_noun_fallback=True`` to restore the old top-up for ablation.
+
+    ``allowed_regimes`` is an optional document-level gate (off by default) so
+    UNKNOWN TEI sweep material is not silently dropped until entry-scope exists.
     """
     regime = infer_text_regime(corpus=corpus, title=title, source_path=source_path)
+    if allowed_regimes is not None and regime not in allowed_regimes:
+        return []
     verb_scored = verb_first_hits(
         text, pattern=pattern, food_terms_list=food_terms_list, canonical=canonical,
         source_path=source_path, title=title, corpus=corpus, date=date,
         regime=regime, units=units, trust_goals=trust_goals,
     )
-    covered_offsets = {row["target_char_offset"] for _, row in verb_scored}
-    noun_hits = scan_text(
-        text, pattern=pattern, canonical=canonical,
-        source_path=source_path, title=title, corpus=corpus, date=date,
-        regime=regime, units=units, trust_goals=trust_goals,
-    )
-    pool = list(verb_scored)
-    pool.extend(
-        (_NOUN_FALLBACK_SCORE, hit)
-        for hit in noun_hits
-        if hit["target_char_offset"] not in covered_offsets
-    )
+    pool: list[tuple[float, dict]] = list(verb_scored)
+    if include_noun_fallback:
+        covered_offsets = {row["target_char_offset"] for _, row in verb_scored}
+        noun_hits = scan_text(
+            text, pattern=pattern, canonical=canonical,
+            source_path=source_path, title=title, corpus=corpus, date=date,
+            regime=regime, units=units, trust_goals=trust_goals,
+        )
+        pool.extend(
+            (_NOUN_FALLBACK_SCORE, hit)
+            for hit in noun_hits
+            if hit["target_char_offset"] not in covered_offsets
+        )
     return stratify_by_position(pool, cap=cap, doc_length=len(text))
+
+
+def _parse_allowed_regimes(raw: str | None) -> frozenset[TextRegime] | None:
+    """Comma-separated TextRegime names → frozenset, or None when unset."""
+    if not raw:
+        return None
+    values: set[TextRegime] = set()
+    for part in raw.split(","):
+        name = part.strip()
+        if not name:
+            continue
+        try:
+            values.add(TextRegime[name] if name in TextRegime.__members__ else TextRegime(name))
+        except (KeyError, ValueError) as exc:
+            known = ", ".join(r.value for r in TextRegime)
+            raise SystemExit(f"unknown regime {name!r}; expected one of: {known}") from exc
+    return frozenset(values) if values else None
 
 
 def main() -> None:
@@ -531,7 +561,20 @@ def main() -> None:
                         help="Override cap for ALL sources incl. already-run ones (smoke-testing only)")
     parser.add_argument("--skip-sweep", action="store_true",
                         help="Smoke-test: skip the full genre-agnostic DBNL sweep (H1)")
+    parser.add_argument(
+        "--include-noun-fallback",
+        action="store_true",
+        help="Top up verb-food bins with unscored noun hits (ablation; default off per PLAN §9i)",
+    )
+    parser.add_argument(
+        "--regimes",
+        default=None,
+        metavar="LIST",
+        help="Optional comma-separated TextRegime allow-list (e.g. RECIPE_PRACTICE,MEDICAL); "
+             "default keeps all regimes",
+    )
     args = parser.parse_args()
+    allowed_regimes = _parse_allowed_regimes(args.regimes)
 
     terms = load_food_terms()
     canonical = alt_label_index(terms)
@@ -552,6 +595,10 @@ def main() -> None:
     # double the planned few-days budget — so it gets the same cap as every
     # other source here, not special-cased as "already done, leave uncapped."
     sweep_cap = args.limit_per_work or DEFAULT_SWEEP_CAP
+    sieve_kwargs = {
+        "include_noun_fallback": args.include_noun_fallback,
+        "allowed_regimes": allowed_regimes,
+    }
 
     dbnl_zip_path = resolve("dbnl_xml")
     filenames_by_stem = xml_filenames_by_stem(dbnl_zip_path)
@@ -566,7 +613,8 @@ def main() -> None:
             if not filename:
                 print(f"  missing from dbnl_xml zip (skipped): {work_id}", flush=True)
                 continue
-            text = strip_tei(archive.read(filename).decode("utf-8", errors="replace"))
+            xml = archive.read(filename).decode("utf-8", errors="replace")
+            text = strip_tei(xml)
             units = structural_units_for_document(
                 text, title=title, source_path=filename, corpus="dbnl_new_2026"
             )
@@ -574,6 +622,10 @@ def main() -> None:
                 text, pattern=pattern, canonical=canonical, food_terms_list=food_terms_list,
                 source_path=filename, title=title,
                 corpus="dbnl_new_2026", date=str(year), units=units, cap=sweep_cap,
+                **sieve_kwargs,
+            )
+            hits = attach_tei_scope_to_rows(
+                hits, xml=xml, stripped_text=text, work_id=filename,
             )
             rows.extend(hits)
             per_work[title] = len(hits)
@@ -595,6 +647,7 @@ def main() -> None:
             text, pattern=pattern, canonical=canonical, food_terms_list=food_terms_list,
             source_path=filename, title=title,
             corpus="colonial_books_2026", date=str(year) if year else None, units=units, cap=sweep_cap,
+            **sieve_kwargs,
         )
         rows.extend(hits)
         per_work[title] = len(hits)
@@ -613,7 +666,7 @@ def main() -> None:
             text, pattern=pattern, canonical=canonical, food_terms_list=food_terms_list,
             source_path="Crŭÿde boeck_Dodoens_mobot31753000817624.pdf",
             title="Cruydeboeck (Dodoens)", corpus="colonial_books_2026", date="1608", units=units,
-            cap=sweep_cap,
+            cap=sweep_cap, **sieve_kwargs,
         )
         rows.extend(hits)
         per_work["Cruydeboeck (Dodoens)"] = len(hits)
@@ -636,6 +689,7 @@ def main() -> None:
             text, pattern=pattern, canonical=canonical, food_terms_list=food_terms_list,
             source_path=filename, title=title,
             corpus="colonial_books_2026", date=str(year) if year else None, units=units, cap=sweep_cap,
+            **sieve_kwargs,
         )
         rows.extend(hits)
         per_work[title] = len(hits)
@@ -664,6 +718,7 @@ def main() -> None:
             text, pattern=pattern, canonical=canonical, food_terms_list=food_terms_list,
             source_path=filename, title=title,
             corpus="kb_cookbooks_2026", date=str(year) if year else None, units=units, cap=sweep_cap,
+            **sieve_kwargs,
         )
         rows.extend(hits)
         per_work[title] = len(hits)
@@ -683,6 +738,7 @@ def main() -> None:
             text, pattern=pattern, canonical=canonical, food_terms_list=food_terms_list,
             source_path=filename, title=title,
             corpus="google_books_2026", date=str(year) if year else None, units=units, cap=sweep_cap,
+            **sieve_kwargs,
         )
         rows.extend(hits)
         per_work[title] = len(hits)
@@ -700,6 +756,7 @@ def main() -> None:
             text, pattern=pattern, canonical=canonical, food_terms_list=food_terms_list,
             source_path=diary_source, title=VAN_LENNEP_TITLE,
             corpus="colonial_books_2026", date=str(VAN_LENNEP_YEAR), units=units, cap=sweep_cap,
+            **sieve_kwargs,
         )
         rows.extend(hits)
         per_work[VAN_LENNEP_TITLE] = len(hits)
@@ -745,7 +802,10 @@ def main() -> None:
                 source_path=cand["filename"], title=title,
                 corpus="dbnl_full_sweep_2026",
                 date=str(cand["year"]) if cand["year"] else None,
-                units=units, cap=sweep_cap,
+                units=units, cap=sweep_cap, **sieve_kwargs,
+            )
+            hits = attach_tei_scope_to_rows(
+                hits, xml=xml, stripped_text=text, work_id=cand["filename"],
             )
             sweep_rows.extend(hits)
             sweep_per_work[title] = len(hits)
