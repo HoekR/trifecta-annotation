@@ -84,8 +84,16 @@ COLONIAL_BOOKS: dict[str, tuple[str, int | None, bool]] = {
 # needed). filename -> (title, year).
 EXTRA_COLONIAL_TXT: dict[str, tuple[str, int | None]] = {
     "Nuttige Indische planten_953710.txt": ("Nuttige Indische planten", 1894),
-    "insulinde_983061.txt": ("Insulinde", None),
-    "Beelden_uit_Nederlandsch_Indie_961013.txt": ("Beelden uit Nederlandsch Indie", None),
+    # Dated 6 Nov 2026 (previously None). Full title "Insulinde: Schetsen van
+    # land en volk van Nederlandsch O.-Indië" (Wouters, Van Hulzen & Koning,
+    # Noordhoff). Its own preface is signed "J. Koning. Wijk-aan-Zee, Voorjaar
+    # 1924."; matches both a bibliographic record for this exact anthology and
+    # Delpher's own catalog entry ("Insulinde » 1924").
+    "insulinde_983061.txt": ("Insulinde", 1924),
+    # Dated 6 Nov 2026 (previously None). By Frederica Johanna van Uildriks
+    # (Haarlem: H.D. Tjeenk Willink). The text's own latest cited year is 1893;
+    # confirmed via web search as this exact title/author/publisher, 1893.
+    "Beelden_uit_Nederlandsch_Indie_961013.txt": ("Beelden uit Nederlandsch Indie", 1893),
 }
 
 # KB/Delpher-digitized cookbooks acquired 2026 (real recipe-practice content —
@@ -143,7 +151,15 @@ KB_COOKBOOKS_REOCR: dict[str, str] = {
 GOOGLE_BOOKS_2026: dict[str, tuple[str, int | None]] = {
     "De_volmaakte_Geldersche_keuken_meid_onde.pdf": ("De volmaakte Geldersche keuken-meid", 1756),
     "Nieuwe_beproefde_en_wel_ondersochte_gene.pdf": ("Nieuwe beproefde en wel ondersochte genees-middelen (Digby)", 1680),
-    "Vervolg_op_M_Noël_Chomel_Algemeen_huish.pdf": ("Vervolg op M. Noël Chomel, Algemeen huishoudelyk-woordenboek", None),
+    # Dated 6 Nov 2026 (previously None). This scan is specifically Volume XIV
+    # of de Chalmot's 9+-volume continuation (1786-93), not a single-dated
+    # work -- "Zynde het XIV. DEEL van het WOORDENBOEK", imprint "TE CAMPEN by
+    # J.A. DE CHALMOT, AMSTELDAM by J. YNTEMA, MDCCXCIL" (OCR-mangled
+    # MDCCXCII). Independently confirmed: DBNL's own Vaderlandsche
+    # Letteroefeningen, Jaargang 1792, lists "Veertiende Stuk. Te Campen by
+    # J.A. de Chalmot, en te Amsterdam by J. Yntema" published 1792 -- same
+    # publishers, same place, same volume number.
+    "Vervolg_op_M_Noël_Chomel_Algemeen_huish.pdf": ("Vervolg op M. Noël Chomel, Algemeen huishoudelyk-woordenboek (XIV. Deel)", 1792),
 }
 
 # Extracted for the §9f structural-density check (447k chars), never
