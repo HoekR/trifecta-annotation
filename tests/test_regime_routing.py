@@ -19,8 +19,7 @@ from trifecta_annotation.step_a_keepdrop import (
 from trifecta_annotation.tei_segmentation import (
     attach_tei_scope_to_rows,
     entry_for_offset,
-    locate_in_stripped_text,
-    parse_entries,
+    render_tei,
 )
 from trifecta_annotation.text_regime import TextRegime
 
@@ -140,7 +139,7 @@ def test_annotate_record_sieve_skips_recipe_but_drops_literary(monkeypatch) -> N
     assert out2.dropped is False
 
 
-def test_locate_and_attach_tei_scope() -> None:
+def test_render_and_attach_tei_scope() -> None:
     xml = """<TEI.2><text><body>
 <div type="chapter"><head>B.</head>
   <div type="section"><head>Middel tegens de Aamborstigheit.</head>
@@ -148,14 +147,10 @@ def test_locate_and_attach_tei_scope() -> None:
   </div>
 </div>
 </body></text></TEI.2>"""
-    from scripts.build_colonial_kwic import strip_tei
-
-    stripped = strip_tei(xml)
-    entries = parse_entries(xml, work_id="w.xml")
-    located = locate_in_stripped_text(entries, stripped)
-    assert located
-    offset = stripped.lower().find("wyn")
-    entry = entry_for_offset(located, offset)
+    rendered = render_tei(xml, work_id="w.xml")
+    assert rendered.located
+    offset = rendered.text.lower().find("wyn")
+    entry = entry_for_offset(rendered.located, offset)
     assert entry is not None
     assert "Aamborstigheit" in (entry.scope_head or entry.head or "")
 
@@ -166,6 +161,34 @@ def test_locate_and_attach_tei_scope() -> None:
             "target_word": "wyn",
         }
     ]
-    stamped = attach_tei_scope_to_rows(rows, xml=xml, stripped_text=stripped, work_id="w.xml")
+    stamped = attach_tei_scope_to_rows(rows, located=rendered.located)
     assert stamped[0]["tei_scope_head"]
     assert stamped[0]["text_regime"] == TextRegime.MEDICAL.value
+
+
+def test_render_places_anchor_across_tagless_boundary() -> None:
+    """Regression for the offset drift: no whitespace between </hi> and the
+    comma made the old strip_tei/itertext renderings disagree, so a passage
+    in a run-on section was attributed to the section head, not its lemma."""
+    xml = """<TEI.2><text><body><div type="section"><head>Andere manier om Aal te vangen.</head>
+<p>Men neemt een zetangel.</p>
+<p><hi rend="b">aamborstigheit</hi>, Kortademigheit, Kuch.</p>
+<p>In vyf pinten wyns doet snuiftabak.</p>
+</div></body></text></TEI.2>"""
+    rendered = render_tei(xml, work_id="w.xml")
+    assert len(rendered.located) == 2
+    assert entry_for_offset(rendered.located, rendered.text.find("snuiftabak")).head == "aamborstigheit"
+    assert entry_for_offset(rendered.located, rendered.text.find("zetangel")).head.startswith("Andere manier")
+
+
+def test_render_excludes_header_and_editorial_apparatus() -> None:
+    xml = """<TEI.2><teiHeader><title>Metadata titel</title></teiHeader><text><body>
+<div type="chapter"><head>Verantwoording van de digitale uitgave</head>
+  <div type="section"><head>Zetfouten</head><p>Lijst.</p></div></div>
+<div type="section"><head>Van de Kruiden.</head><p>Groen&nbsp;blad.</p></div>
+</body></text></TEI.2>"""
+    rendered = render_tei(xml, work_id="w.xml")
+    assert "Metadata" not in rendered.text
+    assert "Zetfouten" not in rendered.text
+    assert "&nbsp;" not in rendered.text
+    assert [e.head for _, e in rendered.located] == ["Van de Kruiden."]

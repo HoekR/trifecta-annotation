@@ -40,7 +40,7 @@ from trifecta_annotation.corpus_genre_join import load_genre_records
 from trifecta_annotation.dbnl_genre import sweep_candidates, work_stem, xml_filenames_by_stem
 from trifecta_annotation.frame_verbs import find_frame_verbs_in_text
 from trifecta_annotation.structural_parse import DocumentUnit, document_structural_units, unit_for_offset
-from trifecta_annotation.tei_segmentation import attach_tei_scope_to_rows
+from trifecta_annotation.tei_segmentation import attach_tei_scope_to_rows, render_tei
 from trifecta_annotation.text_regime import TextRegime, infer_text_regime
 from trifecta_annotation.vocabulary import alt_label_index, load_food_terms
 
@@ -614,7 +614,8 @@ def main() -> None:
                 print(f"  missing from dbnl_xml zip (skipped): {work_id}", flush=True)
                 continue
             xml = archive.read(filename).decode("utf-8", errors="replace")
-            text = strip_tei(xml)
+            rendered = render_tei(xml, work_id=filename)
+            text = rendered.text
             units = structural_units_for_document(
                 text, title=title, source_path=filename, corpus="dbnl_new_2026"
             )
@@ -624,9 +625,7 @@ def main() -> None:
                 corpus="dbnl_new_2026", date=str(year), units=units, cap=sweep_cap,
                 **sieve_kwargs,
             )
-            hits = attach_tei_scope_to_rows(
-                hits, xml=xml, stripped_text=text, work_id=filename,
-            )
+            hits = attach_tei_scope_to_rows(hits, located=rendered.located)
             rows.extend(hits)
             per_work[title] = len(hits)
             print(f"  [new-dbnl] {title!r}: {len(hits)} hits ({time.monotonic() - t0:.1f}s)", flush=True)
@@ -792,7 +791,8 @@ def main() -> None:
     with zipfile.ZipFile(dbnl_zip_path) as archive:
         for i, cand in enumerate(candidates):
             xml = archive.read(cand["filename"]).decode("utf-8", errors="replace")
-            text = strip_tei(xml)
+            rendered = render_tei(xml, work_id=cand["filename"])
+            text = rendered.text
             title = cand["titel"] or cand["ti_id"]
             units = structural_units_for_document(
                 text, title=title, source_path=cand["filename"], corpus="dbnl_full_sweep_2026"
@@ -804,9 +804,7 @@ def main() -> None:
                 date=str(cand["year"]) if cand["year"] else None,
                 units=units, cap=sweep_cap, **sieve_kwargs,
             )
-            hits = attach_tei_scope_to_rows(
-                hits, xml=xml, stripped_text=text, work_id=cand["filename"],
-            )
+            hits = attach_tei_scope_to_rows(hits, located=rendered.located)
             sweep_rows.extend(hits)
             sweep_per_work[title] = len(hits)
             if (i + 1) % 50 == 0:

@@ -9,15 +9,11 @@ density to measure. Keeping the two apart stops the declared path inheriting
 machinery built for a far less reliable signal.
 
 CORRECTION (7 Nov 2026): "char offsets come free" was wrong as originally
-written — this module's own `_text()` rendering and `strip_tei`'s regex
-stripping (what `scan_text`/`capped_candidates` read) disagree at every tag
-boundary with no surrounding whitespace, compounding to ~5% length drift over
-a full document. A structural, single-pass walk that derives both the plain
-text and entry offsets together (replacing `strip_tei` for TEI works, not
-reconciling two independently-built texts afterward) is the fix; not yet
-built. See PLAN.md §9h's correction note and `locate_in_stripped_text`,
-which is the interim, imperfect (~63% entry recall measured on Chomel)
-substring-anchoring workaround — do not treat its output as exact.
+written — this module's `_text()` rendering and `strip_tei`'s regex
+stripping disagree at every tag boundary with no surrounding whitespace,
+drifting ~5% over a full document. Fixed by `render_tei`, which produces the
+harvester's text and every entry's offset in one structural walk, replacing
+`strip_tei` for TEI sources.
 
 Why this exists at all: the DBNL ingestion path reaches text through
 `strip_tei()` in `scripts/build_colonial_kwic.py`, which is
@@ -63,6 +59,7 @@ from __future__ import annotations
 
 import re
 import zipfile
+from bisect import bisect_right
 
 import lxml.etree as ET
 from dataclasses import dataclass, field
@@ -77,6 +74,10 @@ __all__ = [
     "parse_entries",
     "read_work_xml",
     "head_inventory",
+    "render_tei",
+    "RenderedTei",
+    "entry_for_offset",
+    "attach_tei_scope_to_rows",
 ]
 
 # Observed as italic rubric labels in Chomel's herbal entries, validated by
@@ -223,7 +224,9 @@ def _carriers(section: ET.Element) -> tuple[str, ...]:
     return tuple(tag for tag, _ in sorted(counts.items(), key=lambda kv: -kv[1]))
 
 
-def _section_body(section: ET.Element) -> tuple[str, tuple[Anchor, ...]]:
+def _section_body(
+    section: ET.Element,
+) -> tuple[str, tuple[Anchor, ...], tuple[ET._Element, ...]]:
     """Render a section's text once, recording exact anchor offsets as it goes.
 
     Offsets must come from the walk, not from searching the rendered string: a
@@ -235,6 +238,7 @@ def _section_body(section: ET.Element) -> tuple[str, tuple[Anchor, ...]]:
     """
     parts: list[str] = []
     anchors: list[Anchor] = []
+    anchor_elements: list[ET._Element] = []
     length = 0
 
     for element in section.iter():
@@ -251,10 +255,11 @@ def _section_body(section: ET.Element) -> tuple[str, tuple[Anchor, ...]]:
                 term = _text(first)
                 if term:
                     anchors.append(Anchor(term=term, offset=length))
+                    anchor_elements.append(element)
         parts.append(rendered)
         length += len(rendered) + 1
 
-    return " ".join(parts), tuple(anchors)
+    return " ".join(parts), tuple(anchors), tuple(anchor_elements)
 
 
 def _rubrics(section: ET.Element) -> tuple[str, ...]:
@@ -313,8 +318,25 @@ def parse_entries(
     `_EDITORIAL_HEAD`); pass False to see what is being dropped, or use
     `editorial_heads`.
     """
-    root = _parse_xml(xml)
+    return [entry for entry, _ in _build_entries(_parse_xml(xml), work_id, drop_editorial)]
 
+
+def _editorial_chapters(root: ET._Element) -> set[ET._Element]:
+    out: set[ET._Element] = set()
+    for chapter in root.iter("div"):
+        if chapter.get("type") != "chapter":
+            continue
+        head = chapter.find("head")
+        if head is not None and _EDITORIAL_HEAD.match(_text(head)):
+            out.add(chapter)
+    return out
+
+
+def _build_entries(
+    root: ET._Element, work_id: str, drop_editorial: bool
+) -> list[tuple[TeiEntry, ET._Element]]:
+    """Entries plus the element each one starts at (section div or anchor
+    element), so a caller walking the same tree can place them exactly."""
     chapter_of: dict[ET.Element, tuple[int, str | None]] = {}
     editorial: set[ET.Element] = set()
     for index, chapter in enumerate(root.iter("div")):
@@ -329,7 +351,7 @@ def parse_entries(
                 if is_editorial:
                     editorial.add(section)
 
-    entries: list[TeiEntry] = []
+    entries: list[tuple[TeiEntry, ET._Element]] = []
     last_scope: str | None = None
     position = 0
 
@@ -340,17 +362,23 @@ def parse_entries(
             continue
         head_element = section.find("head")
         section_head = _text(head_element) if head_element is not None else None
-        body, anchors = _section_body(section)
+        body, anchors, anchor_elements = _section_body(section)
         carriers = _carriers(section)
         rubrics = _rubrics(section)
         chapter_index, chapter_head = chapter_of.get(section, (None, None))
 
         # Unit boundaries: the section head opens one, every anchor opens another.
-        starts: list[tuple[int, str | None, str]] = [(0, section_head, "section_head")]
-        starts += [(a.offset, a.term, "keyword_anchor") for a in anchors if a.offset > 0]
+        starts: list[tuple[int, str | None, str, ET._Element]] = [
+            (0, section_head, "section_head", section)
+        ]
+        starts += [
+            (a.offset, a.term, "keyword_anchor", el)
+            for a, el in zip(anchors, anchor_elements)
+            if a.offset > 0
+        ]
         starts.sort(key=lambda s: s[0])
 
-        for order, (start, head, unit_kind) in enumerate(starts):
+        for order, (start, head, unit_kind, start_element) in enumerate(starts):
             end = starts[order + 1][0] if order + 1 < len(starts) else len(body)
             kind = _head_kind(head)
 
@@ -365,7 +393,7 @@ def parse_entries(
                 scope_head, inherited = head, False
                 last_scope = head
 
-            entries.append(
+            entries.append((
                 TeiEntry(
                     work_id=work_id,
                     entry_index=position,
@@ -384,70 +412,102 @@ def parse_entries(
                     keyword_anchors=anchors if unit_kind == "section_head" else (),
                     rubrics=rubrics if unit_kind == "section_head" else (),
                     text=body[start:end].strip(),
-                )
-            )
+                ),
+                start_element,
+            ))
             position += 1
 
     return entries
 
 
-_ANCHOR_LEN = 40
+@dataclass(frozen=True)
+class RenderedTei:
+    """Plain text of a TEI work plus each entry's exact start offset in it."""
+
+    text: str
+    located: tuple[tuple[int, TeiEntry], ...]
 
 
-def locate_in_stripped_text(
-    entries: list[TeiEntry], stripped_text: str
-) -> list[tuple[int, TeiEntry]]:
-    """Find each entry's start offset within `strip_tei(xml)`'s text, not
-    this module's own `_text()` reconstruction of it.
+def render_tei(xml: str, *, work_id: str) -> RenderedTei:
+    """Render the work's `<text>` body and place every entry in one walk.
 
-    The two renderings of the same document are NOT the same string — on
-    Chomel they differ by ~5% in length (different whitespace/entity
-    handling) — so entry offsets computed from `parse_entries`' own text
-    cannot be used to look up a `target_char_offset` from the harvester,
-    which is measured against `strip_tei`'s output. This anchors each
-    entry's text into that string instead, by searching forward from the end
-    of the previous match so repeated phrases resolve in document order.
+    Replaces `strip_tei` for TEI sources. `strip_tei` deletes tags with a regex
+    while this module rendered entries via `itertext()`; the two disagree at
+    every tag boundary that has no whitespace in the source (e.g.
+    `aamborstigheit</hi>, Kortademigheit`), drifting ~5% over Chomel, and the
+    substring-anchoring workaround that bridged them only placed ~63% of
+    entries. Here the harvester's text and the entry offsets come from the
+    same pass, so they agree by construction.
 
-    Entries whose anchor text cannot be found (rare — collapsed whitespace
-    edge cases) are dropped from the returned list, not silently misaligned;
-    callers needing every entry should check `len(result) == len(entries)`.
+    Rendering: every tag boundary becomes one space and whitespace runs
+    collapse, matching `strip_tei`'s word separation. Unlike `strip_tei` it
+    leaves out the `teiHeader` and DBNL's digitisation apparatus, and entities
+    are resolved rather than leaking as literal `&nbsp;`.
     """
-    located: list[tuple[int, TeiEntry]] = []
-    cursor = 0
-    for entry in entries:
-        anchor = entry.text[:_ANCHOR_LEN].strip()
-        if not anchor:
-            continue
-        pos = stripped_text.find(anchor, cursor)
-        if pos == -1:
-            continue
-        located.append((pos, entry))
-        cursor = pos + len(anchor)
-    return located
+    root = _parse_xml(xml)
+    body = root.find(".//text")
+    if body is None:
+        body = root
+    skip = _editorial_chapters(root)
+
+    parts: list[str] = []
+    length = 0
+    last_space = True
+    offsets: dict[ET._Element, int] = {}
+
+    def emit(s: str | None) -> None:
+        nonlocal length, last_space
+        if not s:
+            return
+        s = _WS.sub(" ", s)
+        if last_space and s.startswith(" "):
+            s = s[1:]
+        if not s:
+            return
+        parts.append(s)
+        length += len(s)
+        last_space = s.endswith(" ")
+
+    def walk(el: ET._Element) -> None:
+        if not isinstance(el.tag, str) or el in skip:
+            emit(" ")
+            emit(el.tail)
+            return
+        emit(" ")
+        offsets[el] = length
+        emit(el.text)
+        for child in el:
+            walk(child)
+        emit(" ")
+        emit(el.tail)
+
+    walk(body)
+    text = "".join(parts).rstrip()
+
+    located = sorted(
+        ((offsets[el], entry) for entry, el in _build_entries(root, work_id, True) if el in offsets),
+        key=lambda pair: pair[0],
+    )
+    return RenderedTei(text=text, located=tuple(located))
 
 
 def entry_for_offset(
-    located: list[tuple[int, TeiEntry]], offset: int
+    located: tuple[tuple[int, TeiEntry], ...] | list[tuple[int, TeiEntry]], offset: int
 ) -> TeiEntry | None:
-    """The entry governing `offset`, given `locate_in_stripped_text`'s output
-    (must be sorted by position, which it is by construction)."""
-    governing: TeiEntry | None = None
-    for pos, entry in located:
-        if pos > offset:
-            break
-        governing = entry
-    return governing
+    """The entry governing `offset` in `render_tei`'s text."""
+    index = bisect_right([pos for pos, _ in located], offset) - 1
+    return located[index][1] if index >= 0 else None
 
 
 def attach_tei_scope_to_rows(
     rows: list[dict],
     *,
-    xml: str,
-    stripped_text: str,
-    work_id: str,
+    located: tuple[tuple[int, TeiEntry], ...] | list[tuple[int, TeiEntry]],
 ) -> list[dict]:
     """Stamp ``tei_scope_head`` (and upgrade UNKNOWN ``text_regime``) on harvest rows.
 
+    `located` must come from `render_tei` on the same text the rows were
+    harvested from, so `target_char_offset` lands in the right entry.
     Pre-LLM route for works whose work-level regime is UNKNOWN (PLAN.md §9i):
     an entry headed like a remedy/recipe is treated as MEDICAL/RECIPE_PRACTICE
     for sieve routing without rewriting the cascade.
@@ -455,21 +515,18 @@ def attach_tei_scope_to_rows(
     from trifecta_annotation.regime_routing import regime_from_tei_scope_head
     from trifecta_annotation.text_regime import TextRegime
 
-    entries = parse_entries(xml, work_id=work_id)
-    located = locate_in_stripped_text(entries, stripped_text)
     if not located:
         return rows
+    positions = [pos for pos, _ in located]
     out: list[dict] = []
     for row in rows:
         updated = dict(row)
         offset = updated.get("target_char_offset")
-        if offset is None:
+        index = bisect_right(positions, int(offset)) - 1 if offset is not None else -1
+        if index < 0:
             out.append(updated)
             continue
-        entry = entry_for_offset(located, int(offset))
-        if entry is None:
-            out.append(updated)
-            continue
+        entry = located[index][1]
         scope = entry.scope_head or entry.head
         if scope:
             updated["tei_scope_head"] = scope
