@@ -784,6 +784,17 @@ Consequence for routing: "exclude absent-regime, save 30% of spend for 15% of ou
 
 **TEI offset alignment fixed (7 Nov 2026).** `attach_tei_scope_to_rows` originally placed entries by substring-anchoring `tei_segmentation`'s text into `strip_tei`'s, and only placed ~63% of Chomel's entries: the two renderings disagree at every tag boundary with no whitespace in the source (`aamborstigheit</hi>, Kortademigheit`), drifting ~5% over the document — enough to mis-attribute the §9h asthma-remedy passage to the eel-catching head. Replaced by `render_tei`: one lxml walk produces the harvester's text *and* every entry's offset, so they agree by construction. Measured: **7,120/7,120** Chomel entries placed (1,386/1,386 secreet-boek, 268/268 Amstelredamensis), 0.6s for Chomel, no `&nbsp;` leaks. TEI harvests (`build_colonial_kwic.py` new-DBNL + H1 sweep, `build_handdownload_kwic.py`) now read `render_tei` text instead of `strip_tei`, which also drops the `teiHeader` and DBNL's digitisation apparatus from what gets harvested. Consequence: `target_char_offset` and index-based `record_id`s of *future* TEI harvests differ from rows harvested earlier, so re-harvesting an already-annotated work will not `--resume`-match its old rows. `export_term_occurrence_overview.py` still uses `strip_tei` (counts only, no offsets).
 
+**Selection modes, controlled experiment (7 Nov 2026) — settles the confounded comparisons above.** `scripts/experiment_selection_modes.py`: per work, one fixed random pool of 1,500 mention windows; each mode ranks the same pool; top 40 per mode; union (355 rows) annotated once by the normal cascade on local Ollama (default model), 0 errors. Exemplars from the test works (29 of 150) excluded from the embedding centroids. Works: Chomel (RECIPE_PRACTICE), *De Tijdspiegel* 33 (LITERARY), a States Bible (UNKNOWN). Output: scratch `experiments/selection_modes/`.
+
+| real-frame yield | `verb_food` | embedding | noun (random) |
+|---|---:|---:|---:|
+| all (n=120 each) | **76%** | 62% | 33% |
+| RECIPE_PRACTICE | 75% | **82%** | 65% |
+| LITERARY | **75%** | 62% | 15% |
+| UNKNOWN | **78%** | 40% | 20% |
+
+Conclusions: (1) **`verb_food` is the best general selector**, consistent across regimes — the corrected observational direction above is now confirmed causally, and the shipped verb-food harvest default is right. (2) **The embedding route is not 3× better**: competitive only on recipe material (33 vs 30, within noise), clearly worse elsewhere. The earlier 4.3%-drop figure was plausibly inflated by exemplar leakage (the old `embedding_rerank` rows were mostly Chomel, and Chomel is among the exemplar sources) — consistent, not proven. Do not widen `embedding_rerank`. (3) Random noun hits are poor (15% in LITERARY), supporting the noun-fallback removal. Caveat that matters for volume: `verb_food` can only select mentions with a qualifying verb nearby — 494/1,500 in Chomel but ~90/1,500 in the LITERARY and UNKNOWN works — so it is precise but narrow; embedding is the only scorer that ranks the whole pool. Limits: n=40 per cell, one work per regime.
+
 **Still deferred:** (1) Step B NONE encoder gate on weak-regime A-survivors only; (2) domain-mismatch scoring beyond lexical `assess_homonym_context`; (3) sweeping thresholds above 0.98.
 
 **Two distinct problems were being conflated, and both are real:**
