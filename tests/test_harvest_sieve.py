@@ -159,3 +159,24 @@ def test_entry_scope_routes_only_structured_recipe_medical_works() -> None:
             assert "__scope__" in scoped[0]["record_id"]
         else:
             assert scoped == []
+
+
+def test_entry_scope_cap_keeps_cap_rows_even_when_clustered() -> None:
+    nouns = [
+        {"target_char_offset": o, "kwic_mode": "noun_fallback", "source_path": "ex.xml",
+         "candidate_terms": ["boter"], "record_id": f"n{o}"}
+        for o in range(20, 40)  # 20 mentions packed into one stretch of a 1000-char text
+    ]
+    with (
+        patch("scripts.build_colonial_kwic.infer_text_regime", return_value=TextRegime.RECIPE_PRACTICE),
+        patch("scripts.build_colonial_kwic.verb_first_hits", return_value=[]),
+        patch("scripts.build_colonial_kwic.scan_text", return_value=nouns),
+        patch("trifecta_annotation.regime_routing.regime_from_tei_scope_head",
+              return_value=TextRegime.RECIPE_PRACTICE),
+    ):
+        out = capped_candidates(
+            "x" * 1000, pattern=re.compile(r"x"), canonical={}, food_terms_list=[],
+            source_path="ex.xml", title="Kookboek", corpus="c", date=None, cap=5,
+            located=[(0, _entry("Om Boter te maken"))], entry_scope_cap=10,
+        )
+    assert len([r for r in out if r["kwic_mode"] == "entry_scope"]) == 10

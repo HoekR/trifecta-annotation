@@ -593,13 +593,13 @@ def capped_candidates(
             regime=regime, units=units, trust_goals=trust_goals,
         )
         scoped = entry_scope_hits(nouns, located=located, exclude_offsets=verb_offsets)
-        # Stratify only when over budget: bins are document-wide, so entries
-        # clustered in one stretch would otherwise collapse to one row per bin
-        # and a work with 550 eligible rows would keep ~90, not 500.
+        # Over budget: keep evenly spaced rows in document order. Not
+        # `stratify_by_position` — its bins are document-wide, so entries
+        # clustered in one stretch collapse to one row per bin (528 eligible
+        # rows in the secreet-boek came out as 90).
         if entry_scope_cap and len(scoped) > entry_scope_cap:
-            scoped = stratify_by_position(
-                [(0.0, row) for row in scoped], cap=entry_scope_cap, doc_length=len(text)
-            )
+            scoped.sort(key=lambda row: row["target_char_offset"])
+            scoped = [scoped[k * len(scoped) // entry_scope_cap] for k in range(entry_scope_cap)]
         selected += scoped
     return selected
 
