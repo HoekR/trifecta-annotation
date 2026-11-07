@@ -111,7 +111,7 @@ def export_keepdrop_splits(
     *,
     dev_fraction: float = 0.15,
     seed: int = 42,
-    model_base: str = "emanjavacas/globertise",
+    model_base: str = "globalise/GloBERTise",
 ) -> dict[str, Path]:
     """Write train/dev JSONL + label_manifest for binary Step A keep/drop."""
     out = Path(output_dir).expanduser().resolve()

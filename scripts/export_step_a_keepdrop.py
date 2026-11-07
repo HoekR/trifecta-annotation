@@ -48,7 +48,7 @@ def main() -> None:
         help="Manifest logical names to merge (default: four cascade sources)",
     )
     parser.add_argument("--output-dir", default=None, help="Default: scratch trifecta/step_a_keepdrop")
-    parser.add_argument("--model-base", default="emanjavacas/globertise")
+    parser.add_argument("--model-base", default="globalise/GloBERTise")
     parser.add_argument("--dev-fraction", type=float, default=0.15)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--summary", action="store_true")

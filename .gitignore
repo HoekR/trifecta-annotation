@@ -6,6 +6,12 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 output/
+
+# Scratch-tier exports that landed at repo root instead of the registered
+# data_manifest.toml path (e.g. when the scratch disk wasn't mounted) --
+# real output belongs on the scratch tier, never here. Scoped to this one
+# subpath, not all of trifecta/: trifecta/gijsbert/*.jsonl are tracked fixtures.
+/trifecta/step_a_keepdrop/
 .env
 model_compare.env
 

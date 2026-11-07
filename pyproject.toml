@@ -13,6 +13,7 @@ authors = [{ name = "Rik Hoekstra" }]
 keywords = ["framenet", "trifecta", "historical-text", "food", "nlp", "dutch"]
 
 dependencies = [
+    "lxml>=5.0",
     "pandas>=2.0",
     "numpy>=1.24",
     "pyarrow>=14.0",

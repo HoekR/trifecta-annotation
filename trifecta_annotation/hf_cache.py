@@ -39,8 +39,17 @@ def resolve_hf_hub_cache() -> Path:
 
 
 def configure_hf_hub_cache() -> Path:
-    """Set HF env vars so transformers/huggingface_hub use scratch."""
+    """Set HF env vars so transformers/huggingface_hub use scratch.
+
+    Also force a PyTorch-only transformers import path. A Keras 3 install
+    otherwise pulls TF stubs and raises ``tf_keras`` / Keras 3 errors even
+    when training is torch-only.
+    """
     cache = resolve_hf_hub_cache()
     os.environ.setdefault("HF_HOME", str(cache))
     os.environ.setdefault("HUGGINGFACE_HUB_CACHE", str(cache))
+    # Must be set before ``import transformers``.
+    os.environ.setdefault("USE_TF", "0")
+    os.environ.setdefault("TRANSFORMERS_NO_TF", "1")
+    os.environ.setdefault("USE_FLAX", "0")
     return cache

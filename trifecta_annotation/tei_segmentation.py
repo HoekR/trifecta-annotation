@@ -4,9 +4,20 @@ Deliberately separate from `structural_parse.py`. That module detects unit
 boundaries in flowing text with cue regexes and then has to decide whether to
 trust what it found (per-cue-type checks plus a document density gate, PLAN.md
 §9g). Here the boundaries are declared markup: a `div[@type="section"]` is an
-entry because the encoder said so, so there is nothing to trust-gate, no
-density to measure, and char offsets come free. Keeping the two apart stops the
-declared path inheriting machinery built for a far less reliable signal.
+entry because the encoder said so, so there is nothing to trust-gate and no
+density to measure. Keeping the two apart stops the declared path inheriting
+machinery built for a far less reliable signal.
+
+CORRECTION (7 Nov 2026): "char offsets come free" was wrong as originally
+written — this module's own `_text()` rendering and `strip_tei`'s regex
+stripping (what `scan_text`/`capped_candidates` read) disagree at every tag
+boundary with no surrounding whitespace, compounding to ~5% length drift over
+a full document. A structural, single-pass walk that derives both the plain
+text and entry offsets together (replacing `strip_tei` for TEI works, not
+reconciling two independently-built texts afterward) is the fix; not yet
+built. See PLAN.md §9h's correction note and `locate_in_stripped_text`,
+which is the interim, imperfect (~63% entry recall measured on Chomel)
+substring-anchoring workaround — do not treat its output as exact.
 
 Why this exists at all: the DBNL ingestion path reaches text through
 `strip_tei()` in `scripts/build_colonial_kwic.py`, which is
@@ -51,8 +62,9 @@ reports what the markup says; deciding what an entry *means* is a separate step.
 from __future__ import annotations
 
 import re
-import xml.etree.ElementTree as ET
 import zipfile
+
+import lxml.etree as ET
 from dataclasses import dataclass, field
 from html.entities import name2codepoint
 from pathlib import Path
@@ -125,6 +137,19 @@ def _sanitize_entities(xml: str) -> str:
         return chr(codepoint) if codepoint is not None else " "
 
     return _UNDEFINED_ENTITY.sub(repl, xml)
+
+
+_PARSER = ET.XMLParser(
+    recover=True, resolve_entities=False, load_dtd=False, no_network=True
+)
+
+
+def _parse_xml(xml: str) -> ET._Element:
+    """Parse sanitized TEI source. Encodes to bytes first: lxml refuses a
+    `str` containing an XML declaration with an `encoding` attribute, which
+    every one of these files has. `no_network`/`load_dtd=False` stop it
+    trying to fetch the DOCTYPE's PUBLIC identifier over the network."""
+    return ET.fromstring(_sanitize_entities(xml).encode("utf-8"), parser=_PARSER)
 
 
 def _text(element: ET.Element) -> str:
@@ -261,7 +286,7 @@ def editorial_heads(xml: str) -> list[str]:
     Provided so the exclusion can be inspected rather than taken on trust —
     silent dropping is how this project lost provenance before.
     """
-    root = ET.fromstring(_sanitize_entities(xml))
+    root = _parse_xml(xml)
     heads: list[str] = []
     for chapter in root.iter("div"):
         if chapter.get("type") != "chapter":
@@ -288,7 +313,7 @@ def parse_entries(
     `_EDITORIAL_HEAD`); pass False to see what is being dropped, or use
     `editorial_heads`.
     """
-    root = ET.fromstring(_sanitize_entities(xml))
+    root = _parse_xml(xml)
 
     chapter_of: dict[ET.Element, tuple[int, str | None]] = {}
     editorial: set[ET.Element] = set()
