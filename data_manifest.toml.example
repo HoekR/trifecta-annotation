@@ -394,3 +394,17 @@ path = "trifecta/dbnl_sweep_annotations.jsonl"
 phase = "semi"
 description = "A->B->C annotations for dbnl_sweep_kwic_inputs"
 parent = "dbnl_sweep_kwic_inputs"
+
+[datasets.entry_scope_kwic_inputs]
+tier = "scratch"
+path = "trifecta/entry_scope_kwic_inputs.jsonl"
+phase = "semi"
+description = "Entry-scope rows (cap 500/work, not reachable by verb_food) from RECIPE/MEDICAL DBNL TEI works (PLAN §9i, selection v2)"
+parent = "dbnl_xml"
+
+[datasets.entry_scope_annotations]
+tier = "scratch"
+path = "trifecta/entry_scope_annotations.jsonl"
+phase = "semi"
+description = "A->B->C annotations for entry_scope_kwic_inputs"
+parent = "entry_scope_kwic_inputs"

@@ -593,7 +593,10 @@ def capped_candidates(
             regime=regime, units=units, trust_goals=trust_goals,
         )
         scoped = entry_scope_hits(nouns, located=located, exclude_offsets=verb_offsets)
-        if entry_scope_cap:
+        # Stratify only when over budget: bins are document-wide, so entries
+        # clustered in one stretch would otherwise collapse to one row per bin
+        # and a work with 550 eligible rows would keep ~90, not 500.
+        if entry_scope_cap and len(scoped) > entry_scope_cap:
             scoped = stratify_by_position(
                 [(0.0, row) for row in scoped], cap=entry_scope_cap, doc_length=len(text)
             )
