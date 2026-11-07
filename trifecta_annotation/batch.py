@@ -258,6 +258,7 @@ def run_batch(
     english_hint: bool = False,
     api_key: str | None = None,
     step_a_sieve_model: str | Path | None = None,
+    step_a_sieve_threshold: float | None = None,
 ) -> Path:
     """Annotate KwicInput rows; append each result incrementally with tqdm progress.
 
@@ -286,8 +287,9 @@ def run_batch(
     if step_a_sieve_model:
         from trifecta_annotation.step_a_keepdrop import HfStepAKeepDropSieve
 
-        step_a_sieve = HfStepAKeepDropSieve(step_a_sieve_model)
-        print(f"Step A keep/drop sieve: {step_a_sieve.path} (weak regimes only)", flush=True)
+        kwargs = {} if step_a_sieve_threshold is None else {"drop_threshold": step_a_sieve_threshold}
+        step_a_sieve = HfStepAKeepDropSieve(step_a_sieve_model, **kwargs)
+        print(f"Step A keep/drop sieve: {step_a_sieve.path} (weak regimes only, drop_threshold={step_a_sieve.drop_threshold})", flush=True)
     if output_path is not None:
         path = Path(output_path).expanduser().resolve()
     else:

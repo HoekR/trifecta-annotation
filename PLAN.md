@@ -770,7 +770,19 @@ Consequence for routing: "exclude absent-regime, save 30% of spend for 15% of ou
 
 **Genre-routed sieves (2026-11-06, wired):** route by `text_regime` after TEI entry-scope upgrade — see [docs/DECISIONS.md](docs/DECISIONS.md). Harvest stays verb-food; weak regimes may run a binary Step A KEEP/DROP encoder before LLM A (`trifecta-batch --step-a-sieve-model …`); RECIPE/MEDICAL go straight to LLM. Export/train: `scripts/export_step_a_keepdrop.py`, `scripts/train_step_a_keepdrop.py` (user-run GPU). TEI: `attach_tei_scope_to_rows` stamps `tei_scope_head` and may upgrade UNKNOWN → MEDICAL/RECIPE from entry heads.
 
-**Still deferred:** (1) training/adopting a production keep/drop checkpoint (export+train harness ready; threshold by keep-recall per regime); (2) Step B NONE encoder gate on weak-regime A-survivors only; (3) domain-mismatch scoring beyond lexical `assess_homonym_context`.
+**Step A keep/drop sieve trained and thresholded (7 Nov 2026).** GloBERTise (`globalise/GloBERTise`) fine-tuned on the 40,715 Step A labels, split by work; ~1h40m on MPS. Model: scratch `step_a_keepdrop/models/globertise-keepdrop/`. Dev accuracy 92.5% (n=7,103) — but accuracy is the wrong metric for a sieve, so `scripts/sweep_step_a_keepdrop.py` reports keep-recall (true KEEPs surviving) and calls saved per regime and threshold; full output in `threshold_sweep.json` beside the model.
+
+| regime (sieved?) | n | keep-recall @0.5 (argmax) | keep-recall @0.98 | Step A calls saved @0.98 |
+|---|---:|---:|---:|---:|
+| UNKNOWN (yes) | 4,705 | 0.922 | **0.952** | 50.8% |
+| TRAVEL (yes) | 1,120 | 0.959 | **0.980** | 44.4% |
+| LITERARY (yes) | 727 | 0.924 | **0.964** | 46.2% |
+| ADMIN_TRADE (yes) | 92 | 0.961 | 0.961 | 40.2% |
+| MEDICAL (no — direct LLM) | 419 | 0.942 | 0.972 | 18.4% (drop-precision only 0.80–0.88) |
+
+**Decision: `DEFAULT_DROP_THRESHOLD = 0.98`** in `step_a_keepdrop.py`, replacing argmax (=0.5), which lost 4–8% of real KEEPs in the sieved regimes. Overridable via `trifecta-batch --step-a-sieve-threshold`. The curve is flat from 0.5 to 0.95 and only bends at 0.98, so values above 0.98 were not swept and may buy more recall — worth one more sweep if the 5% UNKNOWN loss matters. MEDICAL stays unsieved, confirmed: low savings and weak drop-precision. Caveat: keep-recall here is agreement with LLM Step A, not with gold.
+
+**Still deferred:** (1) Step B NONE encoder gate on weak-regime A-survivors only; (2) domain-mismatch scoring beyond lexical `assess_homonym_context`; (3) sweeping thresholds above 0.98.
 
 **Two distinct problems were being conflated, and both are real:**
 

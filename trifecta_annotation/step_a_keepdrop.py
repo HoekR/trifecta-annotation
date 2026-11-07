@@ -22,6 +22,12 @@ from trifecta_annotation.regime_routing import (
 from trifecta_annotation.schemas import TrifectaAnnotation
 from trifecta_annotation.text_regime import TextRegime
 
+# Chosen from scripts/sweep_step_a_keepdrop.py on the 7,103-row dev split
+# (globertise-keepdrop, 7 Nov 2026): 0.98 keeps keep-recall >= 0.95 on every
+# sieved regime (UNKNOWN 0.952, LITERARY 0.964, TRAVEL 0.980) while still
+# removing ~45-51% of their Step A calls. Argmax (=0.5) lost 4-8% of real KEEPs.
+DEFAULT_DROP_THRESHOLD = 0.98
+
 
 class StepAKeepDropSieve(Protocol):
     def predict_keep(self, text: str) -> bool: ...
@@ -187,7 +193,14 @@ def metrics_by_regime(
 class HfStepAKeepDropSieve:
     """Load a fine-tuned sequence classifier and predict KEEP vs DROP."""
 
-    def __init__(self, model_dir: str | Path, *, device: str | None = None, max_length: int = 256):
+    def __init__(
+        self,
+        model_dir: str | Path,
+        *,
+        device: str | None = None,
+        max_length: int = 256,
+        drop_threshold: float = DEFAULT_DROP_THRESHOLD,
+    ):
         from trifecta_annotation.gijsbert_train import _resolve_device
         from trifecta_annotation.hf_cache import configure_hf_hub_cache
 
@@ -197,6 +210,7 @@ class HfStepAKeepDropSieve:
 
         self.path = Path(model_dir).expanduser().resolve()
         self.max_length = max_length
+        self.drop_threshold = drop_threshold
         self.device = _resolve_device(device)
         self.tokenizer = AutoTokenizer.from_pretrained(self.path)
         self.model = AutoModelForSequenceClassification.from_pretrained(self.path)
@@ -217,8 +231,11 @@ class HfStepAKeepDropSieve:
         enc = {key: value.to(self.device) for key, value in enc.items()}
         with self._torch.no_grad():
             logits = self.model(**enc).logits
-        pred_id = int(logits.argmax(dim=-1).item())
-        return self.id2label.get(pred_id, DROP_LABEL)
+        probs = self._torch.softmax(logits, dim=-1)[0]
+        drop_id = next(i for i, lab in self.id2label.items() if lab == DROP_LABEL)
+        # Not argmax: a false DROP loses a real finding, a false KEEP costs one
+        # LLM call, so only drop when the encoder is very sure.
+        return DROP_LABEL if float(probs[drop_id]) >= self.drop_threshold else KEEP_LABEL
 
     def predict_keep(self, text: str) -> bool:
         return self.predict_label(text) == KEEP_LABEL

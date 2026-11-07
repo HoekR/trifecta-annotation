@@ -60,6 +60,7 @@ def _cmd_batch(args: argparse.Namespace) -> None:
         script=__file__,
         english_hint=args.english_hint,
         step_a_sieve_model=args.step_a_sieve_model,
+        step_a_sieve_threshold=args.step_a_sieve_threshold,
     )
     records = load_jsonl(path)
     ok = sum(1 for record in records if not record.get("error"))
@@ -115,6 +116,12 @@ def build_parser() -> argparse.ArgumentParser:
         "--step-a-sieve-model",
         default=None,
         help="Fine-tuned KEEP/DROP model dir; sieves LITERARY/TRAVEL/UNKNOWN/… before LLM Step A",
+    )
+    batch.add_argument(
+        "--step-a-sieve-threshold",
+        type=float,
+        default=None,
+        help="P(DROP) needed to drop (default 0.98, from scripts/sweep_step_a_keepdrop.py)",
     )
     batch.add_argument("--parent-sources", nargs="*", default=None)
     batch.add_argument("--description", default="TRIFECTA batch annotation run")
