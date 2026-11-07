@@ -795,6 +795,23 @@ Consequence for routing: "exclude absent-regime, save 30% of spend for 15% of ou
 
 Conclusions: (1) **`verb_food` is the best general selector**, consistent across regimes — the corrected observational direction above is now confirmed causally, and the shipped verb-food harvest default is right. (2) **The embedding route is not 3× better**: competitive only on recipe material (33 vs 30, within noise), clearly worse elsewhere. The earlier 4.3%-drop figure was plausibly inflated by exemplar leakage (the old `embedding_rerank` rows were mostly Chomel, and Chomel is among the exemplar sources) — consistent, not proven. Do not widen `embedding_rerank`. (3) Random noun hits are poor (15% in LITERARY), supporting the noun-fallback removal. Caveat that matters for volume: `verb_food` can only select mentions with a qualifying verb nearby — 494/1,500 in Chomel but ~90/1,500 in the LITERARY and UNKNOWN works — so it is precise but narrow; embedding is the only scorer that ranks the whole pool. Limits: n=40 per cell, one work per regime.
 
+**Selection modes v2 (7 Nov 2026, unattended run, `scripts/weekend_run.sh`).** The same design across 10 works: 3 RECIPE (Chomel, secreet-boek, volmaakte keuken-meid), 1 MEDICAL (Pharmacopoea Amstelredamensis), the 3 largest LITERARY sweep works and the 3 largest UNKNOWN works (Bible editions collapsed). Top 60 per mode, plus two structural modes: `entry_scope` (the mention lies inside a TEI entry whose head matches a `regime_from_tei_scope_head` cue) and `entry_scope_head` (the same, with `[Kopje: …]` prefixed). The union of 1,990 rows was annotated on local Ollama with 0 errors. Full table: [docs/evidence/selection_modes_v2/report.md](docs/evidence/selection_modes_v2/report.md).
+
+| real-frame yield | `verb_food` | embedding | noun | entry_scope | +head |
+|---|---:|---:|---:|---:|---:|
+| RECIPE_PRACTICE | 90% | **91%** | 80% | 86% | 88% |
+| MEDICAL | 85% | **90%** | 72% | 89% | 83% |
+| LITERARY | **55%** | 35% | 10% | 9% (n=11) | 0% (n=11) |
+| UNKNOWN | **41%** | 19% | 11% | 11% (n=9) | 33% (n=9) |
+
+Conclusions:
+1. **Within recipe and medical works, precision no longer separates the modes; reach does.** Most of the real frames that the non-verb modes find are *unreachable by verb*: RECIPE entry_scope 93/136, RECIPE embedding 110/163, MEDICAL embedding 42/54. In structured works, verb_food therefore leaves most findings unselected. This confirms structurally-evoked frames need a non-verb route (§9e).
+2. **In weak regimes verb_food stays clearly best.** Entry scope barely applies there: there are few TEI entries, and the scope cues are recipe and medical heads.
+3. **The head prefix gives no measurable gain** (80% vs 78% overall, n=197).
+4. **Do not compare the ALL rows across modes.** 159 of entry_scope's 197 rows come from RECIPE works (composition effect).
+
+Implied routing, not yet implemented: entry_scope plus embedding for structured RECIPE/MEDICAL works, verb_food everywhere else. Caveat: "real frame" is the pipeline's own verdict, not gold.
+
 **Still deferred:** (1) Step B NONE encoder gate on weak-regime A-survivors only; (2) domain-mismatch scoring beyond lexical `assess_homonym_context`; (3) sweeping thresholds above 0.98.
 
 **Two distinct problems were being conflated, and both are real:**
