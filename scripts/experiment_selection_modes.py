@@ -1,26 +1,32 @@
 """Controlled comparison of candidate-selection modes on identical material.
 
 PLAN.md §9i could only compare selection modes observationally, and every
-reading was confounded (corpus era, work selection, noun-fallback filling only
-bins where no verb fired). This settles it by design:
+reading was confounded. This settles it by design: per work, one fixed random
+pool of food-mention windows; each mode ranks that same pool; the union of each
+mode's top N is annotated once by the normal A->B->C cascade.
 
-1. For each of a few works (one per regime), take a fixed random pool of food
-   mention windows (the plain `scan_text` hits, i.e. every mention).
-2. Each mode ranks that same pool:
-   - verb_food: best `score_snippet_for_frame` confidence over the four food
-     frames (windows with no qualifying verb are not selectable by this mode,
-     as in production);
-   - embedding: best food-frame centroid cosine minus NONE-centroid cosine
-     (GysBERT, centroids from gold exemplars, excluding exemplars from the
-     test works themselves to avoid near-duplicate matching);
-   - noun: random order (the unscored baseline).
-3. Top-N per mode; the union is annotated once by the normal A->B->C cascade.
-4. Report Step A survival and real-frame yield per mode and work.
+Modes:
+  verb_food        best `score_snippet_for_frame` confidence over the food
+                   frames; mentions with no qualifying verb are not selectable
+                   (as in production)
+  embedding        best food-frame centroid cosine minus NONE cosine (GysBERT;
+                   exemplars from the test works are excluded)
+  noun             random order — the unscored baseline
+  entry_scope      random among mentions whose governing TEI entry head names a
+                   goal (`regime_from_tei_scope_head` -> MEDICAL/RECIPE), verb
+                   or no verb: the route for structurally-evoked frames
+  entry_scope_head the same mentions, with the entry head prepended to the
+                   context ("[Kopje: ...]") — tests whether the cascade can use
+                   intention that lives in the head rather than the sentence
 
-Phases (each skips work already done, so it is safe to re-run):
-    uv run python scripts/experiment_selection_modes.py select
-    uv run python scripts/experiment_selection_modes.py annotate   # local Ollama
-    uv run python scripts/experiment_selection_modes.py report
+The report gives Step A survival and real-frame yield per mode, plus how many
+real frames each mode finds that `verb_food` can never reach (mention has no
+qualifying verb) — the complementarity question.
+
+v1 (commit 23a859d, results in experiments/selection_modes/) ran 3 works and the
+first three modes; this is v2.
+
+    uv run python scripts/experiment_selection_modes.py all
 """
 from __future__ import annotations
 
@@ -34,21 +40,31 @@ from pathlib import Path
 
 from data_io import resolve
 
-OUT_DIR = Path(resolve("trifecta_annotations")).parent / "experiments" / "selection_modes"
-SELECTION = OUT_DIR / "selection.jsonl"   # KwicInput rows to annotate
-MODES = OUT_DIR / "modes.json"            # record_id -> [modes that selected it]
+OUT_DIR = Path(resolve("trifecta_annotations")).parent / "experiments" / "selection_modes_v2"
+SELECTION = OUT_DIR / "selection.jsonl"
+META = OUT_DIR / "meta.json"
 ANNOTATIONS = OUT_DIR / "annotations.jsonl"
 REPORT = OUT_DIR / "report.md"
 
 POOL_SIZE = 1500
-TOP_N = 40
+TOP_N = 60
 SEED = 0
-RECIPE_WORK = ("chom003huis01_01.xml", "Huishoudelyk woordboek")
+WORKS_PER_SWEEP_REGIME = 3
+FIXED_WORKS = [
+    ("chom003huis01_01.xml", "Huishoudelyk woordboek", "RECIPE_PRACTICE"),
+    ("bate002secr02_01.xml", "Het secreet-boek vol heerlijke konsten", "RECIPE_PRACTICE"),
+    ("_vol002volm01_01.xml", "De volmaakte Hollandsche keuken-meid", "RECIPE_PRACTICE"),
+    ("_pha001phar05_01.xml", "Pharmacopoea Amstelredamensis", "MEDICAL"),
+]
+import re
+
+_BIBLE = re.compile(r"\b(biblia|bijbel|bible)\b", re.IGNORECASE)
+MODES = ("verb_food", "embedding", "noun", "entry_scope", "entry_scope_head")
 
 
 def _pick_works() -> list[tuple[str, str, str]]:
-    """(filename, title, regime): Chomel for RECIPE_PRACTICE, and the largest
-    sweep work whose inferred regime is LITERARY / UNKNOWN."""
+    """Fixed recipe/medical works plus the largest LITERARY / UNKNOWN sweep
+    works, skipping near-duplicate titles (e.g. several Bible editions)."""
     from scripts.build_colonial_kwic import ingested_dbnl_stems
     from trifecta_annotation.corpus_genre_join import load_genre_records
     from trifecta_annotation.dbnl_genre import sweep_candidates, xml_filenames_by_stem
@@ -62,19 +78,23 @@ def _pick_works() -> list[tuple[str, str, str]]:
     )
     with zipfile.ZipFile(zip_path) as archive:
         sizes = {i.filename: i.file_size for i in archive.infolist()}
-    best: dict[str, tuple[int, str, str]] = {}
+    by_regime: dict[str, list[tuple[int, str, str]]] = defaultdict(list)
     for c in cands:
         title = c["titel"] or c["ti_id"]
         regime = infer_text_regime(corpus="dbnl_full_sweep_2026", title=title, source_path=c["filename"]).value
-        if regime not in ("LITERARY", "UNKNOWN"):
-            continue
-        size = sizes.get(c["filename"], 0)
-        if size > best.get(regime, (0, "", ""))[0]:
-            best[regime] = (size, c["filename"], title)
-    works = [(RECIPE_WORK[0], RECIPE_WORK[1], "RECIPE_PRACTICE")]
+        if regime in ("LITERARY", "UNKNOWN"):
+            by_regime[regime].append((sizes.get(c["filename"], 0), c["filename"], title))
+    works = list(FIXED_WORKS)
     for regime in ("LITERARY", "UNKNOWN"):
-        _, fn, title = best[regime]
-        works.append((fn, title, regime))
+        seen_prefixes: set[str] = set()
+        for _, fn, title in sorted(by_regime[regime], reverse=True):
+            prefix = "bible" if _BIBLE.search(title) else title[:12].lower()
+            if prefix in seen_prefixes:
+                continue
+            seen_prefixes.add(prefix)
+            works.append((fn, title, regime))
+            if len(seen_prefixes) >= WORKS_PER_SWEEP_REGIME:
+                break
     return works
 
 
@@ -89,8 +109,9 @@ def select() -> None:
         frame_centroids_from_embeddings,
         load_exemplars_jsonl,
     )
+    from trifecta_annotation.regime_routing import regime_from_tei_scope_head
     from trifecta_annotation.schemas import TrifectaFrame
-    from trifecta_annotation.tei_segmentation import read_work_xml, render_tei
+    from trifecta_annotation.tei_segmentation import entry_for_offset, read_work_xml, render_tei
     from trifecta_annotation.text_regime import TextRegime
     from trifecta_annotation.vocabulary import alt_label_index, load_food_terms
 
@@ -118,7 +139,8 @@ def select() -> None:
     rng = random.Random(SEED)
 
     selection: list[dict] = []
-    modes: dict[str, list[str]] = defaultdict(list)
+    meta: dict[str, dict] = {}
+    pool_stats: dict[str, dict] = {}
     for fn, title, regime_name in works:
         t0 = time.monotonic()
         rendered = render_tei(read_work_xml(resolve("dbnl_xml"), fn), work_id=fn)
@@ -129,7 +151,7 @@ def select() -> None:
             date=None, regime=regime,
         )
         pool = rng.sample(hits, min(POOL_SIZE, len(hits)))
-        print(f"[{regime_name}] {title!r}: {len(hits)} mentions, pool {len(pool)}", flush=True)
+        print(f"[{regime_name}] {title[:60]!r}: {len(hits)} mentions, pool {len(pool)}", flush=True)
 
         verb_scores: list[float | None] = []
         for i, row in enumerate(pool):
@@ -141,8 +163,14 @@ def select() -> None:
                 if cand is not None and (best is None or cand.confidence_score > best):
                     best = cand.confidence_score
             verb_scores.append(best)
-            if (i + 1) % 250 == 0:
+            if (i + 1) % 500 == 0:
                 print(f"   verb-scored {i + 1}/{len(pool)}", flush=True)
+
+        scopes: list[str | None] = []
+        for row in pool:
+            entry = entry_for_offset(rendered.located, row["target_char_offset"]) if rendered.located else None
+            scopes.append((entry.scope_head or entry.head) if entry is not None else None)
+        goal = [s is not None and regime_from_tei_scope_head(s) is not None for s in scopes]
 
         vecs = embedder.encode([r["context_text"] for r in pool])
         none_sim = vecs @ centroids["NONE"]
@@ -154,24 +182,45 @@ def select() -> None:
         emb_ranked = sorted(idx, key=lambda i: -emb_scores[i])
         noun_ranked = idx[:]
         rng.shuffle(noun_ranked)
-        print(f"   verb-selectable: {len(verb_ranked)}  ({time.monotonic() - t0:.0f}s)", flush=True)
+        scope_ranked = [i for i in idx if goal[i]]
+        rng.shuffle(scope_ranked)
+        pool_stats[fn] = {
+            "title": title, "regime": regime_name, "mentions": len(hits), "pool": len(pool),
+            "verb_selectable": len(verb_ranked), "scope_selectable": len(scope_ranked),
+            "entries_located": len(rendered.located),
+        }
+        print(f"   verb-selectable {len(verb_ranked)}, scope-selectable {len(scope_ranked)} "
+              f"({time.monotonic() - t0:.0f}s)", flush=True)
 
         chosen: dict[int, list[str]] = defaultdict(list)
-        for mode, ranked in (("verb_food", verb_ranked), ("embedding", emb_ranked), ("noun", noun_ranked)):
+        for mode, ranked in (("verb_food", verb_ranked), ("embedding", emb_ranked),
+                             ("noun", noun_ranked), ("entry_scope", scope_ranked)):
             for i in ranked[:TOP_N]:
                 chosen[i].append(mode)
         for i, mode_list in chosen.items():
-            row = dict(pool[i])
-            row["record_id"] = f"selexp__{row['record_id']}"
-            row["kwic_mode"] = "selection_experiment"
+            base = dict(pool[i])
+            base_id = f"selexp2__{base['record_id']}"
+            info = {"work": fn, "regime": regime_name, "verb_selectable": verb_scores[i] is not None,
+                    "scope": scopes[i]}
+            row = dict(base, record_id=base_id, kwic_mode="selection_experiment")
             selection.append(row)
-            modes[row["record_id"]] = mode_list
+            meta[base_id] = dict(info, modes=mode_list, base=base_id)
+            if "entry_scope" in mode_list:
+                head_id = f"selexp2__head__{base['record_id']}"
+                head_row = dict(
+                    base, record_id=head_id, kwic_mode="selection_experiment",
+                    context_text=f"[Kopje: {scopes[i]}] {base['context_text']}",
+                    structural_header=scopes[i],
+                )
+                selection.append(head_row)
+                meta[head_id] = dict(info, modes=["entry_scope_head"], base=base_id)
 
     with SELECTION.open("w", encoding="utf-8") as h:
         for row in selection:
             h.write(json.dumps(row, ensure_ascii=False) + "\n")
-    MODES.write_text(json.dumps({"works": works, "modes": modes}, ensure_ascii=False, indent=1), encoding="utf-8")
-    print(f"wrote {len(selection)} unique candidates -> {SELECTION}", flush=True)
+    META.write_text(json.dumps({"works": works, "pool_stats": pool_stats, "records": meta},
+                               ensure_ascii=False, indent=1), encoding="utf-8")
+    print(f"wrote {len(selection)} candidates -> {SELECTION}", flush=True)
 
 
 def annotate() -> None:
@@ -181,40 +230,58 @@ def annotate() -> None:
         load_inputs(input_path=SELECTION),
         output_path=ANNOTATIONS,
         resume=True,
-        description="Selection-mode experiment: same pool, three selection modes",
+        description="Selection-mode experiment v2: same pool, five selection modes",
         script="scripts/experiment_selection_modes.py",
     )
 
 
 def report() -> None:
-    meta = json.loads(MODES.read_text(encoding="utf-8"))
-    modes, works = meta["modes"], meta["works"]
-    regime_of = {fn: regime for fn, _, regime in works}
-    stats: dict[tuple[str, str], list[int]] = defaultdict(lambda: [0, 0, 0])  # n, survived A, real frame
+    meta = json.loads(META.read_text(encoding="utf-8"))
+    records, pool_stats = meta["records"], meta["pool_stats"]
+    stats: dict[tuple[str, str], list[int]] = defaultdict(lambda: [0, 0, 0, 0])  # n, A, frame, frame unreachable by verb
     errors = 0
     for line in ANNOTATIONS.read_text(encoding="utf-8").splitlines():
         r = json.loads(line)
+        info = records.get(r["provenance"]["record_id"])
+        if info is None:
+            continue
         if r.get("error"):
             errors += 1
             continue
-        prov = r["provenance"]
-        regime = regime_of.get(prov["source_path"], "?")
         survived = not r.get("dropped")
         frame = (r.get("step_b") or {}).get("selected_frame")
         real = survived and frame not in (None, "NONE")
-        for mode in modes.get(prov["record_id"], []):
-            for key in ((regime, mode), ("ALL", mode)):
+        unreachable = real and not info["verb_selectable"]
+        for mode in info["modes"]:
+            for key in ((info["regime"], mode), ("ALL", mode)):
                 s = stats[key]
                 s[0] += 1
                 s[1] += survived
                 s[2] += real
+                s[3] += unreachable
 
-    lines = ["# Selection-mode experiment", "",
-             f"Pool {POOL_SIZE} mentions/work, top {TOP_N}/mode, seed {SEED}. Errors excluded: {errors}.", "",
-             "Works: " + "; ".join(f"{r}: {t} ({f})" for f, t, r in works), "",
-             "| regime | mode | n | survive Step A | real frame |", "|---|---|---:|---:|---:|"]
-    for (regime, mode), (n, a, f) in sorted(stats.items()):
-        lines.append(f"| {regime} | {mode} | {n} | {a / n:.0%} ({a}) | {f / n:.0%} ({f}) |")
+    lines = [
+        "# Selection-mode experiment v2", "",
+        f"Pool {POOL_SIZE} mentions/work, top {TOP_N}/mode, seed {SEED}. Errors excluded: {errors}.", "",
+        "## Works", "",
+        "| regime | work | mentions | verb-selectable | scope-selectable | TEI entries |",
+        "|---|---|---:|---:|---:|---:|",
+    ]
+    for fn, ps in pool_stats.items():
+        lines.append(f"| {ps['regime']} | {ps['title'][:50]} (`{fn}`) | {ps['mentions']} | "
+                     f"{ps['verb_selectable']}/{ps['pool']} | {ps['scope_selectable']}/{ps['pool']} | "
+                     f"{ps['entries_located']} |")
+    lines += [
+        "", "## Results", "",
+        "`unreachable by verb` = real frames on mentions with no qualifying verb, which `verb_food` can never select.",
+        "", "| regime | mode | n | survive Step A | real frame | unreachable by verb |",
+        "|---|---|---:|---:|---:|---:|",
+    ]
+    order = {m: i for i, m in enumerate(MODES)}
+    for (regime, mode), (n, a, f, u) in sorted(stats.items(), key=lambda kv: (kv[0][0], order.get(kv[0][1], 9))):
+        lines.append(f"| {regime} | {mode} | {n} | {a / n:.0%} ({a}) | {f / n:.0%} ({f}) | {u} |")
+    lines += ["", "Note: entry-scope selection uses production's `regime_from_tei_scope_head` cues, "
+              "which have their own false positives (`manier om` matches 'Andere manier om Aal te vangen')."]
     REPORT.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines))
 
