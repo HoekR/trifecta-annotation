@@ -810,7 +810,9 @@ Conclusions:
 3. **The head prefix gives no measurable gain** (80% vs 78% overall, n=197).
 4. **Do not compare the ALL rows across modes.** 159 of entry_scope's 197 rows come from RECIPE works (composition effect).
 
-Routing **implemented** in `capped_candidates`: in RECIPE/MEDICAL TEI works, entry-scope mentions the verb route cannot reach are added with their own position-stratified cap (`DEFAULT_ENTRY_SCOPE_CAP` = 500/work, `--entry-scope-cap`, `--no-entry-scope`). Everything else stays verb_food only. Embedding is not added (a harvest-time embedder is heavier, and entry scope already supplies the reach). Caveat: "real frame" is the pipeline's own verdict, not gold.
+Routing **implemented** in `capped_candidates`: in RECIPE/MEDICAL TEI works, entry-scope mentions the verb route cannot reach are added with their own position-stratified cap (`DEFAULT_ENTRY_SCOPE_CAP` = 500/work, `--entry-scope-cap`, `--no-entry-scope`). Everything else stays verb_food only. Embedding is not added (a harvest-time embedder is heavier, and entry scope already supplies the reach).
+
+**Entry-scope production run (7 Nov 2026).** All 24 RECIPE/MEDICAL DBNL TEI works, entry-scope rows only, cap 500/work: 2,590 rows, 0 errors. Real-frame yield was RECIPE 81%, MEDICAL 51%, giving 1,684 new frames the verb harvest cannot reach, at ~1.5 candidates per frame vs ~2.9 in production. Practical remedy books reach 85–93%; medical treatises 25–56%, because the head matches while the food mention is incidental. 7 works with entries yielded 0 rows (cue regexes probably miss Latin heads). Not merged into canonical yet (record_id mismatch, so dedupe is needed first). Report: [docs/evidence/entry_scope/REPORT.md](docs/evidence/entry_scope/REPORT.md). Caveat: "real frame" is the pipeline's own verdict, not gold.
 
 **Still deferred:** (1) Step B NONE encoder gate on weak-regime A-survivors only; (2) domain-mismatch scoring beyond lexical `assess_homonym_context`; (3) sweeping thresholds above 0.98.
 
