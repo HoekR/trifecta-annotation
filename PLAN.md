@@ -810,7 +810,7 @@ Conclusions:
 3. **The head prefix gives no measurable gain** (80% vs 78% overall, n=197).
 4. **Do not compare the ALL rows across modes.** 159 of entry_scope's 197 rows come from RECIPE works (composition effect).
 
-Implied routing, not yet implemented: entry_scope plus embedding for structured RECIPE/MEDICAL works, verb_food everywhere else. Caveat: "real frame" is the pipeline's own verdict, not gold.
+Routing **implemented** in `capped_candidates`: in RECIPE/MEDICAL TEI works, entry-scope mentions the verb route cannot reach are added with their own position-stratified cap (`DEFAULT_ENTRY_SCOPE_CAP` = 500/work, `--entry-scope-cap`, `--no-entry-scope`). Everything else stays verb_food only. Embedding is not added (a harvest-time embedder is heavier, and entry scope already supplies the reach). Caveat: "real frame" is the pipeline's own verdict, not gold.
 
 **Still deferred:** (1) Step B NONE encoder gate on weak-regime A-survivors only; (2) domain-mismatch scoring beyond lexical `assess_homonym_context`; (3) sweeping thresholds above 0.98.
 

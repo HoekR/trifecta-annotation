@@ -125,3 +125,37 @@ def test_parse_allowed_regimes() -> None:
     assert _parse_allowed_regimes("") is None
     parsed = _parse_allowed_regimes("RECIPE_PRACTICE,MEDICAL")
     assert parsed == frozenset({TextRegime.RECIPE_PRACTICE, TextRegime.MEDICAL})
+
+
+def _entry(head: str):
+    from types import SimpleNamespace
+    return SimpleNamespace(head=head, scope_head=None)
+
+
+def test_entry_scope_routes_only_structured_recipe_medical_works() -> None:
+    verb_row = {"target_char_offset": 10, "kwic_mode": "verb_food", "source_path": "ex.xml"}
+    nouns = [
+        {"target_char_offset": o, "kwic_mode": "noun_fallback", "source_path": "ex.xml",
+         "candidate_terms": ["boter"], "record_id": f"n{o}"}
+        for o in (10, 30, 60, 80)
+    ]
+    # entry 1 (offset 0-49) has a recipe head, entry 2 (50-) does not
+    located = [(0, _entry("Om Boter te maken")), (50, _entry("Van den Oorlog"))]
+    kwargs = dict(pattern=re.compile(r"x"), canonical={}, food_terms_list=[],
+                  source_path="ex.xml", title="Kookboek", corpus="c", date=None, cap=5)
+    for regime, expect_scope in ((TextRegime.RECIPE_PRACTICE, True), (TextRegime.LITERARY, False)):
+        with (
+            patch("scripts.build_colonial_kwic.infer_text_regime", return_value=regime),
+            patch("scripts.build_colonial_kwic.verb_first_hits", return_value=[(2.0, verb_row)]),
+            patch("scripts.build_colonial_kwic.scan_text", return_value=nouns),
+            patch("trifecta_annotation.regime_routing.regime_from_tei_scope_head",
+                  side_effect=lambda h: TextRegime.RECIPE_PRACTICE if h and "maken" in h else None),
+        ):
+            out = capped_candidates("x" * 100, located=located, **kwargs)
+        scoped = [r for r in out if r["kwic_mode"] == "entry_scope"]
+        if expect_scope:
+            # offset 10 is verb-reachable -> excluded; 30 is in the recipe entry; 60/80 are not
+            assert [r["target_char_offset"] for r in scoped] == [30]
+            assert "__scope__" in scoped[0]["record_id"]
+        else:
+            assert scoped == []

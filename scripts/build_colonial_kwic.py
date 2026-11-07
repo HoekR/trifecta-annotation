@@ -40,7 +40,7 @@ from trifecta_annotation.corpus_genre_join import load_genre_records
 from trifecta_annotation.dbnl_genre import sweep_candidates, work_stem, xml_filenames_by_stem
 from trifecta_annotation.frame_verbs import find_frame_verbs_in_text
 from trifecta_annotation.structural_parse import DocumentUnit, document_structural_units, unit_for_offset
-from trifecta_annotation.tei_segmentation import attach_tei_scope_to_rows, render_tei
+from trifecta_annotation.tei_segmentation import attach_tei_scope_to_rows, entry_for_offset, render_tei
 from trifecta_annotation.text_regime import TextRegime, infer_text_regime
 from trifecta_annotation.vocabulary import alt_label_index, load_food_terms
 
@@ -53,6 +53,9 @@ from trifecta_annotation.vocabulary import alt_label_index, load_food_terms
 # sources below — those already ran uncapped and recapping them now would only
 # shrink already-paid-for coverage for no benefit.
 DEFAULT_SWEEP_CAP = 10
+# Separate budget for entry-scope rows in structured RECIPE/MEDICAL works —
+# see `capped_candidates`.
+DEFAULT_ENTRY_SCOPE_CAP = 500
 
 _TAG = re.compile(r"<[^>]+>")
 _WS = re.compile(r"\s+")
@@ -486,6 +489,40 @@ def stratify_by_position(
     return [row for _, (_, row) in sorted(best_per_bin.items())]
 
 
+# Work regimes where TEI entry scope adds candidates (selection-mode v2,
+# PLAN.md §9i): in structured recipe/medical works most real frames found by
+# entry scope have no qualifying verb, so verb_food alone leaves them unseen.
+# In LITERARY/UNKNOWN works entry scope yielded ~10% and is not used.
+ENTRY_SCOPE_REGIMES = frozenset({TextRegime.RECIPE_PRACTICE, TextRegime.MEDICAL})
+
+
+def entry_scope_hits(
+    noun_hits: list[dict],
+    *,
+    located: tuple | list,
+    exclude_offsets: set[int],
+) -> list[dict]:
+    """Mentions inside a TEI entry whose (scope) head carries a recipe/medical
+    cue, minus those the verb route already reaches. Tagged `entry_scope`."""
+    from trifecta_annotation.regime_routing import regime_from_tei_scope_head
+
+    out: list[dict] = []
+    for hit in noun_hits:
+        offset = hit["target_char_offset"]
+        if offset in exclude_offsets:
+            continue
+        entry = entry_for_offset(located, offset)
+        if entry is None:
+            continue
+        if regime_from_tei_scope_head(entry.scope_head or entry.head) is None:
+            continue
+        row = dict(hit)
+        row["kwic_mode"] = "entry_scope"
+        row["record_id"] = f"{hit['source_path']}__scope__{offset}__{hit['candidate_terms'][0]}"
+        out.append(row)
+    return out
+
+
 def capped_candidates(
     text: str,
     *,
@@ -501,6 +538,9 @@ def capped_candidates(
     cap: int,
     include_noun_fallback: bool = False,
     allowed_regimes: frozenset[TextRegime] | None = None,
+    located: tuple | list | None = None,
+    entry_scope: bool = True,
+    entry_scope_cap: int | None = DEFAULT_ENTRY_SCOPE_CAP,
 ) -> list[dict]:
     """Harvest the whole document, then sieve down to `cap` by document
     position rather than by score alone. See plans/steps/RECIPE_SIEVE.md.
@@ -512,6 +552,16 @@ def capped_candidates(
 
     ``allowed_regimes`` is an optional document-level gate (off by default) so
     UNKNOWN TEI sweep material is not silently dropped until entry-scope exists.
+
+    Routing (PLAN.md §9i, selection v2): when ``located`` (from ``render_tei``)
+    is given and the work regime is in ``ENTRY_SCOPE_REGIMES``, entry-scope
+    mentions the verb route cannot reach are added on top of the ``cap``
+    verb_food rows, with their own position-stratified budget
+    (``DEFAULT_ENTRY_SCOPE_CAP`` = 500, ``None`` = uncapped). The 10/work sweep
+    cap exists to spread budget over weak material; these rows are ~88% real
+    frames, so a 10 cap would discard the reach v2 found, while 500 spread
+    across the work avoids paying for many near-identical entries.
+    Everything else stays verb_food only. Pass ``entry_scope=False`` to disable.
     """
     regime = infer_text_regime(corpus=corpus, title=title, source_path=source_path)
     if allowed_regimes is not None and regime not in allowed_regimes:
@@ -534,7 +584,21 @@ def capped_candidates(
             for hit in noun_hits
             if hit["target_char_offset"] not in covered_offsets
         )
-    return stratify_by_position(pool, cap=cap, doc_length=len(text))
+    selected = stratify_by_position(pool, cap=cap, doc_length=len(text))
+    if entry_scope and located and regime in ENTRY_SCOPE_REGIMES:
+        verb_offsets = {row["target_char_offset"] for _, row in verb_scored}
+        nouns = scan_text(
+            text, pattern=pattern, canonical=canonical,
+            source_path=source_path, title=title, corpus=corpus, date=date,
+            regime=regime, units=units, trust_goals=trust_goals,
+        )
+        scoped = entry_scope_hits(nouns, located=located, exclude_offsets=verb_offsets)
+        if entry_scope_cap:
+            scoped = stratify_by_position(
+                [(0.0, row) for row in scoped], cap=entry_scope_cap, doc_length=len(text)
+            )
+        selected += scoped
+    return selected
 
 
 def _parse_allowed_regimes(raw: str | None) -> frozenset[TextRegime] | None:
@@ -573,6 +637,13 @@ def main() -> None:
         help="Optional comma-separated TextRegime allow-list (e.g. RECIPE_PRACTICE,MEDICAL); "
              "default keeps all regimes",
     )
+    parser.add_argument(
+        "--entry-scope-cap", type=int, default=DEFAULT_ENTRY_SCOPE_CAP, metavar="N",
+        help=f"Per-work cap on entry-scope rows in RECIPE/MEDICAL TEI works "
+             f"(default {DEFAULT_ENTRY_SCOPE_CAP}; 0 = uncapped)",
+    )
+    parser.add_argument("--no-entry-scope", action="store_true",
+                        help="Disable the entry-scope route (verb_food only, pre-v2 behaviour)")
     args = parser.parse_args()
     allowed_regimes = _parse_allowed_regimes(args.regimes)
 
@@ -598,6 +669,8 @@ def main() -> None:
     sieve_kwargs = {
         "include_noun_fallback": args.include_noun_fallback,
         "allowed_regimes": allowed_regimes,
+        "entry_scope": not args.no_entry_scope,
+        "entry_scope_cap": args.entry_scope_cap or None,
     }
 
     dbnl_zip_path = resolve("dbnl_xml")
@@ -623,7 +696,7 @@ def main() -> None:
                 text, pattern=pattern, canonical=canonical, food_terms_list=food_terms_list,
                 source_path=filename, title=title,
                 corpus="dbnl_new_2026", date=str(year), units=units, cap=sweep_cap,
-                **sieve_kwargs,
+                located=rendered.located, **sieve_kwargs,
             )
             hits = attach_tei_scope_to_rows(hits, located=rendered.located)
             rows.extend(hits)
@@ -802,7 +875,7 @@ def main() -> None:
                 source_path=cand["filename"], title=title,
                 corpus="dbnl_full_sweep_2026",
                 date=str(cand["year"]) if cand["year"] else None,
-                units=units, cap=sweep_cap, **sieve_kwargs,
+                units=units, cap=sweep_cap, located=rendered.located, **sieve_kwargs,
             )
             hits = attach_tei_scope_to_rows(hits, located=rendered.located)
             sweep_rows.extend(hits)
