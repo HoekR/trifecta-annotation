@@ -408,3 +408,10 @@ path = "trifecta/entry_scope_annotations.jsonl"
 phase = "semi"
 description = "A->B->C annotations for entry_scope_kwic_inputs"
 parent = "entry_scope_kwic_inputs"
+
+[datasets.entry_scope_kwic_inputs_chomel_full]
+tier = "scratch"
+path = "trifecta/entry_scope_kwic_inputs_chomel_full.jsonl"
+phase = "semi"
+description = "Uncapped entry-scope rows for Chomel's Huishoudelyk woordboek (extends the cap-500 run; annotations go to entry_scope_annotations, resumed)"
+parent = "dbnl_xml"

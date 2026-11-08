@@ -11,6 +11,12 @@ Writes its own logical names (`entry_scope_kwic_inputs`,
 re-harvests no longer resume-match old record_ids, so mixing would duplicate.
 
     uv run python scripts/run_entry_scope_harvest.py harvest|annotate|report|all
+
+Extending one work past the cap (annotations resume, so rows already done are
+reused; record_ids are offset-based and stable):
+
+    uv run python scripts/run_entry_scope_harvest.py all --only chom003huis01_01.xml \
+        --cap 0 --inputs entry_scope_kwic_inputs_chomel_full
 """
 
 from __future__ import annotations
@@ -65,7 +71,7 @@ def _works(zip_path) -> list[tuple[str, str, str]]:
     return out
 
 
-def harvest() -> None:
+def harvest(*, cap: int | None, only: set[str] | None, inputs: str) -> None:
     terms = load_food_terms()
     canonical = alt_label_index(terms)
     all_terms = set(canonical) | {str(p).strip().lower() for p in terms["Pref_label"].dropna()}
@@ -75,6 +81,8 @@ def harvest() -> None:
 
     zip_path = resolve("dbnl_xml")
     works = _works(zip_path)
+    if only:
+        works = [w for w in works if w[0] in only]
     print(f"{len(works)} RECIPE/MEDICAL DBNL works", flush=True)
     per_work: dict[str, list[dict]] = {}
     t_all = time.monotonic()
@@ -90,39 +98,42 @@ def harvest() -> None:
                 rendered.text, pattern=pattern, canonical=canonical, food_terms_list=food_terms_list,
                 source_path=fn, title=title, corpus=CORPUS, date=None, units=units,
                 cap=DEFAULT_SWEEP_CAP, located=rendered.located,
-                entry_scope_cap=DEFAULT_ENTRY_SCOPE_CAP,
+                entry_scope_cap=cap,
             )
             scoped = [h for h in hits if h["kwic_mode"] == "entry_scope"]
+            heads = {h.get("tei_scope_head") for h in attach_tei_scope_to_rows(list(scoped), located=rendered.located)}
             scoped = attach_tei_scope_to_rows(scoped, located=rendered.located)
             per_work[fn] = scoped
-            print(f"  [{i}/{len(works)}] [{regime}] {title[:60]!r}: {len(scoped)} entry-scope rows "
+            print(f"  [{i}/{len(works)}] [{regime}] {title[:60]!r}: {len(scoped)} entry-scope rows, "
+                  f"{len(heads)} distinct entry heads "
                   f"({time.monotonic() - t0:.0f}s, {time.monotonic() - t_all:.0f}s total)", flush=True)
 
     # Round-robin across works so a run stopped early still covers every work.
     rows = [r for group in zip_longest(*per_work.values()) for r in group if r is not None]
     out = save_semi_structured(
-        rows, logical_name=INPUTS, parent_sources=["dbnl_xml", "dbnl_work_genre"],
-        description=f"Entry-scope rows (cap {DEFAULT_ENTRY_SCOPE_CAP}/work) from RECIPE/MEDICAL DBNL TEI works",
+        rows, logical_name=inputs, parent_sources=["dbnl_xml", "dbnl_work_genre"],
+        description=f"Entry-scope rows (cap {cap or 'none'}/work) from RECIPE/MEDICAL DBNL TEI works"
+                    + (f", only {sorted(only)}" if only else ""),
         script=SCRIPT,
     )
     print(f"wrote {len(rows)} rows from {len(per_work)} works -> {out}", flush=True)
 
 
-def annotate() -> None:
+def annotate(*, inputs: str) -> None:
     from trifecta_annotation.batch import load_inputs, run_batch
 
     run_batch(
-        load_inputs(input_path=resolve(INPUTS)),
+        load_inputs(input_path=resolve(inputs)),
         output_logical=ANNOTATIONS,
         resume=True,
-        parent_sources=[INPUTS],
+        parent_sources=[inputs],
         description="A->B->C annotations for entry_scope_kwic_inputs (local Ollama)",
         script=SCRIPT,
     )
 
 
-def report() -> None:
-    inputs = {json.loads(l)["record_id"]: json.loads(l) for l in open(resolve(INPUTS), encoding="utf-8") if l.strip()}
+def report(*, inputs_logical: str, cap: int | None) -> None:
+    inputs = {json.loads(l)["record_id"]: json.loads(l) for l in open(resolve(inputs_logical), encoding="utf-8") if l.strip()}
     by_work: dict[str, list[int]] = defaultdict(lambda: [0, 0, 0, 0])  # n, errors, survive A, real
     by_regime: dict[str, list[int]] = defaultdict(lambda: [0, 0, 0, 0])
     frames: Counter[str] = Counter()
@@ -159,7 +170,7 @@ def report() -> None:
         "# Entry-scope production run",
         "",
         f"Rows annotated: {total[0]} of {len(inputs)} harvested ({total[1]} errors). "
-        f"Works: {len(by_work)}. Cap {DEFAULT_ENTRY_SCOPE_CAP}/work, round-robin order.",
+        f"Works: {len(by_work)}. Cap {cap or 'none'}/work, round-robin order. Inputs: `{inputs_logical}`.",
         "Yield = real frame / non-error rows. Every row here is unreachable by the verb_food harvest.",
         "",
         "| regime | n | survive Step A | real frame |",
@@ -173,7 +184,8 @@ def report() -> None:
               "|---|---:|---:|---:|"]
     for fn, (n, e, a, f) in sorted(by_work.items(), key=lambda kv: -kv[1][0]):
         lines.append(f"| {titles[fn][:60]} (`{fn}`) | {n} | {pct(a, n - e)} | {pct(f, n - e)} |")
-    out = resolve(ANNOTATIONS).parent / "entry_scope_report.md"
+    suffix = "" if inputs_logical == INPUTS else "_" + inputs_logical.removeprefix(INPUTS + "_")
+    out = resolve(ANNOTATIONS).parent / f"entry_scope_report{suffix}.md"
     out.write_text("\n".join(lines) + "\n", encoding="utf-8")
     print("\n".join(lines[:12]))
     print(f"wrote {out}")
@@ -182,13 +194,18 @@ def report() -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("phase", choices=["harvest", "annotate", "report", "all"])
+    parser.add_argument("--cap", type=int, default=DEFAULT_ENTRY_SCOPE_CAP,
+                        help=f"entry-scope rows per work (default {DEFAULT_ENTRY_SCOPE_CAP}; 0 = uncapped)")
+    parser.add_argument("--only", nargs="*", default=None, metavar="FILE", help="restrict to these DBNL filenames")
+    parser.add_argument("--inputs", default=INPUTS, help=f"inputs logical name (default {INPUTS})")
     args = parser.parse_args()
+    cap = args.cap or None
     if args.phase in ("harvest", "all"):
-        harvest()
+        harvest(cap=cap, only=set(args.only) if args.only else None, inputs=args.inputs)
     if args.phase in ("annotate", "all"):
-        annotate()
+        annotate(inputs=args.inputs)
     if args.phase in ("report", "all"):
-        report()
+        report(inputs_logical=args.inputs, cap=cap)
 
 
 if __name__ == "__main__":
