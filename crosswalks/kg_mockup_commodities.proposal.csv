@@ -1,0 +1,27 @@
+decision,commodity_id,vocab_id,pref_label,alt_labels,eng_translation,type,basis,frame_rows,example
+?,CARDAMOM,FOO596,cardamome,,cardamom,,english,0,
+y,CINNAMON,FOO661,kaneel,,cinnamon,condiment,alias,66," vol Rynschen wyn met veel broodzuiker vermengd, en met een kaneel-stok voorzien, dien men de Vrouwen welke de kraamvrou"
+y,CINNAMON,FOO1643,caneel,"caneele, caneels, canneel",,,alias,12,"of een beetke n quevlees, is goet voor draeying des hoofts. Caneel, Naghelen, ende Muscaet, dese menginghe is goet voor "
+?,CINNAMON,FOO1644,caneelpoeder,canneelpoeder,,,compound,0,
+y,CLOVES,FOO595,kruidnagel,"kruidnagelen, kruidnagels, kruydnagelen, kruytnagelen, nagel, nagels, nagelen, naghelen",clove,condiment,alias,54,"den, vooral eer ze op den Rooster gelegt worden, met eenige Kruidnagelen, en Lauwrierbladen besteken; en ze vervolgens m"
+y,COFFEE,FOO1695,koffie,koffy,,,alias,157,"'n Goed koffielandje van 'n vijftien honderd pikols, dat is je ware!"
+y,MACE,FOO81,foelie,"foely, foeylie, folie","mace, nutmeg",condiment,alias,20,", een Muscaten, Nagelen, Cardamome, Greyn, Cubeben, Caneel, Foelie, Gyneber, Xylo, Aloes, Kamfer, zaet van Citres, Pioen"
+?,MUSK,FOO768,nootmuskaat,"nootemuscaat, nootemuskaat, nootenmuscaat, notemuskaat, notenmuscaat, notenmuscaten, notemuscaat, notemuscaten",nutmeg,condiment,compound,22,"smeerd op den Rooster, en men bestrooit ze met Zout, Peper, Nootmuskaat, en een weinig korst van geraspt Brood, en laat "
+?,MUSK,FOO1721,muscus,muskes,,,compound,3,"geeft? Als men den waterdrinker afvraagt: ‘ Waorom ette gai muskes bai 't waoter, sek? ’ ‘ Dat 's goed voor den buuk, su"
+y,NUTMEG,FOO768,nootmuskaat,"nootemuscaat, nootemuskaat, nootenmuscaat, notemuskaat, notenmuscaat, notenmuscaten, notemuscaat, notemuscaten",nutmeg,condiment,alias,22,"smeerd op den Rooster, en men bestrooit ze met Zout, Peper, Nootmuskaat, en een weinig korst van geraspt Brood, en laat "
+?,NUTMEG,FOO81,foelie,"foely, foeylie, folie","mace, nutmeg",condiment,english,20,", een Muscaten, Nagelen, Cardamome, Greyn, Cubeben, Caneel, Foelie, Gyneber, Xylo, Aloes, Kamfer, zaet van Citres, Pioen"
+y,PEPPER,FOO79,peper,pepers,peppercorn,condiment,alias,122,"nce Caneels, witten Gengber, twee draghmen, Nagelen, langen Peper, Muscaten, elcks twee draghmen, Suycker, een half pont"
+y,PEPPER,FOO1062,peper,"bruyn peper, swert peper, pepere",,,alias,122,"nce Caneels, witten Gengber, twee draghmen, Nagelen, langen Peper, Muscaten, elcks twee draghmen, Suycker, een half pont"
+?,PEPPER,FOO1737,peperwortel,,,,compound,1," te binden. Men eet ook gekookte Endvogels met een saus van peperwortel, of met een enkele mostert saus, is ook heel goe"
+?,PEPPER,FOO1024,bipeper,,,sauce,compound,0,
+?,PEPPER,FOO1736,peperpoeder,,,,compound,0,
+y,RICE,FOO1121,rijs,rijst,,,alias,149," voor baadjes, versierselen, eetwaren, waaronder zakken met rijst, vruchten, gebak enz. Ook de genoodigden brengen vlees"
+?,RICE,FOO1054,mandrice,,,sauce,compound,0,
+y,SUGAR,FOO68,suiker,"fuiker, suijker, suycker, suyckere, suyckers, suyker, suykerey, zuiker",sugar,preservative,alias,246,"sel. Geschuimde honing, die tot een dikte gekookt is. Witte zuiker, elx een pond. Kooktse wederom tot een dikte van een "
+y,SUGAR,FOO958,witte zuiker,witte suiker,white sugar,,alias,0,
+?,SUGAR,FOO597,broodzuiker,"broodsuiker, broodsuijker, broodsuyker, brootsuiker, brootsuicker, brootsuycker, brootsuickere, brootsuyckers, brootsuykere",sugarloaf,,compound,11,"t is een groot glas of een bokaal vol Rynschen wyn met veel broodzuiker vermengd, en met een kaneel-stok voorzien, dien "
+?,SUGAR,FOO247,gesuikerde amandelen,gezuikerde amandelen,candied almonds,nut,compound,0,
+?,SUGAR,FOO694,poeijer-suiker,poeijer zuiker,sugar powder,bakery,compound,0,
+?,SUGAR,FOO169,suikerbeschuit,suiker-beschuit,sugar rusk,bakery,compound,0,
+?,SUGAR,FOO309,suikerboontjes,suiker-boontjes,,vegetable,compound,0,
+y,TEA,FOO1780,thee,,,,alias,312," ver?’ vroeg Hy. (tegen den Tuinman.) Deeze Dame heeft geen thee gedronken; hebt gy ook kokent Water? Toe, jongen, breng"
