@@ -814,6 +814,22 @@ Routing **implemented** in `capped_candidates`: in RECIPE/MEDICAL TEI works, ent
 
 **Entry-scope production run (7 Nov 2026).** All 24 RECIPE/MEDICAL DBNL TEI works, entry-scope rows only, cap 500/work: 2,590 rows, 0 errors. Real-frame yield was RECIPE 81%, MEDICAL 51%, giving 1,684 new frames the verb harvest cannot reach, at ~1.5 candidates per frame vs ~2.9 in production. Practical remedy books reach 85–93%; medical treatises 25–56%, because the head matches while the food mention is incidental. 7 works with entries yielded 0 rows (cue regexes probably miss Latin heads). Not merged into canonical yet (record_id mismatch, so dedupe is needed first). Report: [docs/evidence/entry_scope/REPORT.md](docs/evidence/entry_scope/REPORT.md). Caveat: "real frame" is the pipeline's own verdict, not gold.
 
+**Sieve shadow run (8 Nov 2026), held out from training.** The sieve was run against the real LLM verdicts on 4,638 rows annotated after training: the entry-scope run plus selection v1/v2, minus 35 texts in the training split and 262 duplicates. Report: [docs/evidence/sieve_shadow/report.md](docs/evidence/sieve_shadow/report.md).
+
+| at P(DROP) ≥ 0.98 | n | Step A calls saved | real frames lost |
+|---|---:|---:|---:|
+| **as routed in production** (weak regimes) | 1,160 | **43%** | **1.5%** (5 of 329) |
+| RECIPE_PRACTICE, if sieved | 1,921 | 9% | 1.1% |
+| MEDICAL, if sieved | 1,548 | 27% | 4.8% |
+| works unseen in training | 1,115 | 16% | 2.2% |
+
+Conclusions:
+1. **0.98 holds up on held-out data.** In production the sieve saves ~43% of weak-regime Step A calls and loses ~1.5% of their real frames.
+2. **The routing is right.** Sieving RECIPE would save little (9%), and sieving MEDICAL would cost the most findings (4.8%). Both stay direct-to-LLM.
+3. **No sign of over-fitting by work.** Loss is 2.2% on unseen works vs 2.3% on seen ones.
+
+Limits: the routed rows come from the selection experiments, i.e. a few works per regime, chosen by selection mode rather than by the production sweep's distribution. 0.99 would halve the frame loss again (1.2%) for 1 point fewer calls saved; that is not worth changing on n=329 real frames.
+
 **Still deferred:** (1) Step B NONE encoder gate on weak-regime A-survivors only; (2) domain-mismatch scoring beyond lexical `assess_homonym_context`; (3) sweeping thresholds above 0.98.
 
 **Two distinct problems were being conflated, and both are real:**
