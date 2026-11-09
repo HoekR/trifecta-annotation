@@ -12,6 +12,7 @@ resource here, not CPU, so the default is the narrowest useful set.
 
     uv run python scripts/fetch_ggc_subjects.py --select corpus
     uv run python scripts/fetch_ggc_subjects.py --select screened --limit 50
+    uv run python scripts/fetch_ggc_subjects.py --select unknown --limit 5000
 """
 
 from __future__ import annotations
@@ -61,12 +62,34 @@ def select(rows: list[dict], mode: str, have_xml: set[str]) -> list[dict]:
                 if title_screen(r.get("titel", ""))
                 and (y := year(r)) and 1500 <= y < 1900
                 and r["ti_id"].lstrip("_")[:12] in have_xml]
+    if mode == "unknown":
+        # Works with annotated rows whose text_regime is UNKNOWN: half of all
+        # frames sit there (PLAN §9i), so GGC genre is what makes them usable.
+        keys = unknown_regime_work_keys()
+        return [r for r in rows if r["ti_id"].lstrip("_")[:12] in keys]
     raise SystemExit(f"unknown --select {mode!r}")
+
+
+def unknown_regime_work_keys() -> set[str]:
+    import json
+
+    keys: set[str] = set()
+    for logical in ("trifecta_annotations", "colonial_annotations", "dbnl_sweep_annotations"):
+        path = Path(resolve(logical))
+        if not path.exists():
+            continue
+        for line in path.open(encoding="utf-8"):
+            if '"UNKNOWN"' not in line:
+                continue
+            pv = json.loads(line)["provenance"]
+            if pv.get("text_regime") == "UNKNOWN" and pv.get("source_path"):
+                keys.add(Path(pv["source_path"]).stem.removesuffix("_01").lstrip("_")[:12])
+    return keys
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--select", default="screened", choices=["corpus", "screened"])
+    parser.add_argument("--select", default="screened", choices=["corpus", "screened", "unknown"])
     parser.add_argument("--limit", type=int, default=40, help="Max live requests this run")
     parser.add_argument("--interval", type=float, default=1.5, help="Seconds between requests")
     parser.add_argument("--dry-run", action="store_true")
