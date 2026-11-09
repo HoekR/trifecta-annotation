@@ -12,7 +12,9 @@ label, and duplicate-label vocabulary entries are indistinguishable downstream.
 
 One record per (work, context, commodity) with a real frame. Fields beyond
 FrameNetRecord's own are optional extras kg_mockup accepts:
-  influence_from / influence_to  edition year .. edition year + 20 (Rik's window)
+  circulation_from / circulation_to  edition year .. edition year + 20: assumed period the
+                                    text was in circulation (a display convention, not a claim
+                                    of influence; recipes also look back to earlier practice)
   source_work, work_id, source_label, genre, target_word, record_id
 
 Year = provenance.date, else the work's year from the genre records (the
@@ -46,7 +48,7 @@ ROOT = Path(__file__).resolve().parents[1]
 CROSSWALK = ROOT / "crosswalks" / "kg_mockup_commodities.xlsx"
 DEFAULT_OUT = Path.home() / "develop" / "kg_mockup" / "data" / "dbnl_food_frames.jsonl"
 SOURCE_TYPE = "DBNL_FOOD_FRAMES"
-INFLUENCE_YEARS = 20
+CIRCULATION_YEARS = 20
 SOURCES = {  # logical -> label (None: the early hand-picked batch)
     "trifecta_annotations": "Curated corpus",
     "colonial_annotations": "Initial exploration",
@@ -146,8 +148,8 @@ def main() -> None:
                     "source_type": SOURCE_TYPE,
                     "primary_frame": frame,
                     "text_evidence": re.sub(r"\s+", " ", pv["context_text"]).strip(),
-                    "influence_from": year,
-                    "influence_to": year + INFLUENCE_YEARS,
+                    "circulation_from": year,
+                    "circulation_to": year + CIRCULATION_YEARS,
                     "source_work": pv.get("title") or sp,
                     "work_id": sp,
                     "source_label": label,
@@ -171,7 +173,7 @@ def main() -> None:
         "script": "trifecta-annotation/scripts/export_kg_mockup_frames.py",
         "crosswalk": str(CROSSWALK),
         "sources": [k for k in SOURCES if Path(resolve(k)).exists()],
-        "influence_years": INFLUENCE_YEARS,
+        "circulation_years": CIRCULATION_YEARS,
         "records": len(records),
         "coverage_works": len(coverage),
         "stats": dict(stats),
