@@ -11,8 +11,30 @@ from data_io.manifest import DatasetNotFoundError, TierUnavailableError
 from trifecta_annotation.thesaurus import alt_label_index as thesaurus_alt_index
 
 
-def load_food_terms() -> pd.DataFrame:
-    """Load the TRIFECTA food ontology table."""
+# Extensions live in this repository, next to the code, and are appended to the
+# shared ontology on load (the ontology itself, shared with Preservare, is not
+# edited). Same columns as Food_terms.csv; IDs use their own prefix (IND...).
+VOCABULARY_EXTENSIONS = (
+    Path(__file__).resolve().parents[1] / "vocabulary" / "Food_terms_indies.csv",
+)
+
+
+def load_food_terms(include_extensions: bool = True) -> pd.DataFrame:
+    """Load the TRIFECTA food ontology table, plus the in-repo extensions
+    (`VOCABULARY_EXTENSIONS`, e.g. Indies cuisine) unless `include_extensions=False`."""
+    base = _load_base_food_terms()
+    if not include_extensions:
+        return base
+    extra = [pd.read_csv(p) for p in VOCABULARY_EXTENSIONS if p.exists()]
+    if not extra:
+        return base
+    known = set(base["Pref_label"].astype(str).str.strip().str.lower())
+    extra = [e[~e["Pref_label"].astype(str).str.strip().str.lower().isin(known)] for e in extra]
+    return pd.concat([base, *extra], ignore_index=True)
+
+
+def _load_base_food_terms() -> pd.DataFrame:
+    """Load the shared TRIFECTA food ontology table (Food_terms.csv)."""
     fallback_paths = (
         Path("/Volumes/Extreme SSD/scratch/reference/Food_terms.csv"),
         Path("/Volumes/2tb disk/reference/Food_terms.csv"),

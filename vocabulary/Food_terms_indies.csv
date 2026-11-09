@@ -1,0 +1,53 @@
+Pref_label,Alt_label,Eng_translation,FoodOn,Lat_translation,Type,Definition,DEFINITION_FROM (Works),SUBCLASS_OF (Foods),SIMILAR_TO (Foods),HAS_QUALITY (Qualities),PRODUCT_OF (Practices),Last modified,ID
+sambal,"sambel, sambals, sambal goreng, sambel goreng, sambal oelek, sambal ulek",chili paste / chili relish,,,condiment,"Pittige saus of relish op basis van lombok (Spaanse peper), vaak met trassi, zout en suiker; ook gerechten 'sambal goreng'.",Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND001
+santen,"santan, klappermelk, kokosmelk",coconut milk,,,ingredient,"Uit geraspte kokos geperst vocht, basis van veel Indische gerechten.",Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND002
+lombok,"lomboks, tjabe, tjabé, tjabai, cabe, lombok rawit",chili pepper,,,vegetable,"Spaanse peper in Indische keukens; ook het eiland Lombok (homoniem, risico aanvaard).",Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND003
+trassi,"terasi, trasi, blatjan, belacan",shrimp paste,,,condiment,Gefermenteerde garnalenpasta.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND004
+ketjap,"ketjap manis, ketjap asin, kecap, kitjap, ketchap",soy sauce (sweet or salty),,,sauce,Indische sojasaus.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,soja,,,09/11/2026,IND005
+kroepoek,"kroepoek oedang, krupuk, kerupuk, kroepoeks",prawn cracker,,,dish,"Gefrituurde crackers, vaak van garnalen of cassave.",Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND006
+atjar,"atjar tjampoer, atjar ketimoen, acar",pickled vegetables,,,dish,Zuur ingelegde groenten.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND007
+sajoer,"sayur, sajoer lodeh, sajoer asem, sajoers",vegetable stew,,,dish,Groentegerecht met (meestal) santen-bouillon.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND008
+seroendeng,"serundeng, seroendeng katjang",spiced fried coconut,,,dish,Geroosterde geraspte kokos met kruiden en pinda.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND009
+goela djawa,"goela-djawa, gula jawa, goela djawa's, goela",palm sugar,,,sweetener,Palmsuiker; 'goela' (suiker) als homoniem-risico aanvaard.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND010
+nasi,"nasi goreng, nasi koening, nasi gemoek, nasi rames, nasi poetih",rice (dish),,,dish,Gekookte rijst en rijstgerechten.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,rijs,,,09/11/2026,IND011
+bami,"bami goreng, bakmi, bami soep",noodles (dish),,,dish,Mie en mie-gerechten.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND012
+saté,"sateh, sate, saté babi, saté ajam, sateh ajam, sateh kambing",skewered grilled meat,,,dish,Geroosterde vleesspiesjes.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND013
+loempia,"lumpia, loempia's",spring roll,,,dish,"Gevulde, gefrituurde deegrol.",Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND014
+rijsttafel,"rystafel, rijsttafels, rijsttafel's",rice table,,,dish,Samengestelde Indische maaltijd rond rijst.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND015
+rendang,rendang daging,slow-cooked spiced meat,,,dish,Langzaam gestoofd vlees in santen en kruiden.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND016
+gado-gado,gado gado,vegetable salad with peanut sauce,,,dish,Groenten met pindasaus.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND017
+pindasaus,"pindasaus, sausi katjang, saus katjang, katjangsaus",peanut sauce,,,sauce,Saus van gemalen pinda.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND018
+tahoe,tahu,tofu,,,ingredient,Sojawrongel.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,soja,,,09/11/2026,IND019
+tempé,"tempeh, tempe",tempeh,,,ingredient,Gefermenteerde sojabonen.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,soja,,,09/11/2026,IND020
+taugé,"tauge, taoge, taogé, toge, tauge's",bean sprouts,,,vegetable,Kiemen van de mungboon.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND021
+laos,"lengkoeas, laos-wortel",galangal,,,spice,"Wortelstok verwant aan gember; ook het land Laos (homoniem, risico aanvaard).",Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,gember,,,09/11/2026,IND022
+djahe,"djahé, jahe",ginger,,,spice,Gember (Maleis).,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,gember,,,09/11/2026,IND023
+sereh,"serai, sere, sereh-stengel",lemongrass,,,herb,Citroengras.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND024
+kentjoer,"kencur, kentjor",aromatic ginger,,,spice,Kentjoer-wortel.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,gember,,,09/11/2026,IND025
+koenjit,"kunyit, koenir, kunir",turmeric,,,spice,Kurkuma-wortel.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND026
+ketoembar,ketumbar,coriander seed,,,spice,Korianderzaad (Maleis).,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,koriander,,,09/11/2026,IND027
+djintan,jintan,cumin,,,spice,Komijn (Maleis).,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,comijn,,,09/11/2026,IND028
+kemiri,"kemirie, kemiri-noten, kemirinoten",candlenut,,,nut,"Kemirinoot, bindmiddel in kruidenpasta's.",Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND029
+djeroek poeroet,"djeroek-poeroet, jeruk purut",kaffir lime,,,fruit,Limoen en blad ervan.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND030
+asem,"asem djawa, tamarinde",tamarind,,,fruit,Tamarinde.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND031
+pisang,"pisang goreng, pisangs",banana,,,fruit,"Banaan, ook gebakken (pisang goreng).",Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND032
+ajam,"ajam goreng, ajam panggang, ajam opor, opor ajam",chicken (dish),,,poultry,"Kip, vooral als gerecht.",Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND033
+dendeng,"dendeng ragi, dendeng sapi",dried spiced meat,,,meat,Gedroogd gekruid vlees.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND034
+petis,petis oedang,fermented shrimp paste,,,condiment,Dikke garnalen- of vispasta.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND035
+emping,emping melindjo,melinjo crackers,,,dish,Crackers van melindjo-noten.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND036
+spekkoek,"lapis legit, spekkoeken",layer cake,,,pastry,Indische laagjescake.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND037
+kerrie,"kerrie-poeder, kerriepoeder, karrie",curry (powder),,,condiment,Kerriepoeder en kerriegerechten.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND038
+bandeng,ikan bandeng,milkfish,,,fish,"Bandeng, zoetwater/brakwatervis.",Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND039
+ikan,"ikan goreng, ikan bakar",fish (dish),,,fish,"Vis, vooral als gerecht.",Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND040
+lada,"lada hitam, lada poetih, merica, mritja",pepper,,,spice,Peper (Maleis).,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,peper,,,09/11/2026,IND041
+tjengkeh,"tjengke, cengkeh, tjenkeh",cloves,,,spice,Kruidnagel (Maleis).,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,kruidnagel,,,09/11/2026,IND042
+pala,"boea pala, buah pala",nutmeg,,,spice,Nootmuskaat (Maleis).,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,nootmuskaat,,,09/11/2026,IND043
+kajoe manis,"kayu manis, kajoemanis",cinnamon,,,spice,Kaneel (Maleis).,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,kaneel,,,09/11/2026,IND044
+bawang,"bawang merah, bawang poetih, bawang bombay, brambang",onion / shallot / garlic,,,vegetable,"Ui, sjalot (merah) of knoflook (poetih) (Maleis).",Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,ajuin,,,09/11/2026,IND045
+kapoelaga,"kapulaga, kapoelaga-zaad",cardamom,,,spice,Kardemom (Maleis).,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,cardamome,,,09/11/2026,IND046
+adas,adas manis,fennel / anise,,,spice,Venkel of anijs (Maleis).,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,venkel,,,09/11/2026,IND047
+daoen salam,"daun salam, salamblad, salam",Indonesian bay leaf,,,herb,Indisch laurierblad (Maleis).,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,laurier,,,09/11/2026,IND048
+garam,garem,salt,,,condiment,Zout (Maleis).,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,zout,,,09/11/2026,IND049
+klapper,"kelapa, klappers, geraspte klapper, klapperolie",coconut,,,nut,Kokosnoot (Indisch-Nederlands); santen wordt ervan gemaakt.,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND050
+katjang,"kacang, katjang tanah, katjang pandjang, katjangs",peanut / beans,,,nut,Pinda of peulvrucht (Maleis).,Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,,,,09/11/2026,IND051
+djeroek,"jeruk, djeroek nipis, djeroek limo",citrus / lime,,,fruit,"Citrusvrucht, limoen (Maleis).",Indies cookbooks (Visser 1911; Oost-Indisch kookboek 1913),,limoen,,,09/11/2026,IND052
