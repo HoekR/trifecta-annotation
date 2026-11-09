@@ -5,12 +5,13 @@ Read-only. Writes two CSVs to experiments/results_overview/:
   cells.csv  source, genre, outcome, decade, n
              outcome = frame name, NONE (no frame), DROPPED (Step A or sieve),
              ERROR, or PENDING (harvested weak-regime rows not yet annotated)
-  works.csv  work, title, year, genre, source, rows, frames, pending
+  works.csv  work, wid, title, year, genre, source, rows, frames, pending, fb (frames by type)
   index.html self-contained page (template: results_overview.template.html)
 
 Real frame = not error, not dropped, step_b.selected_frame not in (None, NONE),
 the same rule as the per-run reports. Year: provenance.date where present,
 else the work's year from the genre records (joined on work stem).
+Genre: current work-level infer_text_regime, not the stored row label.
 
     uv run python scripts/build_results_overview.py
 """
@@ -74,15 +75,29 @@ def main() -> None:
     def add(label, src_path, title, genre, year, outcome):
         decade = f"{year // 10 * 10}s" if year else "undated"
         cells[(label, genre, outcome, decade)] += 1
-        w = works.setdefault((label, src_path), {"work": src_path, "title": title, "year": year or "",
-                                                 "genre": genre, "source": label, "rows": 0, "frames": 0, "pending": 0})
+        w = works.setdefault((label, src_path), {"work": src_path, "wid": work_stem(src_path), "title": title,
+                                                 "year": year or "", "genre": genre, "source": label,
+                                                 "rows": 0, "frames": 0, "pending": 0, "fb": {}})
         if outcome == "PENDING":
             w["pending"] += 1
         else:
             w["rows"] += 1
-            w["frames"] += outcome not in ("NONE", "DROPPED", "ERROR")
+            if outcome not in ("NONE", "DROPPED", "ERROR"):
+                w["frames"] += 1
+                w["fb"][outcome] = w["fb"].get(outcome, 0) + 1
         dated[label][0] += 1
         dated[label][1] += year is not None
+
+    # Genre = the CURRENT work-level inference, not the stored provenance.text_regime:
+    # 2,274 curated rows still carry the UNKNOWN stamped before the per-work overrides
+    # existed (audit 2026-11-09), and a few sweep works have mixed row-level labels.
+    regime_cache: dict[tuple, str] = {}
+
+    def genre_of(corpus, title, src_path):
+        key = (corpus, work_stem(src_path or ""))
+        if key not in regime_cache:
+            regime_cache[key] = infer_text_regime(corpus=corpus, title=title, source_path=src_path).value
+        return regime_cache[key]
 
     def year_for(pv_date, src_path):
         return _year(pv_date) or work_year.get(work_stem(src_path or ""))
@@ -100,8 +115,7 @@ def main() -> None:
             if logical == "weak_regime_verb_annotations":
                 annotated_weak.add(pv["record_id"])
             sp = pv.get("source_path") or ""
-            genre = pv.get("text_regime") or infer_text_regime(
-                corpus=pv.get("corpus"), title=pv.get("title"), source_path=sp).value
+            genre = genre_of(pv.get("corpus"), pv.get("title"), sp)
             frame = (r.get("step_b") or {}).get("selected_frame")
             outcome = ("ERROR" if r.get("error") else "DROPPED" if r.get("dropped")
                        else frame if frame not in (None, "NONE") else "NONE")
@@ -114,7 +128,7 @@ def main() -> None:
             if r["record_id"] not in annotated_weak:
                 sp = r["source_path"]
                 add(SOURCES["weak_regime_verb_annotations"], sp, r.get("title") or sp,
-                    r.get("text_regime") or "UNKNOWN", year_for(r.get("date"), sp), "PENDING")
+                    genre_of(r.get("corpus"), r.get("title"), sp), year_for(r.get("date"), sp), "PENDING")
 
     OUT.mkdir(parents=True, exist_ok=True)
     with (OUT / "cells.csv").open("w", newline="", encoding="utf-8") as fh:

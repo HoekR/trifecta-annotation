@@ -102,9 +102,11 @@ input[type="search"] { font: inherit; font-size: 13px; padding: 4px 8px; border:
         <button class="seg" id="m-frames" aria-pressed="true">Frames</button>
         <button class="seg" id="m-rows" aria-pressed="false">Rows</button>
         <button class="seg" id="m-yield" aria-pressed="false">Yield</button>
+        <button class="seg" id="m-works" aria-pressed="false">Works</button>
       </span>
     </div>
-    <p class="note">Genre is the work's text regime. "Pending" rows (the weak-regime harvest) appear only under Rows, hatched.</p>
+    <p class="note">Genre is the work's current text regime. "Pending" rows (the weak-regime harvest) appear only under Rows, hatched.
+      Works = distinct works with at least one frame of the selected types; use it to see past single big works such as Chomel (1743).</p>
   </section>
 
   <div class="grid2">
@@ -173,10 +175,11 @@ pendingChip.onclick = () => { state.pending = !state.pending; pendingChip.setAtt
 chips("fl-source", SOURCES, state.source, "source", pendingChip);
 chips("fl-genre", GENRES, state.genre, "genre");
 chips("fl-frame", FRAMES, state.frame, "frame");
-for (const m of ["frames", "rows", "yield"]) {
+const METRICS = ["frames", "rows", "yield", "works"];
+for (const m of METRICS) {
   document.getElementById("m-" + m).onclick = () => {
     state.metric = m;
-    for (const k of ["frames", "rows", "yield"]) document.getElementById("m-" + k).setAttribute("aria-pressed", k === m);
+    for (const k of METRICS) document.getElementById("m-" + k).setAttribute("aria-pressed", k === m);
     draw();
   };
 }
@@ -238,7 +241,22 @@ function legend(host, items) {
     sp.append(sw, document.createTextNode(name)); h.append(sp);
   }
 }
-const metricWord = () => ({ frames: "Frames", rows: "Rows", yield: "Yield" }[state.metric]);
+const metricWord = () => ({ frames: "Frames", rows: "Rows", yield: "Yield", works: "Works with frames" }[state.metric]);
+
+// distinct works (by work stem, across sources) with >=1 frame of the selected types
+function worksBy(keyFn) {
+  const m = new Map();
+  for (const w of D.works) {
+    if (!state.source.has(w.source) || !state.genre.has(w.genre)) continue;
+    let f = 0; for (const k in w.fb) if (state.frame.has(k)) f += w.fb[k];
+    if (!f) continue;
+    const key = keyFn(w); if (key == null) continue;
+    let e = m.get(key); if (!e) m.set(key, e = { ids: new Set(), frames: 0 });
+    e.ids.add(w.wid); e.frames += f;
+  }
+  return m;
+}
+const decadeOf = w => (w.year && w.year >= 1500 && w.year <= 1929) ? Math.floor(w.year / 10) * 10 : null;
 
 // ---------- chart 1: by genre, stacked by source ----------
 function drawGenre(cells) {
@@ -259,6 +277,25 @@ function drawGenre(cells) {
   for (let i = 0; i <= 4; i++) { const v = max * i / 4, xx = x(v);
     el("line", { x1: xx, x2: xx, y1: T, y2: H - 20, stroke: "var(--grid)" }, s);
     txt(s, xx, H - 6, state.metric === "yield" ? pct(v) : fmt(v), { "text-anchor": "middle" }); }
+  if (state.metric === "works") {
+    const wb = worksBy(w => w.genre);
+    const mx = niceMax(Math.max(1, ...genres.map(g => wb.get(g)?.ids.size || 0)));
+    const xw = v => L + (W - L - R) * v / mx;
+    for (let i = 0; i <= 4; i++) { const v = mx * i / 4, xx = xw(v);
+      el("line", { x1: xx, x2: xx, y1: T, y2: H - 20, stroke: "var(--grid)" }, s);
+      txt(s, xx, H - 6, fmt(v), { "text-anchor": "middle" }); }
+    genres.forEach((g, i) => {
+      const y = T + i * rowH + 6, bh = rowH - 12, e = wb.get(g);
+      txt(s, L - 8, y + bh / 2 + 4, label(g), { "text-anchor": "end" });
+      if (!e) return;
+      const n = e.ids.size;
+      const r = el("rect", { class: "m", x: L, y, width: Math.max(0, xw(n) - L), height: bh, rx: 3, fill: "var(--s1)" }, s);
+      r.onmousemove = ev => showTip(ev, `<b>${label(g)}</b><br><b>${fmt(n)}</b> works with frames<br>${(e.frames / n).toFixed(1)} frames per work`);
+      r.onmouseleave = hideTip;
+      txt(s, xw(n) + 6, y + bh / 2 + 4, fmt(n), { class: "val" });
+    });
+    host.append(s); legend("lg-genre", []); return;
+  }
   genres.forEach((g, i) => {
     const y = T + i * rowH + 6, bh = rowH - 12, a = tot.get(g);
     txt(s, L - 8, y + bh / 2 + 4, label(g), { "text-anchor": "end" });
@@ -340,6 +377,30 @@ function drawTime(cells) {
   const genres = GENRES.filter(g => state.genre.has(g));
   const W = 1120, L = 48, R = 8, T = 8, B = 30, H = 300;
   const s = svg(W, H); hatchDefs(s);
+  if (state.metric === "works") {
+    const wb = worksBy(w => { const d = decadeOf(w); return d == null ? null : d + "\u0000" + w.genre; });
+    const wt = worksBy(decadeOf);
+    const mx = niceMax(Math.max(1, ...all.map(d => wt.get(d)?.ids.size || 0)));
+    const yw = v => H - B - (H - B - T) * v / mx, bw = (W - L - R) / all.length;
+    for (let i = 0; i <= 4; i++) { const v = mx * i / 4;
+      el("line", { x1: L, x2: W - R, y1: yw(v), y2: yw(v), stroke: "var(--grid)" }, s);
+      txt(s, L - 6, yw(v) + 4, fmt(v), { "text-anchor": "end" }); }
+    all.forEach((d, i) => {
+      const x0 = L + i * bw + 1.5, w = Math.max(1, bw - 3), t = wt.get(d);
+      if (d % 50 === 0) txt(s, x0 + w / 2, H - 10, d, { "text-anchor": "middle" });
+      if (!t) return;
+      const head = `<b>${d}s</b><br>${fmt(t.ids.size)} works with frames · ${(t.frames / t.ids.size).toFixed(1)} frames per work`;
+      let yy = H - B;
+      for (const g of genres) {
+        const e = wb.get(d + "\u0000" + g); if (!e) continue;
+        const h = (H - B - T) * e.ids.size / mx;
+        const r = el("rect", { class: "m", x: x0, y: yy - h, width: w, height: Math.max(0, h - 1.5), fill: colorOf.genre(g) }, s);
+        r.onmousemove = ev => showTip(ev, head + `<br>${label(g)}: <b>${fmt(e.ids.size)}</b> works`);
+        r.onmouseleave = hideTip; yy -= h;
+      }
+    });
+    host.append(s); legend("lg-time", genres.map(g => [label(g), colorOf.genre(g)])); return;
+  }
   const val = a => state.metric === "rows" ? a.rows : a.frames;
   let max = 0;
   for (const d of all) { const a = tot.get(String(d)); if (!a) continue;
