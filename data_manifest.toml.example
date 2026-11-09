@@ -429,3 +429,24 @@ path = "trifecta/weak_regime_verb_annotations.jsonl"
 phase = "semi"
 description = "A->B->C annotations for weak_regime_verb_kwic_inputs (Step A sieve on)"
 parent = "weak_regime_verb_kwic_inputs"
+
+[datasets.indies_kwic_inputs_all]
+tier = "scratch"
+path = "trifecta/indies_kwic_inputs_all.jsonl"
+phase = "semi"
+description = "Every Indies-term mention (vocabulary/Food_terms_indies.csv) in the KB, LDK and Google Books 2026 cookbook batches"
+parent = "ldk2025_cookbooks"
+
+[datasets.indies_kwic_inputs]
+tier = "scratch"
+path = "trifecta/indies_kwic_inputs.jsonl"
+phase = "semi"
+description = "Indies-term mentions for annotation: at most --cap per book, evenly spaced, round-robin"
+parent = "indies_kwic_inputs_all"
+
+[datasets.indies_annotations]
+tier = "scratch"
+path = "trifecta/indies_annotations.jsonl"
+phase = "semi"
+description = "A->B->C annotations for indies_kwic_inputs"
+parent = "indies_kwic_inputs"
