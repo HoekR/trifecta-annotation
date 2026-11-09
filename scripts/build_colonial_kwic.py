@@ -166,6 +166,40 @@ GOOGLE_BOOKS_2026: dict[str, tuple[str, int | None]] = {
     "Vervolg_op_M_Noël_Chomel_Algemeen_huish.pdf": ("Vervolg op M. Noël Chomel, Algemeen huishoudelyk-woordenboek (XIV. Deel)", 1792),
 }
 
+# Google Books batch of 9 Nov 2026 (Rik, ~/Downloads/kookboeken), staged under
+# colonial_books_ocr/acquisitions/google_books_2026_11/ as PDF + text. The text
+# was extracted with pdftotext from page 2: page 1 is Google's "Over dit boek"
+# disclaimer, the rest carries no Google text. The OCR is good enough for
+# harvesting (no re-OCR; lower scores of the medical and pastry books reflect
+# vocabulary, not OCR). Years: from the title pages (1870, 1872, 1893), the
+# prefaces (Betje: 8th printing, prefaces Aug 1887 and May 1890, so >= 1890,
+# recorded as 1890) and Rik for the rest. filename -> (title, year).
+GOOGLE_BOOKS_2026_11_DIR = "acquisitions/google_books_2026_11"
+GOOGLE_BOOKS_2026_11: dict[str, tuple[str, int | None]] = {
+    "Oost_Indisch_kookboek.pdf": ("Oost-Indisch kookboek (tweede druk)", 1870),
+    "Oost_Indisch_kookboek_bevattende_meer_da.pdf": ("Oost-Indisch kookboek, bevattende meer dan ... recepten", 1893),
+    "Indisch_kookboek.pdf": ("Indisch kookboek (Gallas Haak-Bastiaanse)", 1872),
+    "Betje_de_goedkoope_keukenmeid.pdf": ("Betje, de goedkoope keukenmeid (8e druk)", 1890),
+    "Het_boek_der_banketbakkerij.pdf": ("Het boek der banketbakkerij (Gouffé)", 1878),
+    "Kookboek_voor_gezonden_en_zieken.pdf": ("Kookboek voor gezonden en zieken (Wiel)", 1875),
+    "De_nieuwe_geneeskunde_zonder_medicijnen.pdf": ("De nieuwe geneeskunde zonder medicijnen (Kuhne)", 1893),
+    "Medische_verhandelingen.pdf": ("Medische verhandelingen (Allinson)", 1892),
+    # KNIL regulations; Rik: 1874 or 1879, recorded as the earlier. Mostly tables.
+    "Algemeene_orders_reglementen_en_instruct.pdf": ("Algemeene orders, reglementen en instructiën", 1874),
+}
+
+# Place of printing for cookbooks where it is a variable of interest: an Indies
+# cookbook printed in the Netherlands (Nijmegen 1872) writes 'Spaansche peper'
+# where the Samarang editions write 'lombok'. Keyed by title.
+PLACE_OF_PRINT: dict[str, str] = {
+    "Oost-Indisch kookboek (tweede druk)": "Samarang",
+    "Oost-Indisch kookboek, bevattende meer dan ... recepten": "Samarang",
+    "Oost-Indisch kookboek": "Samarang",                       # KB copy, 1913
+    "Indisch kookboek (Gallas Haak-Bastiaanse)": "Nijmegen",
+    "Betje, de goedkoope keukenmeid (8e druk)": "Gouda",
+    "Het boek der banketbakkerij (Gouffé)": "Rotterdam",
+}
+
 # Extracted for the §9f structural-density check (447k chars), never
 # food-scanned since. The folder holds the diplomatic edition as .docx/.epub,
 # not .txt — this is the file whose own name matches the folder's
