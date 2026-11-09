@@ -9,6 +9,8 @@ annotated), labelled with its outcome, as:
   works.csv                        one row per work (metadata + counts)
   plaintext/<genre>/<year>_<work>.txt one plain-text document per work (its unique contexts),
   plaintext.zip                       zipped; loads in #LancsBox X (genre folders = sub-corpora) or Voyant
+  names_over_time.csv              Dutch vs Malay names per concept: per cookbook (full text,
+                                   1870-1940) and per decade of newspaper recipes (1940s-1990s)
   README.md, food_harvest_starter.ipynb
 
 Rows are deduplicated on (work, context, target word) across sources. Rerunnable;
@@ -47,6 +49,7 @@ SOURCES = {
     "dbnl_sweep_annotations": "DBNL sweep",
     "entry_scope_annotations": "Entry scope",
     "weak_regime_verb_annotations": "Weak-regime verb",
+    "indies_annotations": "Indies terms (cookbooks)",
 }
 
 
@@ -83,6 +86,71 @@ def split_kwic(context: str, word: str) -> tuple[str, str, str]:
 
 def _slug(text: str, n: int = 40) -> str:
     return re.sub(r"[^A-Za-z0-9]+", "_", text or "").strip("_")[:n] or "untitled"
+
+
+# Dutch vs Malay names of the same thing (concept, Dutch pattern, Malay pattern), word-initial.
+# Only true pairs: ketjap is left out, since soy sauce simply was ketjap ('soja' in these
+# texts is mostly the bean or another product), so there is no Dutch rival name.
+NAME_PAIRS = [
+    ("coriander", r"koriander|coriander", r"ketoembar|ketumbar"),
+    ("chili", r"spaansche peper|spaanse peper", r"lombok|tjabe|cabe\b"),
+    ("coconut", r"kokos|cocos", r"klapper|kelapa"),
+    ("coconut milk", r"kokosmelk|klappermelk", r"santen|santan"),
+    ("onion/shallot", r"sjalot|chalot|ajuin|uien|uijen|uyen|knoflook", r"bawang|brambang"),  # bawang covers onion, shallot and garlic
+    ("bean sprouts", r"bonenkiemen|tauge-kiemen", r"taug[eé]|taoge"),
+    ("ginger", r"gember", r"djahe|jahe"),
+    ("cloves", r"kruidnagel", r"tjengkeh|cengkeh"),
+    ("cinnamon", r"kaneel|caneel", r"kajoe.?manis|kayu.?manis"),
+]
+RECIPE_TRENDS = Path.home() / "develop" / "Dutch-historical-recipe-trends" / "Corpus"
+
+
+def names_over_time(out: Path) -> pd.DataFrame:
+    """Tidy table: one row per (source unit, concept) with Dutch and Malay counts.
+    Cookbooks: full text, per book (denominator = words). Newspaper recipes (van Erp,
+    Wevers & Huurdeman 2018 recipe web, via Dutch-historical-recipe-trends): ingredient
+    lists, per decade (denominator = recipes; count = recipes mentioning the name)."""
+    import csv as _csv
+
+    from scripts.run_indies_harvest import sources as cookbook_sources
+
+    comp = [(c, re.compile(r"\b(?:" + d + ")", re.I), re.compile(r"\b(?:" + m + ")", re.I)) for c, d, m in NAME_PAIRS]
+    rows = []
+    books = [(title, year, text) for _sp, title, year, _corpus, text in cookbook_sources()]
+    have = {y for t, y, _ in books if t.startswith("LDK kookboek")}
+    for f in sorted(RECIPE_TRENDS.glob("*_cookbook.txt")):  # van Erp's corpus has 1932/1938/1939 extra
+        y = int(f.name[:4])
+        if y not in have:
+            books.append((f"Cookbook {y} (recipe-trends corpus)", y, f.read_text(encoding="utf-8", errors="replace")))
+    for title, year, text in books:
+        text = text.replace("ſ", "s")
+        words = len(text.split())
+        for c, d, m in comp:
+            rows.append({"source": "cookbook", "unit": title, "year": year, "decade": year // 10 * 10,
+                         "denominator": words, "denominator_unit": "words", "concept": c,
+                         "dutch": len(d.findall(text)), "malay": len(m.findall(text))})
+    web = RECIPE_TRENDS / "clean_recipe_web.csv"
+    if web.exists():
+        _csv.field_size_limit(10**9)
+        per = defaultdict(lambda: {"n": 0, **{c: [0, 0] for c, _, _ in comp}})
+        for r in _csv.DictReader(web.open(encoding="utf-8", errors="replace")):
+            y = _year(r.get("date"))
+            if not y:
+                continue
+            dec = per[y // 10 * 10]
+            dec["n"] += 1
+            ing = r.get("Ingredients") or ""
+            for c, d, m in comp:
+                dec[c][0] += bool(d.search(ing))
+                dec[c][1] += bool(m.search(ing))
+        for dec, v in sorted(per.items()):
+            for c, _, _ in comp:
+                rows.append({"source": "newspaper recipes", "unit": f"{dec}s", "year": dec, "decade": dec,
+                             "denominator": v["n"], "denominator_unit": "recipes", "concept": c,
+                             "dutch": v[c][0], "malay": v[c][1]})
+    df = pd.DataFrame(rows)
+    df.to_csv(out / "names_over_time.csv", index=False, encoding="utf-8-sig")
+    return df
 
 
 def main() -> None:
@@ -192,6 +260,7 @@ def main() -> None:
         for f in sorted((out / "plaintext").rglob("*.txt")):
             zf.write(f, f.relative_to(out / "plaintext"))
 
+    names = names_over_time(out)
     if NOTEBOOK.exists():
         shutil.copy(NOTEBOOK, out / NOTEBOOK.name)
     counts = df["status"].value_counts().to_dict()
@@ -205,7 +274,7 @@ def main() -> None:
         genres=", ".join(f"{k} {v}" for k, v in df["genre"].value_counts().items()),
     )
     (out / "README.md").write_text(readme, encoding="utf-8")
-    print(f"wrote {len(df)} mentions, {len(works)} works -> {out}")
+    print(f"wrote {len(df)} mentions, {len(works)} works, {len(names)} name rows -> {out}")
     print("status:", counts)
     print("frames:", frames)
 
