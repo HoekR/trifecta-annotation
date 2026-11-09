@@ -166,7 +166,7 @@ GOOGLE_BOOKS_2026: dict[str, tuple[str, int | None]] = {
     "Vervolg_op_M_Noël_Chomel_Algemeen_huish.pdf": ("Vervolg op M. Noël Chomel, Algemeen huishoudelyk-woordenboek (XIV. Deel)", 1792),
 }
 
-# Google Books batch of 9 Nov 2026 (Rik, ~/Downloads/kookboeken), staged under
+# Google Books batch of 9 Nov 2026 (Rik, ~/Downloads/kookboeken; 10 works), staged under
 # colonial_books_ocr/acquisitions/google_books_2026_11/ as PDF + text. The text
 # was extracted with pdftotext from page 2: page 1 is Google's "Over dit boek"
 # disclaimer, the rest carries no Google text. The OCR is good enough for
@@ -184,6 +184,10 @@ GOOGLE_BOOKS_2026_11: dict[str, tuple[str, int | None]] = {
     "Kookboek_voor_gezonden_en_zieken.pdf": ("Kookboek voor gezonden en zieken (Wiel)", 1875),
     "De_nieuwe_geneeskunde_zonder_medicijnen.pdf": ("De nieuwe geneeskunde zonder medicijnen (Kuhne)", 1893),
     "Medische_verhandelingen.pdf": ("Medische verhandelingen (Allinson)", 1892),
+    # Nijmegen, A. van Goor, "I. Deel"; year 1790 per Rik (Google Books KW2sHpXGCNAC).
+    # 18th-century print: long s (ſ) replaced by s in the staged text, the PDF is
+    # untouched; some ſ is OCR'd as f ("Citroen-foep"), which this cannot repair.
+    "De_nieuwe_in_en_buitenlandsche_kock_of_v.pdf": ("De nieuwe in- en buitenlandsche kock (I. Deel)", 1790),
     # KNIL regulations; Rik: 1874 or 1879, recorded as the earlier. Mostly tables.
     "Algemeene_orders_reglementen_en_instruct.pdf": ("Algemeene orders, reglementen en instructiën", 1874),
 }
@@ -196,6 +200,7 @@ PLACE_OF_PRINT: dict[str, str] = {
     "Oost-Indisch kookboek, bevattende meer dan ... recepten": "Samarang",
     "Oost-Indisch kookboek": "Samarang",                       # KB copy, 1913
     "Indisch kookboek (Gallas Haak-Bastiaanse)": "Nijmegen",
+    "De nieuwe in- en buitenlandsche kock (I. Deel)": "Nijmegen",
     "Betje, de goedkoope keukenmeid (8e druk)": "Gouda",
     "Het boek der banketbakkerij (Gouffé)": "Rotterdam",
 }
