@@ -3,9 +3,11 @@
 Writes `crosswalks/kg_mockup_commodities.proposal.csv`: one row per
 (vocabulary entry, commodity) candidate, with how it matched, how many frame
 rows it would bring into the kg_mockup export, and an example context.
-Edit the `decision` column (y / n), then save it as
-`crosswalks/kg_mockup_commodities.csv`. This script never writes that file,
-so rerunning it cannot clobber hand edits.
+Hand decisions live in `crosswalks/kg_mockup_commodities.xlsx` (sheet
+`decisions`, column `decision` y / n, plus a `why` column); that workbook is
+the only file to edit and the one the export reads. This script never writes
+it, so rerunning it cannot clobber hand edits; new candidates it proposes have
+to be copied into the workbook by hand.
 
 Match bases, strongest first:
   alias     a pref/alt label equals a kg_mockup `historical_aliases` entry
