@@ -4,7 +4,8 @@ Rik's standing instruction is not to hammer the catalogue, so this is the only
 place that talks to it, and it:
 
 - never re-requests a title already in the cache (one request per title, ever);
-- spaces live requests by `--interval` seconds, single-threaded;
+- spaces live requests by at least `--interval` seconds and at least twice the
+  recent response time, single-threaded, backing off exponentially on errors;
 - stops after `--limit` live requests so a run is always bounded.
 
 Pick the titles to fetch with `--select`. Catalogue traffic is the scarce
@@ -32,7 +33,7 @@ from trifecta_annotation.text_regime import _WORK_REGIME
 
 SRU = ("https://jsru.kb.nl/sru/sru?operation=searchRetrieve&x-collection=GGC"
        "&query={q}&maximumRecords=5&recordSchema=dcx")
-UA = "trifecta-annotation/1.0 (mailto:rik.hoekstra@gmail.com)"
+UA = "trifecta-annotation/1.0 (mailto:rik.hoekstra@di.huc.knaw.nl)"
 _SPLIT = re.compile(r"[,.]| of | ofte | Deel | Jaargang ")
 _YEAR = re.compile(r"1[0-9]{3}")
 
@@ -116,19 +117,40 @@ def main() -> None:
             print(f"  would fetch: {short_title(row['titel'])[:60]}")
         return
 
+    # Adaptive pacing: the gap before each request is at least --interval and at
+    # least 2x the (smoothed) recent response time, so a catalogue that slows
+    # down gets proportionally more breathing room. Errors double a backoff
+    # (capped at 5 min) that only decays on success; 10 errors in a row stop the run.
+    latency = None          # exponentially smoothed seconds per response
+    backoff = 0.0
+    errors_in_row = 0
+    t_start = time.monotonic()
     for i, row in enumerate(pending, 1):
         if i > 1:
-            time.sleep(args.interval)
+            gap = max(args.interval, 2 * (latency or 0), backoff)
+            time.sleep(gap)
         q = urllib.parse.quote(f'dc.title="{short_title(row["titel"])}"')
         req = urllib.request.Request(SRU.format(q=q), headers={"User-Agent": UA})
+        t0 = time.monotonic()
         try:
-            body = urllib.request.urlopen(req, timeout=30).read().decode("utf-8", "replace")
+            body = urllib.request.urlopen(req, timeout=60).read().decode("utf-8", "replace")
         except Exception as exc:
-            print(f"  {i:3d} ERR {short_title(row['titel'])[:44]}: {exc}")
+            errors_in_row += 1
+            backoff = min(300.0, max(backoff * 2, 10.0))
+            print(f"  {i:4d} ERR {short_title(row['titel'])[:44]}: {exc} -> backoff {backoff:.0f}s", flush=True)
+            if errors_in_row >= 10:
+                print("10 errors in a row: stopping; rerun later (cache resumes)", flush=True)
+                break
             continue
+        dt = time.monotonic() - t0
+        latency = dt if latency is None else 0.8 * latency + 0.2 * dt
+        errors_in_row = 0
+        backoff = backoff / 2 if backoff > 1 else 0.0
         cache_path(cache_dir, row["titel"]).write_text(body, encoding="utf-8")
         n = re.search(r"numberOfRecords>(\d+)", body)
-        print(f"  {i:3d} n={(n.group(1) if n else '?'):>4} {short_title(row['titel'])[:56]}")
+        eta = (len(pending) - i) * (time.monotonic() - t_start) / i / 60
+        print(f"  {i:4d} n={(n.group(1) if n else '?'):>4} {dt:4.1f}s (avg {latency:4.1f}s, ~{eta:.0f} min left) "
+              f"{short_title(row['titel'])[:50]}", flush=True)
     print("\nnow rebuild the sidecar: uv run python scripts/build_dbnl_genre.py --summary")
 
 
