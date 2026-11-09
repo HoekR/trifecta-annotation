@@ -17,7 +17,9 @@ FrameNetRecord's own are optional extras kg_mockup accepts:
 
 Year = provenance.date, else the work's year from the genre records (the
 edition year; no first-edition data, so first_edition_year is left unset).
-Rows with no year are dropped and counted. kg_mockup assumes no relation
+Rows with no year are dropped and counted. A second file, <out>_works.jsonl,
+lists every annotated work with a year (commodity or not): the coverage
+kg_mockup shows so that absence of evidence reads as absence of material. kg_mockup assumes no relation
 between its sources: this is a side-by-side source keyed on commodity + year.
 
     uv run python scripts/export_kg_mockup_frames.py [--out PATH]
@@ -100,6 +102,9 @@ def main() -> None:
     seen: set[tuple] = set()
     stats: Counter = Counter()
     records: list[dict] = []
+    # Coverage: every annotated work with a year, commodity or not, so kg_mockup can
+    # show where material exists (an empty spot without a work there means "not searched").
+    coverage: dict[str, dict] = {}
     for logical, label in SOURCES.items():
         path = Path(resolve(logical))
         if not path.exists():
@@ -109,6 +114,15 @@ def main() -> None:
             if logical == "entry_scope_annotations" and pv["record_id"] not in current_scope:
                 continue
             frame = (r.get("step_b") or {}).get("selected_frame")
+            sp_c = pv.get("source_path") or ""
+            year_c = _year(pv.get("date")) or work_year.get(work_stem(sp_c))
+            if year_c is not None and not r.get("error"):
+                w = coverage.setdefault(work_stem(sp_c), {
+                    "work_id": sp_c, "year": year_c, "source_work": pv.get("title") or sp_c,
+                    "genre": infer_text_regime(corpus=pv.get("corpus"), title=pv.get("title"), source_path=sp_c).value,
+                    "rows": 0, "frames": 0})
+                w["rows"] += 1
+                w["frames"] += not r.get("dropped") and frame not in (None, "NONE")
             if r.get("error") or r.get("dropped") or frame in (None, "NONE"):
                 continue
             word = (pv.get("target_word") or "").strip().lower()
@@ -148,6 +162,10 @@ def main() -> None:
     with args.out.open("w", encoding="utf-8") as fh:
         for d in records:
             fh.write(json.dumps(d, ensure_ascii=False) + "\n")
+    works_out = args.out.with_name(args.out.stem + "_works.jsonl")
+    with works_out.open("w", encoding="utf-8") as fh:
+        for w in sorted(coverage.values(), key=lambda d: (d["year"], d["work_id"])):
+            fh.write(json.dumps(w, ensure_ascii=False) + "\n")
     meta = {
         "generated": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "script": "trifecta-annotation/scripts/export_kg_mockup_frames.py",
@@ -155,11 +173,12 @@ def main() -> None:
         "sources": [k for k in SOURCES if Path(resolve(k)).exists()],
         "influence_years": INFLUENCE_YEARS,
         "records": len(records),
+        "coverage_works": len(coverage),
         "stats": dict(stats),
     }
     args.out.with_suffix(".meta.json").write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
 
-    print(f"wrote {len(records)} records -> {args.out}")
+    print(f"wrote {len(records)} records -> {args.out}; {len(coverage)} annotated works -> {works_out.name}")
     for k, v in sorted(stats.items()):
         print(f"  {k}: {v}")
     print("by commodity:", dict(Counter(d["commodity_id"] for d in records).most_common()))
