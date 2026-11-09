@@ -415,3 +415,17 @@ path = "trifecta/entry_scope_kwic_inputs_chomel_full.jsonl"
 phase = "semi"
 description = "Uncapped entry-scope rows for Chomel's Huishoudelyk woordboek (extends the cap-500 run; annotations go to entry_scope_annotations, resumed)"
 parent = "dbnl_xml"
+
+[datasets.weak_regime_verb_kwic_inputs]
+tier = "scratch"
+path = "trifecta/weak_regime_verb_kwic_inputs.jsonl"
+phase = "semi"
+description = "verb_food rows (cap 50/work) from non-RECIPE/MEDICAL DBNL sweep works, minus contexts the cap-10 sweep already annotated (PLAN §9i)"
+parent = "dbnl_xml"
+
+[datasets.weak_regime_verb_annotations]
+tier = "scratch"
+path = "trifecta/weak_regime_verb_annotations.jsonl"
+phase = "semi"
+description = "A->B->C annotations for weak_regime_verb_kwic_inputs (Step A sieve on)"
+parent = "weak_regime_verb_kwic_inputs"

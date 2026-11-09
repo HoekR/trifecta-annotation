@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trifecta frame results</title>
+<style>
+/* Layout: one column of filter bar + four panels; summary figures first, detail (works table) last. */
+:root {
+  color-scheme: light;
+  --bg: #f6f7f5; --panel: #ffffff; --line: #dfe2dc; --grid: #eceee9;
+  --fg: #16181a; --fg2: #50555a; --muted: #7d8287; --chip: #eef0ec;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+  --s5: #e87ba4; --s6: #008300; --s7: #6250d6; --s8: #e34948;
+  --pending: #9aa0a6;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #141615; --panel: #1c1e1d; --line: #2f3331; --grid: #262928;
+    --fg: #eef0ec; --fg2: #c0c4bf; --muted: #8d928d; --chip: #262928;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+    --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+    --pending: #6f757a;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #141615; --panel: #1c1e1d; --line: #2f3331; --grid: #262928;
+  --fg: #eef0ec; --fg2: #c0c4bf; --muted: #8d928d; --chip: #262928;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+  --s5: #d55181; --s6: #008300; --s7: #9085e9; --s8: #e66767;
+  --pending: #6f757a;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 14px/1.45 var(--sans); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 24px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 16px; }
+h1 { font-size: 22px; margin: 0; text-wrap: balance; }
+h2 { font-size: 15px; margin: 0 0 2px; }
+.sub, .note { color: var(--fg2); margin: 0; }
+.note { font-size: 12.5px; color: var(--muted); }
+.figs { display: flex; flex-wrap: wrap; gap: 28px; }
+.fig b { display: block; font-size: 26px; font-variant-numeric: tabular-nums; font-weight: 600; }
+.fig span { color: var(--fg2); font-size: 12.5px; }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; min-width: 0; }
+.filters { display: grid; gap: 10px; }
+.frow { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.frow > .lab { width: 64px; color: var(--muted); font-size: 11.5px; text-transform: uppercase; letter-spacing: .05em; }
+button.chip { font: inherit; font-size: 12.5px; border: 1px solid var(--line); background: var(--chip); color: var(--fg2);
+  border-radius: 999px; padding: 3px 10px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+button.chip[aria-pressed="true"] { background: var(--panel); color: var(--fg); border-color: var(--fg2); }
+button.chip[aria-pressed="false"] { opacity: .55; text-decoration: line-through; }
+button.chip:focus-visible, button.seg:focus-visible, th:focus-visible { outline: 2px solid var(--s1); outline-offset: 2px; }
+.sw { width: 10px; height: 10px; border-radius: 2px; display: inline-block; flex: none; }
+.seggroup { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+button.seg { font: inherit; font-size: 12.5px; border: 0; background: transparent; color: var(--fg2); padding: 4px 12px; cursor: pointer; }
+button.seg[aria-pressed="true"] { background: var(--chip); color: var(--fg); font-weight: 600; }
+.ph { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline; margin-bottom: 8px; }
+.legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; color: var(--fg2); margin: 6px 0 4px; }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+svg { display: block; width: 100%; height: auto; overflow: visible; }
+svg text { fill: var(--fg2); font: 11.5px var(--sans); }
+svg .val { fill: var(--fg); font-variant-numeric: tabular-nums; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); gap: 16px; }
+#tip { position: fixed; pointer-events: none; background: var(--panel); color: var(--fg); border: 1px solid var(--line);
+  border-radius: 6px; padding: 6px 9px; font-size: 12px; box-shadow: 0 4px 14px rgb(0 0 0 / .15); max-width: 280px; z-index: 5; }
+#tip b { font-variant-numeric: tabular-nums; }
+.tablewrap { overflow-x: auto; max-height: 560px; overflow-y: auto; border-top: 1px solid var(--line); }
+table { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+th, td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+td.t { white-space: normal; min-width: 260px; }
+th { position: sticky; top: 0; background: var(--panel); color: var(--fg2); font-weight: 600; cursor: pointer; user-select: none; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; }
+input[type="search"] { font: inherit; font-size: 13px; padding: 4px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--bg); color: var(--fg); min-width: 0; width: 220px; max-width: 100%; }
+@media (prefers-reduced-motion: no-preference) { rect.m { transition: opacity .12s; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Trifecta frame results</h1>
+    <p class="sub">Step A→B→C annotations across every source. Built <span id="built"></span>.</p>
+  </header>
+
+  <section class="figs" aria-label="Totals for the current filters">
+    <div class="fig"><b id="f-rows">—</b><span>annotated rows</span></div>
+    <div class="fig"><b id="f-frames">—</b><span>real frames</span></div>
+    <div class="fig"><b id="f-yield">—</b><span>yield (frames / rows without errors)</span></div>
+    <div class="fig"><b id="f-pending">—</b><span>harvested, not yet annotated</span></div>
+  </section>
+
+  <section class="panel filters" aria-label="Filters">
+    <div class="frow"><span class="lab">Source</span><span id="fl-source" class="frow"></span></div>
+    <div class="frow"><span class="lab">Genre</span><span id="fl-genre" class="frow"></span></div>
+    <div class="frow"><span class="lab">Frame</span><span id="fl-frame" class="frow"></span></div>
+    <div class="frow"><span class="lab">Count</span>
+      <span class="seggroup" role="group" aria-label="Measure">
+        <button class="seg" id="m-frames" aria-pressed="true">Frames</button>
+        <button class="seg" id="m-rows" aria-pressed="false">Rows</button>
+        <button class="seg" id="m-yield" aria-pressed="false">Yield</button>
+      </span>
+    </div>
+    <p class="note">Genre is the work's text regime. "Pending" rows (the weak-regime harvest) appear only under Rows, hatched.</p>
+  </section>
+
+  <div class="grid2">
+    <section class="panel" id="p-genre">
+      <div class="ph"><h2 id="h-genre">Frames by genre</h2></div>
+      <div class="legend" id="lg-genre"></div>
+      <div id="c-genre"></div>
+    </section>
+    <section class="panel" id="p-mix">
+      <div class="ph"><h2>Frame types by genre</h2><span class="note">share of real frames</span></div>
+      <div class="legend" id="lg-mix"></div>
+      <div id="c-mix"></div>
+    </section>
+  </div>
+
+  <section class="panel" id="p-time">
+    <div class="ph"><h2 id="h-time">Frames by decade</h2><span class="note" id="undated"></span></div>
+    <div class="legend" id="lg-time"></div>
+    <div id="c-time"></div>
+  </section>
+
+  <section class="panel" id="p-works">
+    <div class="ph"><h2>Works</h2>
+      <label class="note" for="q">Filter titles <input type="search" id="q" placeholder="e.g. Suriname"></label></div>
+    <p class="note" id="works-count"></p>
+    <div class="tablewrap"><table id="works"><thead></thead><tbody></tbody></table></div>
+  </section>
+</div>
+<div id="tip" hidden></div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script>
+(() => {
+const D = JSON.parse(document.getElementById("data").textContent);
+const NS = "http://www.w3.org/2000/svg";
+const SOURCES = D.sources, GENRES = D.genres, FRAMES = D.frames;
+const NONFRAME = new Set(["NONE", "DROPPED", "ERROR", "PENDING"]);
+const slot = i => `var(--s${i + 1})`;
+const colorOf = { source: s => slot(SOURCES.indexOf(s)), genre: g => slot(GENRES.indexOf(g)), frame: f => slot(FRAMES.indexOf(f)) };
+const label = s => s.replace(/_/g, " ").toLowerCase().replace(/^./, c => c.toUpperCase());
+const fmt = n => n.toLocaleString("en-US");
+const pct = x => isFinite(x) ? (x * 100).toFixed(0) + "%" : "–";
+
+const state = { source: new Set(SOURCES), genre: new Set(GENRES), frame: new Set(FRAMES), pending: true, metric: "frames" };
+document.getElementById("built").textContent = D.built;
+
+// ---------- filters ----------
+function chips(host, items, set, kind, extra) {
+  const el = document.getElementById(host); el.textContent = "";
+  for (const it of items) {
+    const b = document.createElement("button");
+    b.className = "chip"; b.id = `chip-${kind}-${it}`;
+    const sw = document.createElement("span"); sw.className = "sw"; sw.style.background = colorOf[kind](it);
+    b.append(sw, document.createTextNode(kind === "source" ? it : label(it)));
+    b.setAttribute("aria-pressed", set.has(it));
+    b.onclick = () => { set.has(it) ? set.delete(it) : set.add(it); b.setAttribute("aria-pressed", set.has(it)); draw(); };
+    el.append(b);
+  }
+  if (extra) el.append(extra);
+}
+const pendingChip = document.createElement("button");
+pendingChip.className = "chip"; pendingChip.id = "chip-pending";
+pendingChip.innerHTML = '<span class="sw" style="background:repeating-linear-gradient(45deg,var(--pending) 0 2px,transparent 2px 4px);border:1px solid var(--pending)"></span>Pending';
+pendingChip.setAttribute("aria-pressed", "true");
+pendingChip.onclick = () => { state.pending = !state.pending; pendingChip.setAttribute("aria-pressed", state.pending); draw(); };
+chips("fl-source", SOURCES, state.source, "source", pendingChip);
+chips("fl-genre", GENRES, state.genre, "genre");
+chips("fl-frame", FRAMES, state.frame, "frame");
+for (const m of ["frames", "rows", "yield"]) {
+  document.getElementById("m-" + m).onclick = () => {
+    state.metric = m;
+    for (const k of ["frames", "rows", "yield"]) document.getElementById("m-" + k).setAttribute("aria-pressed", k === m);
+    draw();
+  };
+}
+
+// ---------- aggregation ----------
+// cell: [source, genre, outcome, decade, n]
+function filtered() {
+  return D.cells.filter(([s, g, o]) => state.source.has(s) && state.genre.has(g) &&
+    (o === "PENDING" ? state.pending : true));
+}
+function agg(cells, keyFn) {
+  const m = new Map();
+  for (const c of cells) {
+    const [s, g, o, d, n] = c, k = keyFn(c);
+    const a = m.get(k) || { rows: 0, err: 0, frames: 0, pending: 0, byFrame: {} };
+    if (o === "PENDING") a.pending += n;
+    else {
+      a.rows += n;
+      if (o === "ERROR") a.err += n;
+      if (!NONFRAME.has(o) && state.frame.has(o)) { a.frames += n; a.byFrame[o] = (a.byFrame[o] || 0) + n; }
+    }
+    m.set(k, a);
+  }
+  return m;
+}
+const yieldOf = a => a.frames / Math.max(a.rows - a.err, 1);
+
+// ---------- tooltip ----------
+const tip = document.getElementById("tip");
+function showTip(ev, html) {
+  tip.innerHTML = html; tip.hidden = false;
+  const r = tip.getBoundingClientRect();
+  let x = ev.clientX + 12, y = ev.clientY + 12;
+  if (x + r.width > innerWidth - 8) x = ev.clientX - r.width - 12;
+  if (y + r.height > innerHeight - 8) y = ev.clientY - r.height - 12;
+  tip.style.left = Math.max(8, x) + "px"; tip.style.top = Math.max(8, y) + "px";
+}
+const hideTip = () => { tip.hidden = true; };
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// ---------- svg helpers ----------
+function svg(w, h) { const s = document.createElementNS(NS, "svg"); s.setAttribute("viewBox", `0 0 ${w} ${h}`); s.setAttribute("width", "100%"); return s; }
+function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.append(e); return e; }
+function txt(parent, x, y, s, attrs = {}) { const t = el("text", { x, y, ...attrs }, parent); t.textContent = s; return t; }
+function niceMax(v) { if (v <= 0) return 1; const p = 10 ** Math.floor(Math.log10(v)); for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p; return 10 * p; }
+function hatchDefs(s) {
+  const defs = el("defs", {}, s);
+  const p = el("pattern", { id: "hatch", width: 5, height: 5, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);
+  el("rect", { width: 5, height: 5, fill: "var(--panel)" }, p);
+  el("rect", { width: 2, height: 5, fill: "var(--pending)" }, p);
+}
+function legend(host, items) {
+  const h = document.getElementById(host); h.textContent = "";
+  for (const [name, color, hatch] of items) {
+    const sp = document.createElement("span"), sw = document.createElement("span");
+    sw.className = "sw";
+    sw.style.background = hatch ? "repeating-linear-gradient(45deg,var(--pending) 0 2px,transparent 2px 4px)" : color;
+    if (hatch) sw.style.border = "1px solid var(--pending)";
+    sp.append(sw, document.createTextNode(name)); h.append(sp);
+  }
+}
+const metricWord = () => ({ frames: "Frames", rows: "Rows", yield: "Yield" }[state.metric]);
+
+// ---------- chart 1: by genre, stacked by source ----------
+function drawGenre(cells) {
+  document.getElementById("h-genre").textContent = `${metricWord()} by genre`;
+  const host = document.getElementById("c-genre"); host.textContent = "";
+  const by = agg(cells, c => c[1] + "\u0000" + c[0]);
+  const tot = agg(cells, c => c[1]);
+  const genres = GENRES.filter(g => state.genre.has(g));
+  const srcs = SOURCES.filter(s => state.source.has(s));
+  const W = 560, L = 118, R = 64, rowH = 30, T = 4, H = T + genres.length * rowH + 22;
+  const s = svg(W, H); hatchDefs(s);
+  const val = (a) => state.metric === "rows" ? a.rows : a.frames;
+  let max = 0;
+  for (const g of genres) { const a = tot.get(g); if (!a) continue;
+    max = Math.max(max, state.metric === "yield" ? yieldOf(a) : val(a) + (state.metric === "rows" ? a.pending : 0)); }
+  max = state.metric === "yield" ? 1 : niceMax(max);
+  const x = v => L + (W - L - R) * v / max;
+  for (let i = 0; i <= 4; i++) { const v = max * i / 4, xx = x(v);
+    el("line", { x1: xx, x2: xx, y1: T, y2: H - 20, stroke: "var(--grid)" }, s);
+    txt(s, xx, H - 6, state.metric === "yield" ? pct(v) : fmt(v), { "text-anchor": "middle" }); }
+  genres.forEach((g, i) => {
+    const y = T + i * rowH + 6, bh = rowH - 12, a = tot.get(g);
+    txt(s, L - 8, y + bh / 2 + 4, label(g), { "text-anchor": "end" });
+    if (!a) return;
+    if (state.metric === "yield") {
+      const r = el("rect", { class: "m", x: L, y, width: Math.max(0, x(yieldOf(a)) - L), height: bh, rx: 3, fill: "var(--s1)" }, s);
+      r.onmousemove = ev => showTip(ev, `<b>${label(g)}</b><br>yield <b>${pct(yieldOf(a))}</b><br>${fmt(a.frames)} frames / ${fmt(a.rows - a.err)} rows`);
+      r.onmouseleave = hideTip;
+      txt(s, x(yieldOf(a)) + 6, y + bh / 2 + 4, pct(yieldOf(a)), { class: "val" });
+      return;
+    }
+    let x0 = L;
+    const segs = srcs.map(src => [src, by.get(g + "\u0000" + src)]).filter(([, b]) => b && val(b) > 0);
+    for (const [src, b] of segs) {
+      const w = x(val(b)) - L;
+      const r = el("rect", { class: "m", x: x0, y, width: Math.max(0, w - 2), height: bh, rx: 2, fill: colorOf.source(src) }, s);
+      r.onmousemove = ev => showTip(ev, `<b>${label(g)}</b> · ${esc(src)}<br>${fmt(b.frames)} frames of ${fmt(b.rows)} rows (${pct(yieldOf(b))})`);
+      r.onmouseleave = hideTip; x0 += w;
+    }
+    if (state.metric === "rows" && a.pending) {
+      const w = x(a.pending) - L;
+      const r = el("rect", { class: "m", x: x0, y, width: Math.max(0, w - 2), height: bh, rx: 2, fill: "url(#hatch)", stroke: "var(--pending)" }, s);
+      r.onmousemove = ev => showTip(ev, `<b>${label(g)}</b> · pending<br>${fmt(a.pending)} harvested rows, not yet annotated`);
+      r.onmouseleave = hideTip; x0 += w;
+    }
+    const total = val(a) + (state.metric === "rows" ? a.pending : 0);
+    txt(s, x0 + 6, y + bh / 2 + 4, fmt(total), { class: "val" });
+  });
+  host.append(s);
+  const items = state.metric === "yield" ? [] : srcs.map(src => [src, colorOf.source(src)]);
+  if (state.metric === "rows" && state.pending) items.push(["Pending", null, true]);
+  legend("lg-genre", items);
+}
+
+// ---------- chart 2: frame mix per genre (100%) ----------
+function drawMix(cells) {
+  const host = document.getElementById("c-mix"); host.textContent = "";
+  const tot = agg(cells, c => c[1]);
+  const genres = GENRES.filter(g => state.genre.has(g));
+  const frames = FRAMES.filter(f => state.frame.has(f));
+  const W = 560, L = 118, R = 64, rowH = 30, T = 4, H = T + genres.length * rowH + 22;
+  const s = svg(W, H);
+  const x = v => L + (W - L - R) * v;
+  for (let i = 0; i <= 4; i++) { const xx = x(i / 4);
+    el("line", { x1: xx, x2: xx, y1: T, y2: H - 20, stroke: "var(--grid)" }, s);
+    txt(s, xx, H - 6, pct(i / 4), { "text-anchor": "middle" }); }
+  genres.forEach((g, i) => {
+    const y = T + i * rowH + 6, bh = rowH - 12, a = tot.get(g);
+    txt(s, L - 8, y + bh / 2 + 4, label(g), { "text-anchor": "end" });
+    if (!a || !a.frames) return;
+    let x0 = L;
+    for (const f of frames) {
+      const n = a.byFrame[f] || 0; if (!n) continue;
+      const w = x(n / a.frames) - L;
+      const r = el("rect", { class: "m", x: x0, y, width: Math.max(0, w - 2), height: bh, rx: 2, fill: colorOf.frame(f) }, s);
+      r.onmousemove = ev => showTip(ev, `<b>${label(g)}</b> · ${label(f)}<br><b>${pct(n / a.frames)}</b> (${fmt(n)} of ${fmt(a.frames)} frames)`);
+      r.onmouseleave = hideTip; x0 += w;
+    }
+    txt(s, x(1) + 6, y + bh / 2 + 4, "n=" + fmt(a.frames), { class: "val" });
+  });
+  host.append(s);
+  legend("lg-mix", frames.map(f => [label(f), colorOf.frame(f)]));
+}
+
+// ---------- chart 3: by decade, stacked by genre ----------
+function drawTime(cells) {
+  document.getElementById("h-time").textContent = `${metricWord()} by decade`;
+  const host = document.getElementById("c-time"); host.textContent = "";
+  const inRange = c => c[3] !== "undated" && +c[3].slice(0, 4) >= 1500 && +c[3].slice(0, 4) <= 1920;
+  const dated = cells.filter(inRange);
+  const und = agg(cells.filter(c => !inRange(c)), () => "u").get("u");
+  document.getElementById("undated").textContent = und
+    ? `Not shown, undated or outside 1500–1920: ${fmt(und.frames)} frames, ${fmt(und.rows)} rows` + (und.pending ? `, ${fmt(und.pending)} pending` : "") : "";
+  const decs = [...new Set(dated.map(c => +c[3].slice(0, 4)))].sort((a, b) => a - b);
+  if (!decs.length) return;
+  const all = []; for (let d = decs[0]; d <= decs[decs.length - 1]; d += 10) all.push(d);
+  const by = agg(dated, c => c[3].slice(0, 4) + "\u0000" + c[1]);
+  const tot = agg(dated, c => c[3].slice(0, 4));
+  const genres = GENRES.filter(g => state.genre.has(g));
+  const W = 1120, L = 48, R = 8, T = 8, B = 30, H = 300;
+  const s = svg(W, H); hatchDefs(s);
+  const val = a => state.metric === "rows" ? a.rows : a.frames;
+  let max = 0;
+  for (const d of all) { const a = tot.get(String(d)); if (!a) continue;
+    max = Math.max(max, state.metric === "yield" ? yieldOf(a) : val(a) + (state.metric === "rows" ? a.pending : 0)); }
+  max = state.metric === "yield" ? 1 : niceMax(max);
+  const y = v => H - B - (H - B - T) * v / max;
+  const bw = (W - L - R) / all.length;
+  for (let i = 0; i <= 4; i++) { const v = max * i / 4;
+    el("line", { x1: L, x2: W - R, y1: y(v), y2: y(v), stroke: "var(--grid)" }, s);
+    txt(s, L - 6, y(v) + 4, state.metric === "yield" ? pct(v) : fmt(v), { "text-anchor": "end" }); }
+  all.forEach((d, i) => {
+    const x0 = L + i * bw + 1.5, w = Math.max(1, bw - 3), a = tot.get(String(d));
+    if (d % 50 === 0) txt(s, x0 + w / 2, H - 10, d, { "text-anchor": "middle" });
+    if (!a) return;
+    const head = `<b>${d}s</b><br>${fmt(a.frames)} frames · ${fmt(a.rows)} rows · yield ${pct(yieldOf(a))}` + (a.pending ? `<br>${fmt(a.pending)} pending` : "");
+    if (state.metric === "yield") {
+      if (a.rows - a.err < 20) return;  // tiny decades make noisy yields
+      const r = el("rect", { class: "m", x: x0, y: y(yieldOf(a)), width: w, height: H - B - y(yieldOf(a)), rx: 2, fill: "var(--s1)" }, s);
+      r.onmousemove = ev => showTip(ev, head); r.onmouseleave = hideTip; return;
+    }
+    let yy = H - B;
+    for (const g of genres) {
+      const b = by.get(d + "\u0000" + g); if (!b || !val(b)) continue;
+      const h = (H - B - T) * val(b) / max;
+      const r = el("rect", { class: "m", x: x0, y: yy - h, width: w, height: Math.max(0, h - 1.5), fill: colorOf.genre(g) }, s);
+      r.onmousemove = ev => showTip(ev, head + `<br>${label(g)}: <b>${fmt(val(b))}</b>`);
+      r.onmouseleave = hideTip; yy -= h;
+    }
+    if (state.metric === "rows" && a.pending) {
+      const h = (H - B - T) * a.pending / max;
+      const r = el("rect", { class: "m", x: x0, y: yy - h, width: w, height: Math.max(0, h - 1.5), fill: "url(#hatch)", stroke: "var(--pending)" }, s);
+      r.onmousemove = ev => showTip(ev, head); r.onmouseleave = hideTip;
+    }
+  });
+  host.append(s);
+  const items = state.metric === "yield" ? [["Yield (decades with ≥20 rows)", "var(--s1)"]] : genres.map(g => [label(g), colorOf.genre(g)]);
+  if (state.metric === "rows" && state.pending) items.push(["Pending", null, true]);
+  legend("lg-time", items);
+}
+
+// ---------- works table ----------
+const COLS = [["title", "Title"], ["year", "Year", 1], ["genre", "Genre"], ["source", "Source"], ["rows", "Rows", 1], ["frames", "Frames", 1], ["yield", "Yield", 1], ["pending", "Pending", 1]];
+let sortKey = "frames", sortDir = -1;
+function drawWorks() {
+  const q = document.getElementById("q").value.trim().toLowerCase();
+  const rows = D.works.filter(w => state.source.has(w.source) && state.genre.has(w.genre) &&
+      (!q || w.title.toLowerCase().includes(q) || w.work.toLowerCase().includes(q)))
+    .map(w => ({ ...w, yield: w.rows ? w.frames / w.rows : -1 }));
+  rows.sort((a, b) => { const x = a[sortKey], y = b[sortKey];
+    return (typeof x === "string" ? x.localeCompare(y) : (x === "" ? -1e9 : x) - (y === "" ? -1e9 : y)) * sortDir; });
+  const thead = document.querySelector("#works thead"), tbody = document.querySelector("#works tbody");
+  thead.textContent = ""; tbody.textContent = "";
+  const tr = document.createElement("tr");
+  for (const [k, name, num] of COLS) {
+    const th = document.createElement("th"); th.tabIndex = 0; if (num) th.className = "n";
+    th.textContent = name + (k === sortKey ? (sortDir < 0 ? " ↓" : " ↑") : "");
+    const act = () => { if (sortKey === k) sortDir = -sortDir; else { sortKey = k; sortDir = num ? -1 : 1; } drawWorks(); };
+    th.onclick = act; th.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); act(); } };
+    tr.append(th);
+  }
+  thead.append(tr);
+  const shown = rows.slice(0, 200);
+  for (const w of shown) {
+    const r = document.createElement("tr");
+    const vals = [w.title, w.year, label(w.genre), w.source, fmt(w.rows), fmt(w.frames), w.rows ? pct(w.yield) : "–", w.pending ? fmt(w.pending) : ""];
+    vals.forEach((v, i) => { const td = document.createElement("td"); td.textContent = v;
+      if (i === 0) { td.className = "t"; td.title = w.work; } else if (COLS[i][2]) td.className = "n"; r.append(td); });
+    tbody.append(r);
+  }
+  document.getElementById("works-count").textContent =
+    `${fmt(rows.length)} work × source rows match` + (rows.length > shown.length ? `; showing the first ${shown.length}` : "") +
+    ". Frames here count all frame types.";
+}
+document.getElementById("q").oninput = drawWorks;
+
+// ---------- totals ----------
+function drawFigs(cells) {
+  const a = agg(cells, () => "t").get("t") || { rows: 0, err: 0, frames: 0, pending: 0 };
+  document.getElementById("f-rows").textContent = fmt(a.rows);
+  document.getElementById("f-frames").textContent = fmt(a.frames);
+  document.getElementById("f-yield").textContent = pct(yieldOf(a));
+  document.getElementById("f-pending").textContent = fmt(a.pending);
+}
+
+function draw() { const c = filtered(); drawFigs(c); drawGenre(c); drawMix(c); drawTime(c); drawWorks(); }
+draw();
+})();
+</script>
+</body>
+</html>
