@@ -76,7 +76,13 @@ times" (operator, 9 Nov 2026); kg_mockup stays on the VOC registry and VOC times
      also in Leiden Digital Collections ("Colonial Sources (KIT)"), same access problem.
      Also found: Wannée, *Kookboek van de Amsterdamsche Huishoudschool* 1911 and 1920
      PDFs in `~/develop/trifecta/amsterdams_kookboek/` (with text layer) that never went
-     into `ldk2025_cookbooks` (1910/1912/1925/1940 did). The Leiden scraper itself The site resets connections to its `/search` path for automated
+     into `ldk2025_cookbooks` (1910/1912/1925/1940 did); **added 10 Nov** as
+     `WANNEE_2026_11` (raw PDF text, `acquisitions/wannee_2026_11/`, README there; not
+     annotated). Six editions 1910–1940 of one book: *ketoembar*, *lombok*, *santen*
+     appear only in 1940 (5, 18, 23); 1910–1925 all Dutch. Also the core material for the
+     cookbook lineage comparison, which needs recipe-level structure, not frames
+     (recipe sets per edition, ingredients, quantities, times; see COOKING_TIMES T1).
+     The "LDK kookboek" titles are these Wannée editions. The Leiden scraper itself The site resets connections to its `/search` path for automated
      clients (Playwright and plain curl, honest UA); homepage fine, `/oai2` 404. Not
      worked around. Routes: ask Leiden UB for a bulk export / OAI-PMH endpoint, or
      download by hand.

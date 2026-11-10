@@ -175,6 +175,13 @@ GOOGLE_BOOKS_2026: dict[str, tuple[str, int | None]] = {
 # prefaces (Betje: 8th printing, prefaces Aug 1887 and May 1890, so >= 1890,
 # recorded as 1890) and Rik for the rest. filename -> (title, year).
 GOOGLE_BOOKS_2026_11_DIR = "acquisitions/google_books_2026_11"
+# Wannée, Kookboek van de Amsterdamsche Huishoudschool: editions missing from LDK2025/corpus.
+# Raw PDF text (see the folder README); used for name counts, not annotated.
+WANNEE_2026_11_DIR = "acquisitions/wannee_2026_11"
+WANNEE_2026_11: dict[str, tuple[str, int]] = {
+    "cookbook_1911.txt": ("Kookboek Amsterdamsche Huishoudschool 1911 (PDF text)", 1911),
+    "cookbook_1920.txt": ("Kookboek Amsterdamsche Huishoudschool 1920 (PDF text)", 1920),
+}
 GOOGLE_BOOKS_2026_11: dict[str, tuple[str, int | None]] = {
     "Oost_Indisch_kookboek.pdf": ("Oost-Indisch kookboek (tweede druk)", 1870),
     "Oost_Indisch_kookboek_bevattende_meer_da.pdf": ("Oost-Indisch kookboek, bevattende meer dan ... recepten", 1893),

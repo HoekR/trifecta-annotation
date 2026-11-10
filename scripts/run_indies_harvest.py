@@ -32,6 +32,8 @@ from scripts.build_colonial_kwic import (
     KB_COOKBOOKS_2026,
     KB_COOKBOOKS_REOCR,
     PLACE_OF_PRINT,
+    WANNEE_2026_11,
+    WANNEE_2026_11_DIR,
     build_term_pattern,
     scan_text,
     structural_units_for_document,
@@ -66,6 +68,10 @@ def sources() -> list[tuple[str, str, int | None, str, str]]:
         p = (ocr / GOOGLE_BOOKS_2026_11_DIR / filename).with_suffix(".txt")
         if p.exists():
             out.append((filename, title, year, "google_books_2026_11", p.read_text(encoding="utf-8", errors="replace")))
+    for filename, (title, year) in WANNEE_2026_11.items():
+        p = ocr / WANNEE_2026_11_DIR / filename
+        if p.exists():
+            out.append((f"wannee_{filename}", title, year, "wannee_2026_11", p.read_text(encoding="utf-8", errors="replace")))
     return out
 
 
