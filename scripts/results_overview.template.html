@@ -111,8 +111,10 @@ input[type="search"] { font: inherit; font-size: 13px; padding: 4px 8px; border:
       <li><b>Entry scope</b>: the entries of recipe and household dictionaries (e.g. Chomel), read entry by entry</li>
       <li><b>Weak-regime verb</b>: works outside cookbooks (literature, travel, uncatalogued), sentences with a cooking or eating verb, at most 50 per work</li>
     </ul>
-    <p><b>Genre</b> is assigned per work. <b>Unknown</b> means no genre is known yet, not that the work is odd:
-      most are literature, children's books and songbooks without a usable catalogue genre.</p>
+    <p><b>Genre</b> is assigned per work: our own per-work labels first, then the library catalogues
+      (DBNL's genre for the work, the KB's GGC classification). <b>Periodicals</b> are yearbooks and journal
+      volumes, which mix genres. <b>Other non-fiction</b> is history, religion, language and the like.
+      <b>Unknown</b> means no catalogue gave a usable genre.</p>
     <p><b>Read with care:</b></p>
     <ul>
       <li>Sources are samples with per-work caps, not a balanced corpus: compare <b>yield</b> and <b>shares</b>, not raw counts between sources.</li>
@@ -180,9 +182,10 @@ const NS = "http://www.w3.org/2000/svg";
 const SOURCES = D.sources, GENRES = D.genres, FRAMES = D.frames;
 const NONFRAME = new Set(["NONE", "DROPPED", "ERROR", "PENDING"]);
 const slot = i => `var(--s${i + 1})`;
-const colorOf = { source: s => slot(SOURCES.indexOf(s)), genre: g => slot(GENRES.indexOf(g)), frame: f => slot(FRAMES.indexOf(f)) };
+const colorOf = { source: s => slot(SOURCES.indexOf(s)), genre: g => g === "UNKNOWN" ? "var(--muted)" : slot(GENRES.indexOf(g)), frame: f => slot(FRAMES.indexOf(f)) };
 const NAMES = { RECIPE_PRACTICE: "Recipes & household", MEDICAL: "Medical", LITERARY: "Literature", TRAVEL: "Travel",
   ADMIN_TRADE: "Administration & trade", SCIENTIFIC: "Science", UNKNOWN: "Unknown",
+  PERIODICAL: "Periodicals", OTHER_NONFICTION: "Other non-fiction",
   COOKING_CREATION: "Cooking", INGESTION: "Eating & drinking", CURE: "Cure", PRESERVING: "Preserving" };
 const label = s => NAMES[s] || s.replace(/_/g, " ").toLowerCase().replace(/^./, c => c.toUpperCase());
 const fmt = n => n.toLocaleString("en-US");
@@ -265,7 +268,7 @@ const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;",
 function svg(w, h) { const s = document.createElementNS(NS, "svg"); s.setAttribute("viewBox", `0 0 ${w} ${h}`); s.setAttribute("width", "100%"); return s; }
 function el(tag, attrs, parent) { const e = document.createElementNS(NS, tag); for (const k in attrs) e.setAttribute(k, attrs[k]); parent && parent.append(e); return e; }
 function txt(parent, x, y, s, attrs = {}) { const t = el("text", { x, y, ...attrs }, parent); t.textContent = s; return t; }
-function niceMax(v) { if (v <= 0) return 1; const p = 10 ** Math.floor(Math.log10(v)); for (const m of [1, 2, 2.5, 5, 10]) if (m * p >= v) return m * p; return 10 * p; }
+function niceMax(v) { if (v <= 0) return 1; const p = 10 ** Math.floor(Math.log10(v)); for (const m of [1, 1.25, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) if (m * p >= v) return m * p; return 10 * p; }
 function hatchDefs(s) {
   const defs = el("defs", {}, s);
   const p = el("pattern", { id: "hatch", width: 5, height: 5, patternUnits: "userSpaceOnUse", patternTransform: "rotate(45)" }, defs);

@@ -36,7 +36,7 @@ from data_io import resolve
 
 from trifecta_annotation.corpus_genre_join import load_genre_records
 from trifecta_annotation.dbnl_genre import work_stem
-from trifecta_annotation.text_regime import infer_text_regime
+from trifecta_annotation.catalogue_genre import reporting_genre
 from trifecta_annotation.vocabulary import alt_label_index, load_food_terms
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -194,8 +194,8 @@ def main() -> None:
                       else "frame" if frame not in (None, "NONE") else "no_frame")
             ck = (pv.get("corpus"), stem)
             if ck not in regime_cache:
-                regime_cache[ck] = infer_text_regime(corpus=pv.get("corpus"), title=pv.get("title"),
-                                                     source_path=sp).value
+                regime_cache[ck] = reporting_genre(corpus=pv.get("corpus"), title=pv.get("title"),
+                                                   source_path=sp)
             year = _year(pv.get("date")) or work_year.get(stem)
             pref = canonical.get(word.lower(), word.lower())
             v = vocab.get(pref)
@@ -209,7 +209,8 @@ def main() -> None:
                 "title": pv.get("title") or sp,
                 "year": year,
                 "decade": (year // 10 * 10) if year else None,
-                "genre": regime_cache[ck],
+                "genre": regime_cache[ck][0],
+                "genre_source": regime_cache[ck][1],
                 "target_word": word,
                 "keyword": kw or word,
                 "pref_label": pref,
@@ -300,6 +301,7 @@ Genres: {genres}. {dup} duplicate mentions across sources were merged.
 ## Columns of `mentions`
 
 - `mention_id`, `source`, `work_id`, `title`, `year` (edition year), `decade`, `genre`
+  (per work: our own label, else DBNL genre / GGC catalogue; `genre_source` says which)
 - `target_word` (as harvested), `keyword` (the whole token in the text, e.g. *koffiekan*),
   `pref_label` (normalised term from the food vocabulary: use this to pool spelling variants),
   `food_type`, `eng_translation` (from the vocabulary; often empty)

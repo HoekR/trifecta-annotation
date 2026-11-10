@@ -11,7 +11,9 @@ Read-only. Writes two CSVs to experiments/results_overview/:
 Real frame = not error, not dropped, step_b.selected_frame not in (None, NONE),
 the same rule as the per-run reports. Year: provenance.date where present,
 else the work's year from the genre records (joined on work stem).
-Genre: current work-level infer_text_regime, not the stored row label.
+Genre: work-level `reporting_genre` (text regime, filled in from catalogue data;
+trifecta_annotation/catalogue_genre.py), not the stored row label. On the page,
+HISTORY / RELIGION / LANGUAGE fold into OTHER_NONFICTION (8 colours + grey Unknown).
 
     uv run python scripts/build_results_overview.py
 """
@@ -29,10 +31,12 @@ from data_io import resolve
 
 from trifecta_annotation.corpus_genre_join import load_genre_records
 from trifecta_annotation.dbnl_genre import work_stem
-from trifecta_annotation.text_regime import infer_text_regime
+from trifecta_annotation.catalogue_genre import reporting_genre
 
 TEMPLATE = Path(__file__).with_name("results_overview.template.html")
-GENRE_ORDER = ["RECIPE_PRACTICE", "MEDICAL", "LITERARY", "TRAVEL", "ADMIN_TRADE", "SCIENTIFIC", "UNKNOWN"]
+GENRE_ORDER = ["RECIPE_PRACTICE", "MEDICAL", "LITERARY", "TRAVEL", "ADMIN_TRADE", "SCIENTIFIC", "PERIODICAL",
+               "OTHER_NONFICTION", "UNKNOWN"]
+PAGE_FOLD = {"HISTORY": "OTHER_NONFICTION", "RELIGION": "OTHER_NONFICTION", "LANGUAGE": "OTHER_NONFICTION"}
 OUT = Path("/Volumes/Extreme SSD/scratch/trifecta/experiments/results_overview")
 SOURCES = {  # logical name -> label shown on the page
     "trifecta_annotations": "Curated corpus",
@@ -96,7 +100,8 @@ def main() -> None:
     def genre_of(corpus, title, src_path):
         key = (corpus, work_stem(src_path or ""))
         if key not in regime_cache:
-            regime_cache[key] = infer_text_regime(corpus=corpus, title=title, source_path=src_path).value
+            g = reporting_genre(corpus=corpus, title=title, source_path=src_path)[0]
+            regime_cache[key] = PAGE_FOLD.get(g, g)
         return regime_cache[key]
 
     def year_for(pv_date, src_path):

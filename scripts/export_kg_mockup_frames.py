@@ -41,7 +41,7 @@ from openpyxl import load_workbook
 
 from trifecta_annotation.corpus_genre_join import load_genre_records
 from trifecta_annotation.dbnl_genre import work_stem
-from trifecta_annotation.text_regime import infer_text_regime
+from trifecta_annotation.catalogue_genre import reporting_genre
 from trifecta_annotation.vocabulary import alt_label_index, load_food_terms
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -121,7 +121,7 @@ def main() -> None:
             if year_c is not None and not r.get("error"):
                 w = coverage.setdefault(work_stem(sp_c), {
                     "work_id": sp_c, "year": year_c, "source_work": pv.get("title") or sp_c,
-                    "genre": infer_text_regime(corpus=pv.get("corpus"), title=pv.get("title"), source_path=sp_c).value,
+                    "genre": reporting_genre(corpus=pv.get("corpus"), title=pv.get("title"), source_path=sp_c)[0],
                     "rows": 0, "frames": 0})
                 w["rows"] += 1
                 w["frames"] += not r.get("dropped") and frame not in (None, "NONE")
@@ -153,7 +153,7 @@ def main() -> None:
                     "source_work": pv.get("title") or sp,
                     "work_id": sp,
                     "source_label": label,
-                    "genre": infer_text_regime(corpus=pv.get("corpus"), title=pv.get("title"), source_path=sp).value,
+                    "genre": reporting_genre(corpus=pv.get("corpus"), title=pv.get("title"), source_path=sp)[0],
                     "target_word": pv.get("target_word"),
                     "record_id": pv["record_id"],
                 })
