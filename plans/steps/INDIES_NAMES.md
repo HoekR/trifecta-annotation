@@ -1,6 +1,6 @@
 # Indies food names: which name, where, when (1600–1990)
 
-**Status:** in progress (9 Nov 2026). Exploratory; findings are hypotheses on a
+**Status:** in progress (9 Nov 2026; N1 done 10 Nov). Exploratory; findings are hypotheses on a
 small number of books.
 
 **Question:** many ingredients have a Dutch and a Malay name (*koriander* /
@@ -35,7 +35,23 @@ times" (operator, 9 Nov 2026); kg_mockup stays on the VOC registry and VOC times
    are homonyms (Xanten, *klapperlieden*, Palatinate); the one real local name is
    *klappersolie / calappusolij* in VOC resolutions (1759, 1775).
 
+6. **N1, DBNL bridge 1750–1889** (`scripts/indies_names_dbnl.py` -> `indies_names_dbnl`,
+   `indies_names_dbnl_samples`; DBNL rows in `names_over_time.csv` and notebook Part D).
+   2,176 public-domain DBNL works with TEI (the set ends 1889). **Stricter Malay patterns**
+   than for cookbooks, after reading every sample of a first run: *santen* = "saints"
+   (63/63), *santan* = Santander, *tauge* = German *taugen*, *bawang* = river Toelang
+   Bawang; so lowercase *lombok*, *klapper* only in compounds, *santan*/*tauge* whole
+   words, *santen* not counted. 80 Malay hits remain, nearly all genuine.
+
 ## Findings so far
+
+- **Before 1866 the Malay kitchen names are absent from Dutch print** (DBNL): no
+  *ketoembar*, *santan*, *lombok*, *djahe*. The exception is coconut: *klapper*-compounds
+  (*klapperboom*, *klapperolie*) from 1805, Malay share 3–7% to 1860, ~20% 1860–1889;
+  a plantation/trade word (VOC *klappersolie*). *Lombok* / *tjabé* appear 1866–1877 in
+  Indies-themed periodicals (*De Gids*, *Los en vast*) and colonial novels, **with a
+  gloss** ("lombok, Spaansche peper"). So the Samarang 1870 convention is Indies print;
+  the metropolitan press of the same years translates.
 
 - In the Samarang editions the Malay name dominates for coriander, chili, coconut
   (milk), **identically across 1870, 1893, 1913**: a convention, not drift.
@@ -56,7 +72,7 @@ cuisine moving to the Netherlands, and partly receded after the war.
 
 | step | what |
 |---|---|
-| N1 | **Bridge 1800–1870**: targeted Indies-term harvest over DBNL (travel accounts, periodicals, Indies literature; `~/develop/indische_belletrie`) to see whether the cookbook convention predates 1870 |
+| ~~N1~~ | **done 10 Nov** (see Done 6). Was: **Bridge 1800–1870**: targeted Indies-term harvest over DBNL (travel accounts, periodicals, Indies literature; `~/develop/indische_belletrie`) to see whether the cookbook convention predates 1870 |
 | N2 | Test 1: Malay/Dutch ratio split by kg_mockup `COMMODITY_REGISTRY` membership (trade good or not) |
 | N3 | More Indies cookbooks (Delpher, e.g. Catenius-van der Meijden, *Groot nieuw volledig Oost-Indisch kookboek*, 1902+) |
 | N4 | Notebook section on dishes (recipe headings: *sambal goreng*, *nasi goreng*) and how a dish changes between editions |

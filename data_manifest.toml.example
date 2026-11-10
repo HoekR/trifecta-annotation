@@ -450,3 +450,17 @@ path = "trifecta/indies_annotations.jsonl"
 phase = "semi"
 description = "A->B->C annotations for indies_kwic_inputs"
 parent = "indies_kwic_inputs"
+
+[datasets.indies_names_dbnl]
+tier = "scratch"
+path = "trifecta/indies_names_dbnl.jsonl"
+phase = "semi"
+description = "Dutch vs Malay food-name counts per DBNL work x concept, 1750-1920 (scripts/indies_names_dbnl.py)"
+parent = "dbnl_xml"
+
+[datasets.indies_names_dbnl_samples]
+tier = "scratch"
+path = "trifecta/indies_names_dbnl_samples.jsonl"
+phase = "semi"
+description = "Context samples of Malay-name hits in DBNL (max 3 per term per work)"
+parent = "indies_names_dbnl"

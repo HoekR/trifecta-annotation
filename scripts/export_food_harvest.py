@@ -10,7 +10,8 @@ annotated), labelled with its outcome, as:
   plaintext/<genre>/<year>_<work>.txt one plain-text document per work (its unique contexts),
   plaintext.zip                       zipped; loads in #LancsBox X (genre folders = sub-corpora) or Voyant
   names_over_time.csv              Dutch vs Malay names per concept: per cookbook (full text,
-                                   1870-1940) and per decade of newspaper recipes (1940s-1990s)
+                                   1790-1940), per decade of DBNL (1750-1889) and of newspaper
+                                   recipes (1940s-1990s)
   README.md, food_harvest_starter.ipynb
 
 Rows are deduplicated on (work, context, target word) across sources. Rerunnable;
@@ -148,6 +149,19 @@ def names_over_time(out: Path) -> pd.DataFrame:
                 rows.append({"source": "newspaper recipes", "unit": f"{dec}s", "year": dec, "decade": dec,
                              "denominator": v["n"], "denominator_unit": "recipes", "concept": c,
                              "dutch": v[c][0], "malay": v[c][1]})
+    dbnl = Path(resolve("indies_names_dbnl"))  # N1 bridge, scripts/indies_names_dbnl.py (stricter Malay patterns)
+    if dbnl.exists():
+        per = defaultdict(lambda: defaultdict(lambda: [0, 0, set()]))
+        for line in dbnl.open(encoding="utf-8"):
+            if line.strip() and not line.startswith("---"):
+                r = json.loads(line)
+                v = per[r["decade"]][r["concept"]]
+                v[0] += r["dutch"]; v[1] += r["malay"]; v[2].add(r["work_id"])
+        for dec, concepts in sorted(per.items()):
+            for c, (d, m, works) in concepts.items():
+                rows.append({"source": "dbnl", "unit": f"DBNL {dec}s", "year": dec, "decade": dec,
+                             "denominator": len(works), "denominator_unit": "works with a mention",
+                             "concept": c, "dutch": d, "malay": m})
     df = pd.DataFrame(rows)
     df.to_csv(out / "names_over_time.csv", index=False, encoding="utf-8-sig")
     return df
