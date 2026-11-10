@@ -64,4 +64,5 @@ dev = [
     "ipykernel>=6.0",
     "ipywidgets>=8.0",
     "itables>=2.0",
+    "matplotlib>=3.11.2",
 ]
