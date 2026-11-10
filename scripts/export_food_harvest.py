@@ -315,7 +315,7 @@ Genres: {genres}. {dup} duplicate mentions across sources were merged.
 | `mentions.csv` (UTF-8 with BOM) / `mentions.parquet` | one row per mention, see columns below |
 | `works.csv` | one row per work: title, edition year, genre, sources, mentions, frames |
 | `plaintext/`, `plaintext.zip` | one plain-text document per work (its unique contexts), one folder per genre. For collocation statistics use **#LancsBox X** (local; load each genre folder as a sub-corpus; log-Dice / MI / GraphColl). For a quick visual overview **Voyant Tools** (note: voyant-tools.org means uploading the texts; a local Voyant server avoids that) |
-| `food_harvest_starter.ipynb` | loading, concordance filtering, first collocation measures (pandas only) |
+| `food_harvest_starter.ipynb` | loading, concordance filtering, first collocation measures, Indies names over time. Needs `pandas`, `pyarrow`, `matplotlib`, `jinja2` (`pip install pandas pyarrow matplotlib jinja2`; a standard Jupyter/Anaconda install has them) |
 
 ## Columns of `mentions`
 
