@@ -78,6 +78,9 @@ def _extra_texts(folder: Path) -> list[tuple[str, str, str, int, str]]:
     for r in csv.DictReader((folder / "registry.csv").open(encoding="utf-8-sig")):
         if not (r.get("file") or "").strip():
             continue
+        if not (r.get("year") or "").strip():
+            print(f"  no year, skipped: {r['file']}", flush=True)
+            continue
         p = folder / r["file"].strip()
         if not p.exists():
             print(f"  missing: {p.name}", flush=True)
@@ -99,7 +102,8 @@ def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--from", dest="y0", type=int, default=1750)
     ap.add_argument("--to", dest="y1", type=int, default=1920)
-    ap.add_argument("--extra-dir", default=None, help="folder with hand-downloaded texts + registry.csv")
+    ap.add_argument("--extra-dir", action="append", default=[],
+                    help="folder with hand-downloaded texts + registry.csv (repeatable)")
     a = ap.parse_args()
 
     zip_path = resolve("dbnl_xml")
@@ -114,7 +118,7 @@ def main() -> None:
             works.append((stem, files[stem], r.get("titel") or stem, r["year"]))
     print(f"{len(works)} DBNL works with TEI, {a.y0}-{a.y1}", flush=True)
 
-    extra = _extra_texts(Path(a.extra_dir)) if a.extra_dir else []
+    extra = [t for d in a.extra_dir for t in _extra_texts(Path(d))]
     print(f"{len(extra)} hand-downloaded texts", flush=True)
 
     rows, samples, t0 = [], [], time.monotonic()

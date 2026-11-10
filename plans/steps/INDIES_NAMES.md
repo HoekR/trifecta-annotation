@@ -66,7 +66,17 @@ times" (operator, 9 Nov 2026); kg_mockup stays on the VOC registry and VOC times
      Couperus *De stille kracht* (1900), A. de Wit (1902–05), Kartini (1911), Székely-
      Lulofs (1931–32), Du Perron (1935), Vuyk (1939); availability to check.
    - **Leiden *Indische bellettrie*** (`~/develop/indische_belletrie/leidenuniv_scrape.py`):
-     does **not** work. The site resets connections to its `/search` path for automated
+     does **not** work (see below). Rik had already downloaded 5 KITLV microfilms by hand
+     (`~/Downloads/kb_indische_letteren/`); text + `registry.csv` in
+     `acquisitions/leiden_kitlv_2026_11/` (KITLV condition: no reproduction, so counts and
+     samples only). Ritter, *Indische herinneringen* (1843): no Malay names. Daum, *Ups en
+     downs* (1890, text of a later druk): Malay only in *klapper*-compounds, *Spaansche
+     peper* not *lombok*. Three films (Isoline, Ten Brink 6e druk, Westerlinck) lack a
+     year and are skipped until Rik fills it in. KIT (Amsterdam) colonial material is
+     also in Leiden Digital Collections ("Colonial Sources (KIT)"), same access problem.
+     Also found: Wannée, *Kookboek van de Amsterdamsche Huishoudschool* 1911 and 1920
+     PDFs in `~/develop/trifecta/amsterdams_kookboek/` (with text layer) that never went
+     into `ldk2025_cookbooks` (1910/1912/1925/1940 did). The Leiden scraper itself The site resets connections to its `/search` path for automated
      clients (Playwright and plain curl, honest UA); homepage fine, `/oai2` 404. Not
      worked around. Routes: ask Leiden UB for a bulk export / OAI-PMH endpoint, or
      download by hand.

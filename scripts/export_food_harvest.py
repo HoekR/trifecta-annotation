@@ -155,6 +155,11 @@ def names_over_time(out: Path) -> pd.DataFrame:
         for line in dbnl.open(encoding="utf-8"):
             if line.strip() and not line.startswith("---"):
                 r = json.loads(line)
+                if r.get("manual"):  # hand-downloaded prose (Leiden/KITLV, DBNL after 1889): per work, not pooled
+                    rows.append({"source": "prose (hand-downloaded)", "unit": r["unit"], "year": r["year"],
+                                 "decade": r["decade"], "denominator": r["denominator"], "denominator_unit": "words",
+                                 "concept": r["concept"], "dutch": r["dutch"], "malay": r["malay"]})
+                    continue
                 v = per[r["decade"]][r["concept"]]
                 v[0] += r["dutch"]; v[1] += r["malay"]; v[2].add(r["work_id"])
         for dec, concepts in sorted(per.items()):
