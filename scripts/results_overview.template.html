@@ -66,6 +66,9 @@ svg { display: block; width: 100%; height: auto; overflow: visible; }
 svg text { fill: var(--fg2); font: 11.5px var(--sans); }
 svg .val { fill: var(--fg); font-variant-numeric: tabular-nums; }
 .grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr)); gap: 16px; }
+.guide summary { cursor: pointer; }
+.guide p, .guide ul { margin: 8px 0 0; color: var(--fg2); max-width: 75ch; }
+.guide ul { padding-left: 20px; } .guide li { margin: 2px 0; }
 #tip { position: fixed; pointer-events: none; background: var(--panel); color: var(--fg); border: 1px solid var(--line);
   border-radius: 6px; padding: 6px 9px; font-size: 12px; box-shadow: 0 4px 14px rgb(0 0 0 / .15); max-width: 280px; z-index: 5; }
 #tip b { font-variant-numeric: tabular-nums; }
@@ -83,14 +86,47 @@ input[type="search"] { font: inherit; font-size: 13px; padding: 4px 8px; border:
 <div class="wrap">
   <header>
     <h1>Trifecta frame results</h1>
-    <p class="sub">Step A→B→C annotations across every source. Built <span id="built"></span>.</p>
+    <p class="sub">Where food appears in historical Dutch texts (1500–1920), and in what role. Built <span id="built"></span>.</p>
   </header>
+
+  <details class="panel guide" open>
+    <summary><b>How to read this</b></summary>
+    <p><b>Rows</b> are sentences that contain a food word, harvested from digitised books (mostly DBNL).
+      Each row passed through an automatic three-step annotation (a local language model):
+      <b>A</b> is this sentence about food at all? <b>B</b> which situation (frame) does it describe? <b>C</b> who and what fill the roles?
+      A <b>frame</b> is a row that passed A and B with one of four situations:</p>
+    <ul>
+      <li><b>Cooking</b>: preparing food (boiling, baking, mixing)</li>
+      <li><b>Eating &amp; drinking</b>: someone consumes food</li>
+      <li><b>Cure</b>: food used as a remedy or medicine</li>
+      <li><b>Preserving</b>: keeping food (pickling, drying, sugaring, salting)</li>
+    </ul>
+    <p><b>Yield</b> is the share of rows that turned out to be a frame; the rest mention food in passing
+      (a name, a metaphor, a price) or were filtered out early.</p>
+    <p><b>Sources</b> are successive harvests, each sampled differently:</p>
+    <ul>
+      <li><b>Curated corpus</b>: 61 hand-selected cookbooks, household and medical books, harvested in depth</li>
+      <li><b>Initial exploration</b>: an early hand-picked batch (extra DBNL works, colonial books from Leiden, KB cookbooks, Google Books)</li>
+      <li><b>DBNL sweep</b>: all of DBNL up to 1920, at most 10 sentences per work</li>
+      <li><b>Entry scope</b>: the entries of recipe and household dictionaries (e.g. Chomel), read entry by entry</li>
+      <li><b>Weak-regime verb</b>: works outside cookbooks (literature, travel, uncatalogued), sentences with a cooking or eating verb, at most 50 per work</li>
+    </ul>
+    <p><b>Genre</b> is assigned per work. <b>Unknown</b> means no genre is known yet, not that the work is odd:
+      most are literature, children's books and songbooks without a usable catalogue genre.</p>
+    <p><b>Read with care:</b></p>
+    <ul>
+      <li>Sources are samples with per-work caps, not a balanced corpus: compare <b>yield</b> and <b>shares</b>, not raw counts between sources.</li>
+      <li>A single big work can dominate: the <i>Huishoudelyk woordboek</i> (Chomel, 1743) alone gives over 3,000 frames, split over two sources. Switch <b>Count</b> to <b>Works</b> to see past it.</li>
+      <li>Years are edition years, not dates of composition; undated rows are left out of the decade chart.</li>
+      <li>All labels are automatic and not hand-checked; treat small numbers as indications.</li>
+    </ul>
+  </details>
 
   <section class="figs" aria-label="Totals for the current filters">
     <div class="fig"><b id="f-rows">—</b><span>annotated rows</span></div>
     <div class="fig"><b id="f-frames">—</b><span>real frames</span></div>
     <div class="fig"><b id="f-yield">—</b><span>yield (frames / rows without errors)</span></div>
-    <div class="fig"><b id="f-pending">—</b><span>harvested, not yet annotated</span></div>
+    <div class="fig" id="fig-pending"><b id="f-pending">—</b><span>harvested, not yet annotated</span></div>
   </section>
 
   <section class="panel filters" aria-label="Filters">
@@ -105,8 +141,7 @@ input[type="search"] { font: inherit; font-size: 13px; padding: 4px 8px; border:
         <button class="seg" id="m-works" aria-pressed="false">Works</button>
       </span>
     </div>
-    <p class="note">Genre is the work's current text regime. "Pending" rows (the weak-regime harvest) appear only under Rows, hatched.
-      Works = distinct works with at least one frame of the selected types; use it to see past single big works such as Chomel (1743).</p>
+    <p class="note"><span id="note-pending">"Pending" rows (harvested, not yet annotated) appear only under Rows, hatched. </span>Works = distinct works with at least one frame of the selected types; use it to see past single big works such as Chomel (1743).</p>
   </section>
 
   <div class="grid2">
@@ -146,7 +181,10 @@ const SOURCES = D.sources, GENRES = D.genres, FRAMES = D.frames;
 const NONFRAME = new Set(["NONE", "DROPPED", "ERROR", "PENDING"]);
 const slot = i => `var(--s${i + 1})`;
 const colorOf = { source: s => slot(SOURCES.indexOf(s)), genre: g => slot(GENRES.indexOf(g)), frame: f => slot(FRAMES.indexOf(f)) };
-const label = s => s.replace(/_/g, " ").toLowerCase().replace(/^./, c => c.toUpperCase());
+const NAMES = { RECIPE_PRACTICE: "Recipes & household", MEDICAL: "Medical", LITERARY: "Literature", TRAVEL: "Travel",
+  ADMIN_TRADE: "Administration & trade", SCIENTIFIC: "Science", UNKNOWN: "Unknown",
+  COOKING_CREATION: "Cooking", INGESTION: "Eating & drinking", CURE: "Cure", PRESERVING: "Preserving" };
+const label = s => NAMES[s] || s.replace(/_/g, " ").toLowerCase().replace(/^./, c => c.toUpperCase());
 const fmt = n => n.toLocaleString("en-US");
 const pct = x => isFinite(x) ? (x * 100).toFixed(0) + "%" : "–";
 
@@ -172,7 +210,10 @@ pendingChip.className = "chip"; pendingChip.id = "chip-pending";
 pendingChip.innerHTML = '<span class="sw" style="background:repeating-linear-gradient(45deg,var(--pending) 0 2px,transparent 2px 4px);border:1px solid var(--pending)"></span>Pending';
 pendingChip.setAttribute("aria-pressed", "true");
 pendingChip.onclick = () => { state.pending = !state.pending; pendingChip.setAttribute("aria-pressed", state.pending); draw(); };
-chips("fl-source", SOURCES, state.source, "source", pendingChip);
+const ANY_PENDING = D.cells.some(c => c[2] === "PENDING" && c[4] > 0);
+if (!ANY_PENDING) { state.pending = false;
+  document.getElementById("fig-pending").hidden = true; document.getElementById("note-pending").hidden = true; }
+chips("fl-source", SOURCES, state.source, "source", ANY_PENDING ? pendingChip : undefined);
 chips("fl-genre", GENRES, state.genre, "genre");
 chips("fl-frame", FRAMES, state.frame, "frame");
 const METRICS = ["frames", "rows", "yield", "works"];
@@ -442,7 +483,7 @@ function drawTime(cells) {
 }
 
 // ---------- works table ----------
-const COLS = [["title", "Title"], ["year", "Year", 1], ["genre", "Genre"], ["source", "Source"], ["rows", "Rows", 1], ["frames", "Frames", 1], ["yield", "Yield", 1], ["pending", "Pending", 1]];
+const COLS = [["title", "Title"], ["year", "Year", 1], ["genre", "Genre"], ["source", "Source"], ["rows", "Rows", 1], ["frames", "Frames", 1], ["yield", "Yield", 1], ["pending", "Pending", 1]].slice(0, ANY_PENDING ? 8 : 7);
 let sortKey = "frames", sortDir = -1;
 function drawWorks() {
   const q = document.getElementById("q").value.trim().toLowerCase();
@@ -465,7 +506,7 @@ function drawWorks() {
   const shown = rows.slice(0, 200);
   for (const w of shown) {
     const r = document.createElement("tr");
-    const vals = [w.title, w.year, label(w.genre), w.source, fmt(w.rows), fmt(w.frames), w.rows ? pct(w.yield) : "–", w.pending ? fmt(w.pending) : ""];
+    const vals = [w.title, w.year, label(w.genre), w.source, fmt(w.rows), fmt(w.frames), w.rows ? pct(w.yield) : "–", w.pending ? fmt(w.pending) : ""].slice(0, COLS.length);
     vals.forEach((v, i) => { const td = document.createElement("td"); td.textContent = v;
       if (i === 0) { td.className = "t"; td.title = w.work; } else if (COLS[i][2]) td.className = "n"; r.append(td); });
     tbody.append(r);
