@@ -20,17 +20,24 @@ Reads the DBNL TEI zip (`dbnl_xml`) and the per-work year from
 `dbnl_work_genre`; writes `indies_names_dbnl` (one row per work x concept with
 a hit) and `indies_names_dbnl_samples`. Read-only on everything else.
 
-    uv run python scripts/indies_names_dbnl.py [--from 1750 --to 1920]
+    uv run python scripts/indies_names_dbnl.py [--from 1750 --to 1920] [--extra-dir DIR]
+
+`--extra-dir`: hand-downloaded DBNL texts after 1889 (DBNL serves them one by
+one, not in the PD zip). The folder holds .txt files (or .pdf / .epub, converted
+here) plus `registry.csv` (file,title,year,note); rows get `manual: true`.
 """
 
 from __future__ import annotations
 
 import argparse
+import csv
 import html
+import subprocess
 import re
 import time
 import zipfile
 from collections import defaultdict
+from pathlib import Path
 
 from data_io import resolve
 from data_io.jsonl_io import save_semi_structured
@@ -65,10 +72,34 @@ def plain(xml: str) -> str:
     return re.sub(r"\s+", " ", html.unescape(TAG.sub(" ", body))).replace("ſ", "s")
 
 
+def _extra_texts(folder: Path) -> list[tuple[str, str, str, int, str]]:
+    """(stem, file, title, year, text) for every registered hand-downloaded file."""
+    out = []
+    for r in csv.DictReader((folder / "registry.csv").open(encoding="utf-8-sig")):
+        if not (r.get("file") or "").strip():
+            continue
+        p = folder / r["file"].strip()
+        if not p.exists():
+            print(f"  missing: {p.name}", flush=True)
+            continue
+        if p.suffix.lower() == ".pdf":
+            text = subprocess.run(["pdftotext", "-layout", str(p), "-"], capture_output=True, text=True).stdout
+        elif p.suffix.lower() == ".epub":
+            with zipfile.ZipFile(p) as z:
+                text = " ".join(TAG.sub(" ", z.read(n).decode("utf-8", errors="replace"))
+                                for n in z.namelist() if n.endswith((".xhtml", ".html", ".htm")))
+        else:
+            text = p.read_text(encoding="utf-8", errors="replace")
+        text = re.sub(r"\s+", " ", html.unescape(text)).replace("ſ", "s")
+        out.append((work_stem(p.stem), p.name, r["title"].strip(), int(r["year"]), text))
+    return out
+
+
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--from", dest="y0", type=int, default=1750)
     ap.add_argument("--to", dest="y1", type=int, default=1920)
+    ap.add_argument("--extra-dir", default=None, help="folder with hand-downloaded texts + registry.csv")
     a = ap.parse_args()
 
     zip_path = resolve("dbnl_xml")
@@ -83,12 +114,17 @@ def main() -> None:
             works.append((stem, files[stem], r.get("titel") or stem, r["year"]))
     print(f"{len(works)} DBNL works with TEI, {a.y0}-{a.y1}", flush=True)
 
+    extra = _extra_texts(Path(a.extra_dir)) if a.extra_dir else []
+    print(f"{len(extra)} hand-downloaded texts", flush=True)
+
     rows, samples, t0 = [], [], time.monotonic()
     with zipfile.ZipFile(zip_path) as archive:
-        for i, (stem, fn, title, year) in enumerate(works, 1):
-            text = plain(archive.read(fn).decode("utf-8", errors="replace"))
+        todo = [(stem, fn, title, year, None) for stem, fn, title, year in works] + extra
+        for i, (stem, fn, title, year, given) in enumerate(todo, 1):
+            text = given if given is not None else plain(archive.read(fn).decode("utf-8", errors="replace"))
             words = len(text.split())
             genre, genre_source = reporting_genre(corpus=None, title=title, source_path=fn)
+            manual = given is not None
             for concept, d, m in COMP:
                 nd, mh = len(d.findall(text)), list(m.finditer(text))
                 if not nd and not mh:
@@ -96,7 +132,7 @@ def main() -> None:
                 rows.append({"source": "dbnl", "unit": title, "work_id": stem, "year": year,
                              "decade": year // 10 * 10, "genre": genre, "genre_source": genre_source,
                              "denominator": words, "denominator_unit": "words", "concept": concept,
-                             "dutch": nd, "malay": len(mh)})
+                             "dutch": nd, "malay": len(mh), "manual": manual})
                 per_term = defaultdict(int)
                 for h in mh:
                     t = h.group(0).lower()
@@ -105,8 +141,8 @@ def main() -> None:
                         samples.append({"work_id": stem, "title": title, "year": year, "genre": genre,
                                         "concept": concept, "term": h.group(0),
                                         "context": text[max(0, h.start() - 120):h.end() + 120]})
-            if i % 500 == 0 or i == len(works):
-                print(f"  {i}/{len(works)} works ({(time.monotonic() - t0) / 60:.1f} min)", flush=True)
+            if i % 500 == 0 or i == len(todo):
+                print(f"  {i}/{len(todo)} works ({(time.monotonic() - t0) / 60:.1f} min)", flush=True)
 
     save_semi_structured(rows, logical_name=OUT, parent_sources=["dbnl_xml", "dbnl_work_genre"],
                          description=f"Dutch vs Malay food-name counts per DBNL work x concept, {a.y0}-{a.y1}",
