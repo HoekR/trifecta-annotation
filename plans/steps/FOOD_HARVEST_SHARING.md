@@ -39,9 +39,14 @@ colleagues' collocation and name-shift work.
 
 **Let colleagues run it without installing anything.** Options, cheapest first:
 
-- **Static HTML** of the executed notebook: read-only, a browser is enough.
-  (nbconvert on Rik's Mac trips over an old `jupyter_contrib_nbextensions`
-  setting; render in a clean environment.)
+- ~~**Static HTML**~~ done 10 Nov 2026 (Trifecta-event `20989c7`): both notebooks as
+  executed `.html` next to the `.ipynb`. Re-render after a new export:
+  `uv run --no-project --isolated --with nbconvert --with ipykernel --with <deps> jupyter nbconvert --to html --execute <nb>`
+  from the notebook's folder. (The stale Anaconda `/usr/local/etc/jupyter/jupyter_nbconvert_config.json`
+  that broke nbconvert is deleted.)
+- **Fix before the next render:** the food-harvest genre chart has 12 genres on matplotlib's
+  10-colour cycle, so HISTORY/UNKNOWN and ADMIN_TRADE/TRAVEL share a colour. Fold the minor
+  genres as the results overview does (8 colours + grey Unknown).
 - **One-liner** in the README for those with a terminal:
   `uvx --with pandas,pyarrow,matplotlib,jinja2 jupyter lab`.
 - **Colab:** quick, but the data is uploaded to Google. Cookbook texts are fine
