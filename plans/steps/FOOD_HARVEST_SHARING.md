@@ -1,6 +1,6 @@
 # Food harvest for colleagues: sharing the export and the starter notebook
 
-**Status:** waiting on Rik's review of the notebook (10 Nov 2026).
+**Status:** shared in Trifecta-event (10 Nov 2026); later: run without install.
 
 **What:** the food-harvest export (`scripts/export_food_harvest.py` ->
 `/Volumes/Extreme SSD/scratch/trifecta/exports/food_harvest/`) and its starter
@@ -22,15 +22,18 @@ colleagues' collocation and name-shift work.
 5. **Trifecta-event** (private repo, trifecta-project): `food_frames/` holds the
    results overview and the kg_mockup preview; the food harvest is held back.
 
+6. **Reviewed and shared** (10 Nov 2026, Trifecta-event `d87bd95`):
+   `food_frames/food_harvest/` holds the notebook, README, `works.csv`,
+   `names_over_time.csv`, `mentions.parquet` (32 MB), `plaintext.zip` (10 MB); not
+   `mentions.csv` (66 MB, same data). Next to it `food_frames/term_relations/`, the
+   standalone export of kg_mockup's term-relations notebook
+   (`scripts/term_relations_notebook.py export`).
+
 ## Next
 
-1. **Rik reviews the notebook** for comprehensibility (open the export copy, so
-   it runs as colleagues will see it).
-2. **Into Trifecta-event** `food_frames/food_harvest/`: notebook, README,
-   `works.csv`, `names_over_time.csv`. `mentions.parquet` (32 MB) and
-   `plaintext.zip` (10 MB) once, or as a GitHub Release asset if re-exported
-   often (every committed version stays in Git history). Not `mentions.csv`
-   (66 MB, same data as the parquet).
+- **Re-sharing after a new export:** copy the same files again. Every committed
+  version of `mentions.parquet` stays in Git history, so if re-exports become
+  frequent, move it to a GitHub Release asset instead.
 
 ## Later (not now)
 

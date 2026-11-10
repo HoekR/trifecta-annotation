@@ -355,7 +355,7 @@ Baseline freeze and training pivot. Steps are **iterative** — expect to loop b
 | Snippet-local skeleton → GijsBERT | Gate: ≥60% ALL_FRAMED hint alignment ([COLLOCATION.md §6](docs/COLLOCATION.md#6-gijsbert-export-audit-9-jul-2026)) |
 | NONE silver from KWIC `reizen` batch | done — `notebooks/gijsbert_none_silver_training.ipynb` |
 | Indies food names (which name, where, when) | in progress — [plans/steps/INDIES_NAMES.md](plans/steps/INDIES_NAMES.md); food-harvest stream, not kg_mockup |
-| Food harvest for colleagues (export + starter notebook) | waiting on Rik's review; later: run without install (HTML / SURF Jupyter / Colab) — [plans/steps/FOOD_HARVEST_SHARING.md](plans/steps/FOOD_HARVEST_SHARING.md) |
+| Food harvest for colleagues (export + starter notebook) | shared in Trifecta-event (10 Nov); later: run without install (HTML / SURF Jupyter / Colab) — [plans/steps/FOOD_HARVEST_SHARING.md](plans/steps/FOOD_HARVEST_SHARING.md) |
 | Cooking times in the cookbooks | **parked** (9 Nov 2026: needs recipe-as-unit) — [plans/steps/COOKING_TIMES.md](plans/steps/COOKING_TIMES.md) |
 
 ---
