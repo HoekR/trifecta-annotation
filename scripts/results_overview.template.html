@@ -86,7 +86,7 @@ input[type="search"] { font: inherit; font-size: 13px; padding: 4px 8px; border:
 <div class="wrap">
   <header>
     <h1>Trifecta frame results</h1>
-    <p class="sub">Where food appears in historical Dutch texts (1500–1920), and in what role. Built <span id="built"></span>.</p>
+    <p class="sub">Where food appears in historical Dutch texts (1500–1940), and in what role. Built <span id="built"></span>.</p>
   </header>
 
   <details class="panel guide" open>
@@ -110,6 +110,7 @@ input[type="search"] { font: inherit; font-size: 13px; padding: 4px 8px; border:
       <li><b>DBNL sweep</b>: all of DBNL up to 1920, at most 10 sentences per work</li>
       <li><b>Entry scope</b>: the entries of recipe and household dictionaries (e.g. Chomel), read entry by entry</li>
       <li><b>Weak-regime verb</b>: works outside cookbooks (literature, travel, uncatalogued), sentences with a cooking or eating verb, at most 50 per work</li>
+      <li><b>Indies terms</b>: Indies-cuisine words (<i>ketoembar, santen, sambal</i>…) in 21 cookbooks and household books 1790–1940, at most 80 per book; here the interest is which word is used, more than the frame</li>
     </ul>
     <p><b>Genre</b> is assigned per work: our own per-work labels first, then the library catalogues
       (DBNL's genre for the work, the KB's GGC classification). <b>Periodicals</b> are yearbooks and journal
@@ -300,7 +301,7 @@ function worksBy(keyFn) {
   }
   return m;
 }
-const decadeOf = w => (w.year && w.year >= 1500 && w.year <= 1929) ? Math.floor(w.year / 10) * 10 : null;
+const decadeOf = w => (w.year && w.year >= 1500 && w.year <= 1939) ? Math.floor(w.year / 10) * 10 : null;
 
 // ---------- chart 1: by genre, stacked by source ----------
 function drawGenre(cells) {
@@ -408,11 +409,11 @@ function drawMix(cells) {
 function drawTime(cells) {
   document.getElementById("h-time").textContent = `${metricWord()} by decade`;
   const host = document.getElementById("c-time"); host.textContent = "";
-  const inRange = c => c[3] !== "undated" && +c[3].slice(0, 4) >= 1500 && +c[3].slice(0, 4) <= 1920;
+  const inRange = c => c[3] !== "undated" && +c[3].slice(0, 4) >= 1500 && +c[3].slice(0, 4) <= 1930;
   const dated = cells.filter(inRange);
   const und = agg(cells.filter(c => !inRange(c)), () => "u").get("u");
   document.getElementById("undated").textContent = und
-    ? `Not shown, undated or outside 1500–1920: ${fmt(und.frames)} frames, ${fmt(und.rows)} rows` + (und.pending ? `, ${fmt(und.pending)} pending` : "") : "";
+    ? `Not shown, undated or outside 1500–1940: ${fmt(und.frames)} frames, ${fmt(und.rows)} rows` + (und.pending ? `, ${fmt(und.pending)} pending` : "") : "";
   const decs = [...new Set(dated.map(c => +c[3].slice(0, 4)))].sort((a, b) => a - b);
   if (!decs.length) return;
   const all = []; for (let d = decs[0]; d <= decs[decs.length - 1]; d += 10) all.push(d);

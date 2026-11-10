@@ -45,13 +45,14 @@ SOURCES = {  # logical name -> label shown on the page
     "dbnl_sweep_annotations": "DBNL sweep",
     "entry_scope_annotations": "Entry scope",
     "weak_regime_verb_annotations": "Weak-regime verb",
+    "indies_annotations": "Indies terms",  # genre from the harvest's explicit per-book regime
 }
 # "colonial" is a misnomer: the colonial_* and handdownload_* files are the early hand-picked
 # batch (extra DBNL works, Leiden colonial books, KB cookbooks, Google Books, two 1513/14 editions).
 # The per-origin corpus stays visible in works.csv / the works table via the title.
 CORPUS_LABELS = {c: "Initial exploration" for c in (
     "dbnl_new_2026", "dbnl_hand_download_2026", "colonial_books_2026", "kb_cookbooks_2026", "google_books_2026")}
-LABEL_ORDER = ["Curated corpus", "Initial exploration", "DBNL sweep", "Entry scope", "Weak-regime verb"]
+LABEL_ORDER = ["Curated corpus", "Initial exploration", "DBNL sweep", "Entry scope", "Weak-regime verb", "Indies terms"]
 
 
 def _jsonl(path: Path):
@@ -120,7 +121,8 @@ def main() -> None:
             if logical == "weak_regime_verb_annotations":
                 annotated_weak.add(pv["record_id"])
             sp = pv.get("source_path") or ""
-            genre = genre_of(pv.get("corpus"), pv.get("title"), sp)
+            genre = (pv.get("text_regime") if logical == "indies_annotations" and pv.get("text_regime")
+                     else genre_of(pv.get("corpus"), pv.get("title"), sp))
             frame = (r.get("step_b") or {}).get("selected_frame")
             outcome = ("ERROR" if r.get("error") else "DROPPED" if r.get("dropped")
                        else frame if frame not in (None, "NONE") else "NONE")
