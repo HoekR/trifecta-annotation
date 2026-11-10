@@ -98,7 +98,11 @@ class DataManager:
     def __init__(self, manifest_path: Path | None = None) -> None:
         self.manifest_path = manifest_path or find_manifest_path()
         self._raw = load_manifest_dict(self.manifest_path)
-        self.tiers = self._parse_tiers(self._raw.get("tiers", {}))
+        # A relative tier root (warm = "data") is relative to the manifest, not to wherever the
+        # process happens to start (a notebook in notebooks/, a script run from a subfolder).
+        base = Path(self.manifest_path).resolve().parent
+        self.tiers = {name: t if t.root.is_absolute() else TierConfig(root=base / t.root, mount_check=t.mount_check)
+                      for name, t in self._parse_tiers(self._raw.get("tiers", {})).items()}
         self.datasets = self._parse_datasets(self._raw.get("datasets", {}))
 
     @staticmethod
