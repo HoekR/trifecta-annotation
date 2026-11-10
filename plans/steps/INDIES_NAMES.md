@@ -43,6 +43,34 @@ times" (operator, 9 Nov 2026); kg_mockup stays on the VOC registry and VOC times
    Bawang; so lowercase *lombok*, *klapper* only in compounds, *santan*/*tauge* whole
    words, *santen* not counted. 80 Malay hits remain, nearly all genuine.
 
+7. **Acquisition routes for 1889–1949** (10 Nov 2026; nothing downloaded yet):
+   - **KB cookbooks (N3).** The list is the KB culinary bibliography we already had
+     (`kb_titles_parsed`, 7,545 catalogue records of the KB cookbook collection).
+     `scripts/kb_cookbook_candidates.py` ->
+     `acquisitions/kb_cookbook_candidates_1889_1949.xlsx`: 471 titles, 27 with Indies
+     title words, 248 with a digital-copy link (KB resolver `MMKB…` = Delpher book, or
+     Google Books), `decision` / `note` columns for Rik. Gotcha: the catalogue scrape
+     is messy (records run into each other) and a digitised copy is a *separate*
+     record dated by its digitisation year, so links are matched by **title only**
+     and may point to another edition. Our KB files are named by MMKB id, which marks
+     what we already have. Download target: `acquisitions/delpher_2026_11/` (+ year);
+     register like the 9 Nov Google batch (`build_colonial_kwic.py` +
+     `run_indies_harvest.sources()`).
+   - **DBNL prose after 1889.** The PD zip ends in 1889 (*copyright verlopen* set);
+     later works can be downloaded one by one on dbnl.org. Intake:
+     `acquisitions/dbnl_manual_2026_11/` (files + `registry.csv`: file,title,year,note)
+     and `scripts/indies_names_dbnl.py --extra-dir <folder>` (txt/pdf/epub; rows
+     `manual: true`; only counts + short samples are stored, so in-copyright texts stay
+     internal). Candidates: Daum (*Goena-goena* 1889, *Ups en downs* 1890, *Indische
+     mensen in Holland* 1890), Van Maurik *Indrukken van een Tòtòk* (1897, on DBNL),
+     Couperus *De stille kracht* (1900), A. de Wit (1902–05), Kartini (1911), Székely-
+     Lulofs (1931–32), Du Perron (1935), Vuyk (1939); availability to check.
+   - **Leiden *Indische bellettrie*** (`~/develop/indische_belletrie/leidenuniv_scrape.py`):
+     does **not** work. The site resets connections to its `/search` path for automated
+     clients (Playwright and plain curl, honest UA); homepage fine, `/oai2` 404. Not
+     worked around. Routes: ask Leiden UB for a bulk export / OAI-PMH endpoint, or
+     download by hand.
+
 ## Findings so far
 
 - **Before 1866 the Malay kitchen names are absent from Dutch print** (DBNL): no
@@ -74,7 +102,7 @@ cuisine moving to the Netherlands, and partly receded after the war.
 |---|---|
 | ~~N1~~ | **done 10 Nov** (see Done 6). Was: **Bridge 1800–1870**: targeted Indies-term harvest over DBNL (travel accounts, periodicals, Indies literature; `~/develop/indische_belletrie`) to see whether the cookbook convention predates 1870 |
 | N2 | Test 1: Malay/Dutch ratio split by kg_mockup `COMMODITY_REGISTRY` membership (trade good or not) |
-| N3 | More Indies cookbooks (Delpher, e.g. Catenius-van der Meijden, *Groot nieuw volledig Oost-Indisch kookboek*, 1902+) |
+| N3 | More Indies cookbooks: candidate list ready (Done 7); waiting on Rik's picks/downloads, then register + harvest + Part D. Pairs to test the audience effect: *Makanlah nasi… voor Holland* (1928), *Het geheim van de rijsttafel: bewerking voor Nederland* (1934), *Indisch eten in Nederland* (1936) vs *De Hollandsche tafel in Indië* (1913), *Calvé-Delft's Hollandsche recepten voor Indië* (1938). *Kokki Bitja* (1895) is in Malay: Malay share meaningless, dish names useful |
 | N4 | Notebook section on dishes (recipe headings: *sambal goreng*, *nasi goreng*) and how a dish changes between editions |
 
 ## Caveats
