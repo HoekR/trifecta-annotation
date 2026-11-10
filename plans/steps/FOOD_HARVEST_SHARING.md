@@ -12,8 +12,11 @@ colleagues' collocation and name-shift work.
 1. **The notebook runs end to end** on a copy of the export (14 code cells, ~20 s).
 2. **README dependencies:** the export README said "pandas only"; it now lists
    pandas, pyarrow, matplotlib, jinja2. matplotlib added to the `dev` group here.
-3. **Wrong data folder** gives a clear message instead of a traceback;
-   `FOOD_HARVEST_DIR` overrides `DATA_DIR = "."` (the repo copy has no data next to it).
+3. **Data folder relative to the notebook** (`DATA_SUBDIR = "."`, from the notebook's own
+   folder: VS Code's `__vsc_ipynb_file__`, else the working directory), with a clear message
+   when the data is not there. No environment variable, no fixed paths (AGENTS.md,
+   dighum_template `wisdom/topics/local-config-not-env.md`). The repo copy has no data next
+   to it, so review the export copy.
 4. **Checked for sharing:** no KITLV film text in `plaintext/` (the Daum / Leiden
    files there are DBNL works); `names_over_time.csv` is counts only.
 5. **Trifecta-event** (private repo, trifecta-project): `food_frames/` holds the
