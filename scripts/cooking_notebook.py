@@ -11,6 +11,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import nbformat as nbf
+from _branding import eu_cell, logo_cell
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / "notebooks/cooking_frames.ipynb"
@@ -203,7 +204,7 @@ md("""## Where to go from here
 
 
 def main() -> None:
-    nb = nbf.v4.new_notebook(cells=CELLS, metadata={
+    nb = nbf.v4.new_notebook(cells=[logo_cell()] + CELLS + [eu_cell()], metadata={
         "kernelspec": {"name": "python3", "display_name": "Python 3", "language": "python"},
         "language_info": {"name": "python"}})
     nbf.write(nb, OUT)
