@@ -12,7 +12,7 @@ annotated), labelled with its outcome, as:
   names_over_time.csv              Dutch vs Malay names per concept: per cookbook (full text,
                                    1790-1940), per decade of DBNL (1750-1889) and of newspaper
                                    recipes (1940s-1990s)
-  README.md, food_harvest_starter.ipynb
+  README.md, food_harvest_starter.ipynb, cooking_frames.ipynb
 
 Rows are deduplicated on (work, context, target word) across sources. Rerunnable;
 writes only under the output directory.
@@ -43,6 +43,7 @@ from trifecta_annotation.vocabulary import alt_label_index, load_food_terms
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_OUT = Path("/Volumes/Extreme SSD/scratch/trifecta/exports/food_harvest")
 NOTEBOOK = ROOT / "notebooks" / "food_harvest_starter.ipynb"
+COOKING_NOTEBOOK = ROOT / "notebooks" / "cooking_frames.ipynb"   # scripts/cooking_notebook.py
 SOURCES = {
     "trifecta_annotations": "Curated corpus",
     "colonial_annotations": "Initial exploration",
@@ -283,6 +284,8 @@ def main() -> None:
     names = names_over_time(out)
     if NOTEBOOK.exists():
         shutil.copy(NOTEBOOK, out / NOTEBOOK.name)
+        if COOKING_NOTEBOOK.exists():
+            shutil.copy(COOKING_NOTEBOOK, out / COOKING_NOTEBOOK.name)
     counts = df["status"].value_counts().to_dict()
     frames = df.loc[df["status"] == "frame", "frame"].value_counts().to_dict()
     readme = README.format(
@@ -315,6 +318,7 @@ Genres: {genres}. {dup} duplicate mentions across sources were merged.
 | `mentions.csv` (UTF-8 with BOM) / `mentions.parquet` | one row per mention, see columns below |
 | `works.csv` | one row per work: title, edition year, genre, sources, mentions, frames |
 | `plaintext/`, `plaintext.zip` | one plain-text document per work (its unique contexts), one folder per genre. For collocation statistics use **#LancsBox X** (local; load each genre folder as a sub-corpus; log-Dice / MI / GraphColl). For a quick visual overview **Voyant Tools** (note: voyant-tools.org means uploading the texts; a local Voyant server avoids that) |
+| `cooking_frames.ipynb` | frame-oriented: which frame in which genre and when, what is cooked and how (grounded frame elements), methods and their words (*sieden* → *koken*), foods moving from cure to kitchen and table. Needs `pandas`, `pyarrow`, `matplotlib` |
 | `food_harvest_starter.ipynb` | loading, concordance filtering, first collocation measures, Indies names over time. Needs `pandas`, `pyarrow`, `matplotlib`, `jinja2` (`pip install pandas pyarrow matplotlib jinja2`; a standard Jupyter/Anaconda install has them) |
 
 ## Columns of `mentions`
