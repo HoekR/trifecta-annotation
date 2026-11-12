@@ -1,0 +1,361 @@
+record_id,work,target,position,chars_after_head,purpose_head,head_frame,head_seen,head_kind,scope_inherited,scope_head,gold,pred
+_den001denk09_01.xml__ch17__v_houden__brood,_den001denk09_01.xml,brood,body,93942,,,False,descriptive,False,Antwoord van den Denker.,DROPPED,DROPPED
+_den001denk09_01.xml__ch16__v_drinken__bier,_den001denk09_01.xml,bier,body,81016,,,False,descriptive,False,Antwoord van den Denker.,INGESTION,NONE
+_jaa002187401_01.xml__ch14__thee,_jaa002187401_01.xml,thee,body,20513,,,False,descriptive,False,en tot Buitenlandsche Leden:,INGESTION,INGESTION
+_jaa033187301_01.xml__ch37__jus,_jaa033187301_01.xml,jus,body,207,,,False,descriptive,False,4. L'abbesse de Hocht renonce à tout droit de patronage sur l'église de Reckheim,DROPPED,DROPPED
+_jaa033187301_01.xml__ch97__v_drinken__water,_jaa033187301_01.xml,water,body,652,,,False,descriptive,False,§ 1. Beschrijving der Noordsche streken.,DROPPED,DROPPED
+_kod003kodd02_01.xml__ch46__haas,_kod003kodd02_01.xml,Haas,body,2150,,,False,descriptive,False,Hakken en krukken.,COOKING_CREATION,COOKING_CREATION
+_kod003kodd02_01.xml__ch53__v_braden__worst,_kod003kodd02_01.xml,worst,body,2772,,,False,descriptive,False,Besluit.,COOKING_CREATION,DROPPED
+tabak_pilot___kod003kodd02_01.xml__ch64__toebak__39907,_kod003kodd02_01.xml,toebak,body,4954,,,False,descriptive,False,"Hecubaas klacht, Over de rampzalige dood van de geofferde Polyxena, uit P.O. Naz",NONE,COOKING_CREATION
+_lee024leeu02_01.xml__ch38__dadel,_lee024leeu02_01.xml,Dadel,body,425,,,False,descriptive,False,Oleum Nucum Moschat: Palmae.,CURE,CURE
+_lee024leeu02_01.xml__ch38__laurier,_lee024leeu02_01.xml,Laurier,head,0,,,True,descriptive,False,Oleum Laurinum. Oly van Laurier-Beyen.,CURE,CURE
+_lee024leeu02_01.xml__ch40__v_heelen__water,_lee024leeu02_01.xml,water,near_head,90,,,True,descriptive,False,Unguentum odoriserum. Welruikende Salf.,CURE,COOKING_CREATION
+_lee024leeu02_01.xml__ch45__v_bewaren__oly,_lee024leeu02_01.xml,oly,near_head,171,,,False,descriptive,False,Oleum Terebinthinae. Terepentijn Olye.,COOKING_CREATION,COOKING_CREATION
+_lee024leeu02_01.xml__ch18__bessen,_lee024leeu02_01.xml,Bessen,body,19597,,,False,descriptive,False,"Opdracht,",DROPPED,CURE
+_lee024leeu02_01.xml__ch45__foely,_lee024leeu02_01.xml,Foely,body,4207,,,False,descriptive,False,Oleum Anisi. Oly van Anijs.,CURE,CURE
+_nie148nieu01_01.xml__ch38__rogge,_nie148nieu01_01.xml,Rogge,body,1851,,,True,descriptive,False,Stemme: Besneeude Velde.,DROPPED,NONE
+_nie148nieu01_01.xml__ch38__tarwe,_nie148nieu01_01.xml,Tarwe,body,1842,,,True,descriptive,False,Stemme: Besneeude Velde.,NONE,NONE
+_nie148nieu01_01.xml__ch33__v_drincken__noot,_nie148nieu01_01.xml,noot,body,1706,,,False,descriptive,False,Stem: LiefsteLief.,DROPPED,DROPPED
+_nie148nieu01_01.xml__ch46__brandewijn,_nie148nieu01_01.xml,Brandewijn,body,877,,,False,descriptive,False,Voys: Van Mieke stout.,NONE,INGESTION
+_nie148nieu01_01.xml__ch34__v_eten__wijn,_nie148nieu01_01.xml,wijn,body,1717,,,False,descriptive,False,Op een Nieuwe Voys.,INGESTION,INGESTION
+_pha001phar02_01.xml__ch28__huid,_pha001phar02_01.xml,huid,near_head,23,,,True,descriptive,False,Oleum Vulpinum.,COOKING_CREATION,DROPPED
+_pha001phar02_01.xml__ch25__tarwen,_pha001phar02_01.xml,tarwen,near_head,107,,,True,descriptive,False,Trochisci Scillitici voor de Theriakel.,COOKING_CREATION,CURE
+ingest_stepc___pha001phar02_01.xml__ch19__kersen__13364,_pha001phar02_01.xml,Kersen,body,1175,,,False,descriptive,False,Confituren.,PRESERVING,COOKING_CREATION
+_pha001phar02_01.xml__ch20__v_stampen__azijn,_pha001phar02_01.xml,azijn,near_head,75,,,False,descriptive,False,F. S. a. Electuarium.,DROPPED,COOKING_CREATION
+_pha001phar02_01.xml__ch2__v_bewaren__wortelen,_pha001phar02_01.xml,wortelen,body,1802,,,False,descriptive,False,Boekverkoper tot den Leser.,DROPPED,NONE
+_pha001phar02_01.xml__ch25__v_droogen__oly,_pha001phar02_01.xml,oly,body,439,,,False,descriptive,False,Trochisci Hedychroi Galeni voor de Theriakel.,PRESERVING,COOKING_CREATION
+_pha001phar05_01.xml__ch22__v_smelten__mede,_pha001phar05_01.xml,mede,body,2050,,,False,descriptive,False,Theriaca Andromachi Senioris.,DROPPED,DROPPED
+_pha001phar05_01.xml__ch28__v_maken__olie,_pha001phar05_01.xml,olie,body,610,,,False,descriptive,False,Pilulae Sine quibus.,COOKING_CREATION,COOKING_CREATION
+_pha001phar05_01.xml__ch19__v_steenen__hoender,_pha001phar05_01.xml,hoender,body,373,,,True,descriptive,False,Syrupus aceti.,COOKING_CREATION,CURE
+_pha001phar05_01.xml__ch19__zuiker,_pha001phar05_01.xml,zuiker,body,390,,,False,descriptive,False,Syrupus absinthii Compositus.,CURE,COOKING_CREATION
+_pha001phar05_01.xml__ch19__bessen,_pha001phar05_01.xml,Bessen,near_head,42,,,False,descriptive,False,Rob. Berberorum. Ribesiorum.,COOKING_CREATION,COOKING_CREATION
+_pha001phar05_01.xml__ch34__azyn,_pha001phar05_01.xml,Azyn,body,351,,,False,descriptive,False,Gepraepareerd Staal.,CURE,COOKING_CREATION
+_pha001phar05_01.xml__ch19__pap,_pha001phar05_01.xml,pap,near_head,15,,,True,descriptive,False,Syrupus succi Betonicae.,CURE,COOKING_CREATION
+_pha001phar05_01.xml__ch19__lever__1,_pha001phar05_01.xml,lever,body,337,,,False,descriptive,False,Syrupus quinque Radicum.,DROPPED,DROPPED
+_pha001phar05_01.xml__ch17__kruiden__1,_pha001phar05_01.xml,kruiden,body,272,,,False,descriptive,False,Aqua alexipharmaca.,COOKING_CREATION,COOKING_CREATION
+_pha001phar05_01.xml__ch19__sap,_pha001phar05_01.xml,sap,body,326,,,False,descriptive,False,Syrupus Rosarum solutivus.,COOKING_CREATION,COOKING_CREATION
+_pha001phar05_01.xml__ch21__v_stampen__azyn,_pha001phar05_01.xml,azyn,body,506,,,False,descriptive,False,Hiera Diacolocynthidos.,CURE,COOKING_CREATION
+_pha001phar05_01.xml__ch2__v_bewaren__wortelen,_pha001phar05_01.xml,wortelen,body,1874,,,False,descriptive,False,Aan den Leezer.,DROPPED,NONE
+_tij008186501_01.xml__ch19__uijen,_tij008186501_01.xml,uijen,body,82521,,,False,descriptive,False,"De eed eener zuster of schandmerk en zegepalm. Naar het Engelsch van J.F. Smith,",INGESTION,INGESTION
+tabak_pilot___tij008186501_01.xml__ch109__tabak__22948,_tij008186501_01.xml,tabak,body,12049,,,False,descriptive,False,VI. Marsch van Mechelen naar het hart van Frankrijk. - Het hospitaal te Limoges.,INGESTION,NONE
+_tij008186501_01.xml__ch48__v_drinken__wijn,_tij008186501_01.xml,wijn,body,61433,,,False,descriptive,False,Het verborgen leven van Wallstreet. Een handelsroman. Uit het Engelsch van Richa,INGESTION,INGESTION
+_tij008186501_01.xml__ch38__v_eten__brood,_tij008186501_01.xml,brood,body,491562,,,False,descriptive,False,"De eed eener zuster of schandmerk en zegepalm. Naar het Engelsch van J.F. Smith,",INGESTION,INGESTION
+_tij008186501_01.xml__ch139__v_eten__rijst,_tij008186501_01.xml,rijst,body,83675,,,False,descriptive,False,"In het daglicht. Tafereelen uit het werkelijk leven, door Ottilie Wildermuth. Ui",DROPPED,INGESTION
+_tij008186501_01.xml__ch122__v_drinken__genever,_tij008186501_01.xml,genever,body,309829,,,False,descriptive,False,VI. Marsch van Mechelen naar het hart van Frankrijk. - Het hospitaal te Limoges.,INGESTION,NONE
+_tij008186501_01.xml__ch83__v_eten__spek,_tij008186501_01.xml,spek,body,7641,,,False,descriptive,False,II. Avonturen op reis naar den Haag. - Inrigting der koninklijke kweekschool.,INGESTION,INGESTION
+_tij008186501_01.xml__ch88__v_voeden__rijst,_tij008186501_01.xml,rijst,body,37514,,,False,descriptive,False,Mengelwerk.,INGESTION,COOKING_CREATION
+_vad003180901_01.xml__ch129__bloed,_vad003180901_01.xml,bloed,body,859287,,,False,descriptive,False,Den winter.,DROPPED,DROPPED
+_vad003180901_01.xml__ch100__v_houden__munt,_vad003180901_01.xml,munt,body,649198,,,False,descriptive,False,Den winter.,DROPPED,DROPPED
+_vad003180901_01.xml__ch218__v_genezen__huid,_vad003180901_01.xml,huid,body,1516178,,,False,descriptive,False,Den winter.,DROPPED,DROPPED
+tabak_pilot___vad003180901_01.xml__ch328__tabak__3658,_vad003180901_01.xml,tabak,body,211629,,,False,descriptive,False,Lands- of Heeren-wegen.,NONE,NONE
+_vad003180901_01.xml__ch345__v_eten__schapen,_vad003180901_01.xml,schapen,body,363375,,,False,descriptive,False,Lands- of Heeren-wegen.,DROPPED,DROPPED
+_vad003182101_01.xml__ch385__v_smoren__bloed,_vad003182101_01.xml,bloed,body,51564,,,False,descriptive,False,Koude Spijzen.,DROPPED,DROPPED
+ingest_stepc___vad003182101_01.xml__ch360__groente__95663,_vad003182101_01.xml,groente,body,198287,,,False,descriptive,False,Eendragt.,INGESTION,INGESTION
+_vad003182101_01.xml__ch406__v_eigen__soep,_vad003182101_01.xml,soep,body,9616,,,False,descriptive,False,Belangrijke bijdrage tot de leer en de behandeling der hondsdolheid.,INGESTION,NONE
+_vad003182701_01.xml__ch407__v_eten__rijst,_vad003182701_01.xml,rijst,body,42076,,,False,descriptive,False,‘De zeldzame Profeet.,INGESTION,INGESTION
+_vad003182701_01.xml__ch282__v_bewaren__schapen,_vad003182701_01.xml,schapen,body,310622,,,False,descriptive,False,II.,DROPPED,DROPPED
+_vad003183301_01.xml__ch379__bloem,_vad003183301_01.xml,bloem,body,175058,,,False,descriptive,False,De Spreeuw van Baltimore.,DROPPED,NONE
+_vad003183301_01.xml__ch281__v_verzorgen__suiker,_vad003183301_01.xml,suiker,body,28599,,,False,descriptive,False,Eenige bedenkingen ten aanzien van den toestand des vaderlands in de jaren 1672 ,INGESTION,INGESTION
+_vad003183301_01.xml__ch362__v_zeven__schapen,_vad003183301_01.xml,schapen,body,100694,,,False,descriptive,False,De Spotvogel.,DROPPED,DROPPED
+_vad003183401_01.xml__ch359__v_braden__soep,_vad003183401_01.xml,soep,body,24756,,,False,descriptive,False,"I. Over de ijzeren wegen, die op het vasteland van Europa ontworpen of aangelegd",DROPPED,COOKING_CREATION
+_vad003183401_01.xml__ch343__v_genezen__vlier,_vad003183401_01.xml,vlier,body,60068,,,False,descriptive,False,Museums en Schouwburgen.,CURE,CURE
+_vad003183401_01.xml__ch133__v_verzachten__bloed,_vad003183401_01.xml,bloed,body,378507,,,False,descriptive,False,‘Ten besluyte.,DROPPED,DROPPED
+ingest_stepc___vad003183401_01.xml__ch359__soep__28369,_vad003183401_01.xml,soep,body,24756,,,False,descriptive,False,"I. Over de ijzeren wegen, die op het vasteland van Europa ontworpen of aangelegd",COOKING_CREATION,COOKING_CREATION
+ingest_stepc___vad003183401_01.xml__ch339__worst__1219,_vad003183401_01.xml,worst,body,26774,,,False,descriptive,False,Museums en Schouwburgen.,DROPPED,NONE
+tabak_pilot___vad003183401_01.xml__ch322__tabak__15720,_vad003183401_01.xml,tabak,body,17335,,,False,descriptive,False,Verslag over de vijfentwintig verloopene jaren van het bestaan der Inrigting voo,DROPPED,NONE
+_vad003183901_01.xml__ch389__v_nuttigen__boter,_vad003183901_01.xml,boter,body,72579,,,False,descriptive,False,"Volksvermaken en Volksgeloof. Ouderdom, Dood en Begrafenis.",INGESTION,NONE
+_vad003183901_01.xml__ch311__v_drinken__water,_vad003183901_01.xml,water,body,361260,,,False,descriptive,False,"Aurelia. De Graaf van Penaparda. Twee Verhalen naar het Fransch. Te Rotterdam, b",INGESTION,DROPPED
+ingest_stepc___vad003184101_01.xml__ch379__rijst__12713,_vad003184101_01.xml,rijst,body,81513,,,False,descriptive,False,Verblijf op Sumatra.,NONE,NONE
+_vad003184101_01.xml__ch370__v_eten__erwten,_vad003184101_01.xml,erwten,body,22044,,,False,descriptive,False,Verblijf op Sumatra.,INGESTION,COOKING_CREATION
+_vad003184101_01.xml__ch398__v_eten__melk,_vad003184101_01.xml,melk,body,35087,,,False,divider,False,V.,INGESTION,INGESTION
+_vad003184101_01.xml__ch379__v_drinken__soep,_vad003184101_01.xml,soep,body,116711,,,False,descriptive,False,Verblijf op Sumatra.,INGESTION,NONE
+_vad003185501_01.xml__ch307__v_maken__kaas,_vad003185501_01.xml,kaas,body,107250,,,False,descriptive,False,"II. Opmerkingen en toelichtingen, naar aanleiding van dr. J.A.C. Oudemans' beoor",DROPPED,CURE
+_vad003185901_01.xml__ch219__aardappel,_vad003185901_01.xml,aardappel,body,389893,,,False,descriptive,False,III. De strijd.,NONE,CURE
+_vad003185901_01.xml__ch226__brandewijn,_vad003185901_01.xml,brandewijn,body,548128,,,False,descriptive,False,III. De strijd.,NONE,INGESTION
+tabak_pilot___vad003185901_01.xml__ch242__tabak__29480,_vad003185901_01.xml,tabak,body,195494,,,False,descriptive,False,5. Maleische ras.,DROPPED,NONE
+_vad003185901_01.xml__ch240__v_heilzaam voor__schapen,_vad003185901_01.xml,schapen,body,138430,,,False,descriptive,False,5. Maleische ras.,DROPPED,DROPPED
+_vol002volm01_01.xml__ch10__confituuren,_vol002volm01_01.xml,Confituuren,body,1769,,,False,descriptive,False,16. Besluit van dit Werkje.,DROPPED,COOKING_CREATION
+_vol002volm01_01.xml__ch18__vlade,_vol002volm01_01.xml,vlade,near_head,151,,COOKING_CREATION,True,descriptive,False,"70. Struif van Amandelen, hoe men die maaken zal.",COOKING_CREATION,COOKING_CREATION
+_vol002volm01_01.xml__ch13__sap,_vol002volm01_01.xml,sap,near_head,67,,COOKING_CREATION,False,descriptive,False,"29. Limoen-Taart, hoe men die bakken zal. Zie 1. Stuk pag. 21. No. 8.",COOKING_CREATION,COOKING_CREATION
+_vol002volm01_01.xml__ch17__vet,_vol002volm01_01.xml,vet,near_head,8,,COOKING_CREATION,True,descriptive,False,"7. Ganzen, hoe men die voor de winter zal inzouten.",PRESERVING,COOKING_CREATION
+_vol002volm01_01.xml__ch18__v_trekken__sap,_vol002volm01_01.xml,sap,body,212,,COOKING_CREATION,True,descriptive,False,"21. Harssens van een kalf, hoe men die stooven zal.",COOKING_CREATION,COOKING_CREATION
+_vol002volm01_01.xml__ch13__artischokken,_vol002volm01_01.xml,artischokken,near_head,143,,COOKING_CREATION,False,descriptive,False,"53. Taart van gehakte Zalm, voor de Vasten, hoe men die maaken zal.",COOKING_CREATION,COOKING_CREATION
+_vol002volm01_01.xml__ch13__kruidnagelen,_vol002volm01_01.xml,Kruidnagelen,body,206,,COOKING_CREATION,False,descriptive,False,"48. Taart van Baars voor de Roomsgezinden, hoe men die maaken zal.",COOKING_CREATION,COOKING_CREATION
+_vol002volm01_01.xml__ch2__kruidnagelen,_vol002volm01_01.xml,kruidnagelen,body,334,RECIPE_PRACTICE,PRESERVING,False,descriptive,False,"7. Osse-pekel en Rookworst, hoe men die maaken zal.",COOKING_CREATION,COOKING_CREATION
+_vol002volm01_01.xml__ch19__speenvarken,_vol002volm01_01.xml,Speenvarken,body,1203,,,False,descriptive,False,26. Ontlediging van een Speenvarken. Zie Plaat 2. Fig. 3.,COOKING_CREATION,COOKING_CREATION
+_vol002volm01_01.xml__ch13__broodzuiker,_vol002volm01_01.xml,broodzuiker,body,342,,COOKING_CREATION,False,descriptive,False,"40. Room-Taart, hoe men die maaken zal.",COOKING_CREATION,COOKING_CREATION
+_vol002volm01_01.xml__ch17__kruidnagelen,_vol002volm01_01.xml,kruidnagelen,near_head,121,,PRESERVING,False,descriptive,False,"9. Peeren in quartieren, om die in de voorzomer als 'er geen peeren zyn te gebru",COOKING_CREATION,PRESERVING
+_vol002volm01_01.xml__ch15__aspersjes,_vol002volm01_01.xml,Aspersjes,head,0,,PRESERVING,True,descriptive,False,"4. Aspersjes, hoe men die bewaren zal.",PRESERVING,PRESERVING
+cure_stepc___vol002volm01_01.xml__ch8__garst__78084,_vol002volm01_01.xml,garst,body,410,,COOKING_CREATION,True,descriptive,False,"39. Soepe die zeer goed is, hoe men die maaken zal.",COOKING_CREATION,COOKING_CREATION
+ingest_stepc___vol002volm01_01.xml__ch18__spek__66330,_vol002volm01_01.xml,spek,near_head,172,,COOKING_CREATION,True,descriptive,False,"27. Kalfs-schyf, hoe men die stooven zal.",COOKING_CREATION,COOKING_CREATION
+ingest_stepc___vol002volm01_01.xml__ch9__taart__77022,_vol002volm01_01.xml,Taart,near_head,3,,,True,divider,False,A.,NONE,COOKING_CREATION
+_vol002volm01_01.xml__ch10__v_spyzen__confituuren,_vol002volm01_01.xml,confituuren,body,1769,,,False,descriptive,False,16. Besluit van dit Werkje.,COOKING_CREATION,COOKING_CREATION
+_vol002volm01_01.xml__ch11__v_spyzen__confituuren,_vol002volm01_01.xml,confituuren,near_head,67,RECIPE_PRACTICE,,True,descriptive,False,"Aanhangzel, van de volmaakte Hollandsche keuken-meid.",DROPPED,COOKING_CREATION
+_vol002volm01_01.xml__ch18__v_eeten__haas,_vol002volm01_01.xml,haas,head,0,,COOKING_CREATION,True,descriptive,False,"17. Haas a la daube, hoe men die toebereiden zal.",INGESTION,COOKING_CREATION
+_vol002volm01_01.xml__ch6__v_eeten__oly,_vol002volm01_01.xml,oly,body,388,,,True,descriptive,False,"V. Hoofdstuk. Fruiten van allerhande gerechten zo van Vleesch, als van Vis en Gr",COOKING_CREATION,COOKING_CREATION
+_vol002volm01_01.xml__ch9__v_spyzen__soepe,_vol002volm01_01.xml,soepe,body,539,,,True,descriptive,False,2. Hoe de Tafels der Grooten in het Huishouden geschikt worden.,DROPPED,COOKING_CREATION
+_vol002volm01_01.xml__ch4__v_droogen__suiker,_vol002volm01_01.xml,suiker,body,427,,,True,descriptive,False,"III. Hoofdstuk. Braaden aan 't Spit, in de Pot, in den Oven, en op de Rooster, v",DROPPED,COOKING_CREATION
+alke003nede01_01.xml__ch13__v_bewaren__zout,alke003nede01_01.xml,zout,body,1245,,,False,descriptive,False,"[Van Selbarnen, het verscheide gebruik van tafelzout, en zoutvaten, by de oude v",PRESERVING,NONE
+bate002secr02_01.xml__ch97__v_oncen__sap,bate002secr02_01.xml,sap,near_head,11,,,True,descriptive,False,"Een ander Aluynwater, van alle Currosivige Ulceratien des monts, dat dickmaels i",COOKING_CREATION,NONE
+bate002secr02_01.xml__ch71__v_maken__zout,bate002secr02_01.xml,zout,near_head,59,,COOKING_CREATION,True,descriptive,False,Om het Christal smeltende te maken.,COOKING_CREATION,DROPPED
+bate002secr02_01.xml__ch63__laurier,bate002secr02_01.xml,Laurier,near_head,12,,PRESERVING,True,descriptive,False,Hoe dat men de Gerste onbeschadigt bewaren sal.,PRESERVING,PRESERVING
+cure_stepc__bate002secr02_01.xml__ch53__azijn__65292,bate002secr02_01.xml,Azijn,body,235,MEDICAL,CURE,True,descriptive,False,Remedie als den Kersse-boom ofte Kriecken-boom begint te rotten.,CURE,CURE
+bate002secr02_01.xml__ch40__v_eeten__hoender,bate002secr02_01.xml,hoender,near_head,128,,COOKING_CREATION,True,descriptive,False,Om de Roof-vogels haer Veeren te doen wisselen.,INGESTION,COOKING_CREATION
+bate002secr02_01.xml__ch53__v_remedie voor__quee,bate002secr02_01.xml,quee,head,0,MEDICAL,CURE,True,descriptive,False,Een Remedie voor eenen onvruchtbaren ende siecken Quee-boom.,CURE,CURE
+bate002secr02_01.xml__ch104__v_goed voor__lever,bate002secr02_01.xml,lever,body,1127,,,True,descriptive,False,"Van de Aqua vite, hoe dat men die sal distileeren, ende van hare krachten.",CURE,DROPPED
+inception_nl_v2__selected_texts_txt__altink__s14__4424__wijn,bate002secr02_01.xml,wijn,body,858,,COOKING_CREATION,False,descriptive,False,Om stinkende Wijn goedt te maken.,NONE,
+inception_nl_v2__selected_texts_txt__altink__s14__4443__wijn,bate002secr02_01.xml,wijn,body,858,,COOKING_CREATION,False,descriptive,False,Om stinkende Wijn goedt te maken.,NONE,
+inception_nl_v2__selected_texts_txt__altink__s19__5461__van,bate002secr02_01.xml,van,near_head,21,,COOKING_CREATION,False,descriptive,False,Om Wijn den smaeck van Muscadel te geven.,COOKING_CREATION,
+inception_nl_v2__selected_texts_txt__altink__s19__5465__wilde,bate002secr02_01.xml,wilde,near_head,25,,COOKING_CREATION,False,descriptive,False,Om Wijn den smaeck van Muscadel te geven.,COOKING_CREATION,
+inception_nl_v2__selected_texts_txt__altink__s19__5482__van,bate002secr02_01.xml,van,near_head,21,,COOKING_CREATION,False,descriptive,False,Om Wijn den smaeck van Muscadel te geven.,COOKING_CREATION,
+inception_nl_v2__selected_texts_txt__altink__s19__5622__wijn,bate002secr02_01.xml,wijn,near_head,183,,COOKING_CREATION,False,descriptive,False,Om Wijn den smaeck van Muscadel te geven.,COOKING_CREATION,
+inception_nl_v2__selected_texts_txt__altink__s19__5740__muscadel,bate002secr02_01.xml,Muscadel,body,301,,COOKING_CREATION,False,descriptive,False,Om Wijn den smaeck van Muscadel te geven.,COOKING_CREATION,
+inception_nl_v2__selected_texts_txt__altink__s19__5799__wijn,bate002secr02_01.xml,wijn,near_head,183,,COOKING_CREATION,False,descriptive,False,Om Wijn den smaeck van Muscadel te geven.,COOKING_CREATION,
+inception_nl_v2__selected_texts_txt__altink__s20__5866__kruyt,bate002secr02_01.xml,kruyt,near_head,13,,COOKING_CREATION,False,bare,True,Om Wijn den smaeck van Muscadel te geven.,NONE,
+inception_nl_v2__selected_texts_txt__altink__s20__5872__genaemt,bate002secr02_01.xml,genaemt,near_head,19,,COOKING_CREATION,False,bare,True,Om Wijn den smaeck van Muscadel te geven.,NONE,
+inception_nl_v2__selected_texts_txt__altink__s20__6079__wijn,bate002secr02_01.xml,Wijn,near_head,175,,COOKING_CREATION,False,bare,True,Om Wijn den smaeck van Muscadel te geven.,NONE,
+inception_nl_v2__selected_texts_txt__altink__s21__6245__wijn,bate002secr02_01.xml,Wijn,body,392,,COOKING_CREATION,False,bare,True,Om Wijn den smaeck van Muscadel te geven.,COOKING_CREATION,
+inception_nl_v2__selected_texts_txt__altink__s21__6286__muscadel,bate002secr02_01.xml,Muscadel,body,433,,COOKING_CREATION,False,bare,True,Om Wijn den smaeck van Muscadel te geven.,COOKING_CREATION,
+inception_nl_v2__selected_texts_txt__dejong__s19__5709__wijns,bate002secr02_01.xml,wijns,body,270,,COOKING_CREATION,False,descriptive,False,Om Wijn den smaeck van Muscadel te geven.,COOKING_CREATION,
+bont009gebr01_01.xml__ch10__v_likken__suiker,bont009gebr01_01.xml,suiker,body,336,,,False,descriptive,False,§. IV.,DROPPED,INGESTION
+bont009gebr01_01.xml__ch18__v_drinken__boontjes,bont009gebr01_01.xml,boontjes,near_head,115,,,True,descriptive,False,II.,DROPPED,COOKING_CREATION
+bont009gebr01_01.xml__ch19__v_drinken__zout,bont009gebr01_01.xml,zout,body,1117,,,True,descriptive,False,II.,INGESTION,NONE
+bure003magd01_01.xml__ch7__v_maken__water,bure003magd01_01.xml,water,body,131607,,,False,descriptive,False,Voorberigt.,DROPPED,DROPPED
+bure003magd01_01.xml__ch3__v_drinken__bloed,bure003magd01_01.xml,bloed,body,41104,,,False,descriptive,False,Voorberigt.,DROPPED,DROPPED
+cats001houw01_01.xml__ch16__biet,cats001houw01_01.xml,biet,body,1770,,,False,descriptive,False,Korte afbeeldinge eenes rechten hvys-vaders.,DROPPED,NONE
+cats001houw01_01.xml__ch37__nier,cats001houw01_01.xml,nier,body,1184,,,False,descriptive,False,Que les Marys ne doivent pas estre trop jaloux.,DROPPED,DROPPED
+cats001houw01_01.xml__ch18__v_breken__noot,cats001houw01_01.xml,noot,body,3903,,,False,descriptive,False,Bruyts lynvvaet.,DROPPED,DROPPED
+cats001houw01_01.xml__ch18__v_heelen__mede,cats001houw01_01.xml,mede,body,55420,MEDICAL,CURE,False,descriptive,False,"Eerste deel van't christelick hvys-wyf Vertoont inde ghestalte van bruyt, Met by",DROPPED,DROPPED
+chom003huis01_01.xml__ch13__schil,chom003huis01_01.xml,schil,body,2791,,CURE,False,anaphoric,False,"Andere hartsterkende Drank, of Julep.",COOKING_CREATION,NONE
+chom003huis01_01.xml__ch20__v_zouten__vlees,chom003huis01_01.xml,vlees,body,1201,,,True,descriptive,False,"Destillatie van Rogge, of van ander granen, als Koorn, en Gerst.",PRESERVING,CURE
+chom003huis01_01.xml__ch13__v_maken__olie,chom003huis01_01.xml,olie,body,1727,,CURE,False,anaphoric,False,"Andere hartsterkende Drank, of Julep.",CURE,COOKING_CREATION
+chom003huis01_01.xml__ch24__speenvarken,chom003huis01_01.xml,SPEENVARKEN,near_head,110,RECIPE_PRACTICE,PRESERVING,True,descriptive,False,"Wanneer, en hoe men de Varkens slagt, om te zouten.",NONE,NONE
+chom003huis01_01.xml__ch25__venkel,chom003huis01_01.xml,Venkel,near_head,181,,,True,descriptive,False,"Wyn, die goed is voor raauheden, en moeilykheid in ’t watermaken.",COOKING_CREATION,NONE
+chom003huis01_01.xml__ch6__kaas,chom003huis01_01.xml,Kaas,body,1133,,,False,descriptive,False,castoreum,COOKING_CREATION,CURE
+chom003huis01_01.xml__ch25__olie,chom003huis01_01.xml,olie,near_head,132,MEDICAL,CURE,False,descriptive,False,Geheim tegen de Weegluis.,PRESERVING,COOKING_CREATION
+chom003huis01_01.xml__ch24__peren,chom003huis01_01.xml,Peren,near_head,40,,PRESERVING,True,descriptive,False,Geheim om Vlees lang zonder bederf goed te houden.,COOKING_CREATION,NONE
+chom003huis01_01.xml__ch13__deeg,chom003huis01_01.xml,deeg,body,1643,,COOKING_CREATION,True,descriptive,False,"Mengsel van twee soorten van Aas, om Karper met den Hengel te vangen.",COOKING_CREATION,COOKING_CREATION
+chom003huis01_01.xml__ch18__kruid,chom003huis01_01.xml,kruid,body,464,,,True,descriptive,False,VAN DE OPGEZWOLLENHEID,CURE,CURE
+chom003huis01_01.xml__ch13__prei,chom003huis01_01.xml,Prei,body,2433,,,True,descriptive,False,koffy,CURE,CURE
+chom003huis01_01.xml__ch8__kaneel,chom003huis01_01.xml,Kaneel,body,948,,,True,descriptive,False,Gebakke Eyeren.,COOKING_CREATION,NONE
+chom003huis01_01.xml__ch25__pruimen,chom003huis01_01.xml,Pruimen,body,950,,,False,anaphoric,False,Andere voortekenen van het weder.,NONE,NONE
+chom003huis01_01.xml__ch25__wildbraad,chom003huis01_01.xml,Wildbraad,head,0,,,True,descriptive,False,wildbraad,NONE,DROPPED
+chom003huis01_01.xml__ch22__kaas,chom003huis01_01.xml,Kaas,body,525,,,True,descriptive,False,Beschryving van de Indise Tarw.,COOKING_CREATION,NONE
+chom003huis01_01.xml__ch22__ragout,chom003huis01_01.xml,Ragout,body,897,,,True,descriptive,False,Tarbot au gros Michel.,COOKING_CREATION,COOKING_CREATION
+chom003huis01_01.xml__ch22__wortel,chom003huis01_01.xml,Wortel,near_head,38,,,True,descriptive,False,turbith,NONE,CURE
+chom003huis01_01.xml__ch10__peper,chom003huis01_01.xml,Peper,near_head,181,,COOKING_CREATION,True,descriptive,False,"Geheim, om een goed Geheugen te maken.",CURE,CURE
+chom003huis01_01.xml__ch13__gehakt,chom003huis01_01.xml,gehakt,head,0,,,True,descriptive,False,Gehakte Kalfs-schyf.,COOKING_CREATION,COOKING_CREATION
+chom003huis01_01.xml__ch5__munt,chom003huis01_01.xml,Munt,body,9758,,,True,descriptive,False,bank,DROPPED,DROPPED
+chom003huis01_01.xml__ch22__kruid,chom003huis01_01.xml,kruid,body,599,,,True,descriptive,False,trekkende,CURE,NONE
+chom003huis01_01.xml__ch18__v_trekken__water,chom003huis01_01.xml,water,body,1841,,,True,descriptive,False,ogen,COOKING_CREATION,DROPPED
+chom003huis01_01.xml__ch19__v_maken__hoenders,chom003huis01_01.xml,hoenders,body,5565,,COOKING_CREATION,False,descriptive,False,"Maakzel van verscheiden soorten van Kooijen om’er Patrys in te zetten, en vervoe",DROPPED,COOKING_CREATION
+chom003huis01_01.xml__ch6__kruidnagelen,chom003huis01_01.xml,Kruidnagelen,body,4940,,,False,descriptive,False,byvoet,COOKING_CREATION,COOKING_CREATION
+chom003huis01_01.xml__ch11__nootemuskaat,chom003huis01_01.xml,Nootemuskaat,body,1557,,,False,descriptive,False,Bye-Zalf.,COOKING_CREATION,COOKING_CREATION
+chom003huis01_01.xml__ch4__artischokken,chom003huis01_01.xml,Artischokken,head,0,,COOKING_CREATION,True,descriptive,False,Verscheide wyzen om de Artischokken klaar te maken.,COOKING_CREATION,COOKING_CREATION
+chom003huis01_01.xml__ch20__amandelen,chom003huis01_01.xml,Amandelen,body,1710,MEDICAL,CURE,False,descriptive,False,"De Tekens der Koorts, en de Genezing volgens den zelven.",DROPPED,CURE
+chom003huis01_01.xml__ch20__verjuis,chom003huis01_01.xml,Verjuis,body,1554,MEDICAL,CURE,False,descriptive,False,Algemene remedien voor de Ziekten der Nieren.,CURE,CURE
+chom003huis01_01.xml__ch14__varkens,chom003huis01_01.xml,Varkens,body,4906,,,False,descriptive,False,"Wat men doen moet, als ’t Lam geboren is.",CURE,CURE
+chom003huis01_01.xml__ch15__kaneel,chom003huis01_01.xml,Kaneel,body,1550,,,False,descriptive,False,Gemengde Meê.,CURE,CURE
+chom003huis01_01.xml__ch21__kaneel,chom003huis01_01.xml,Kaneel,body,344,,COOKING_CREATION,False,descriptive,False,Geheim om essentie van Saffraan te maken.,CURE,CURE
+chom003huis01_01.xml__ch21__suiker,chom003huis01_01.xml,Suiker,body,336,,COOKING_CREATION,False,descriptive,False,Geheim om essentie van Saffraan te maken.,CURE,CURE
+chom003huis01_01.xml__ch22__wortel__1,chom003huis01_01.xml,Wortel,body,1532,,COOKING_CREATION,False,descriptive,False,Aanmerking op zekere toebereidzelen.,NONE,CURE
+chom003huis01_01.xml__ch13__pannekoeken,chom003huis01_01.xml,Pannekoeken,near_head,188,,,False,descriptive,False,Levenswys der Kortborstigen.,DROPPED,INGESTION
+chom003huis01_01.xml__ch12__knoflook,chom003huis01_01.xml,Knoflook,body,752,,,False,descriptive,False,Pap voor de Jigt.,CURE,INGESTION
+chom003huis01_01.xml__ch4__kruidnagels,chom003huis01_01.xml,kruidnagels,body,1144,,PRESERVING,False,anaphoric,False,"Andere manier, om de stoelen van Artischokken te bewaren.",PRESERVING,PRESERVING
+chom003huis01_01.xml__ch4__komkommers,chom003huis01_01.xml,Komkommers,body,1049,,PRESERVING,False,anaphoric,False,"Andere manier, om de stoelen van Artischokken te bewaren.",PRESERVING,PRESERVING
+chom003huis01_01.xml__ch20__wortelen,chom003huis01_01.xml,Wortelen,body,9820,,,False,descriptive,False,queekhof,NONE,PRESERVING
+chom003huis01_01.xml__ch10__kruiden,chom003huis01_01.xml,Kruiden,near_head,166,,,False,descriptive,False,Vierde Vermenigvuldiging.,PRESERVING,PRESERVING
+chom003huis01_01.xml__ch23__v_genezen__vlees,chom003huis01_01.xml,vlees,near_head,165,,COOKING_CREATION,True,descriptive,False,Hoe men ze gebruikt.,DROPPED,CURE
+chom003huis01_01.xml__ch24__v_allen__water,chom003huis01_01.xml,water,body,371,,,True,descriptive,False,verstopping,DROPPED,DROPPED
+chom003huis01_01.xml__ch24__v_genezen__olie,chom003huis01_01.xml,olie,body,3435,,,False,descriptive,False,"Aanmerkingen van den Heer Frankus, over de krachten van de Veronica.",CURE,CURE
+cure_stepc__chom003huis01_01.xml__ch20__venkel__102306,chom003huis01_01.xml,Venkel,body,464,MEDICAL,CURE,True,descriptive,False,remedie.,CURE,CURE
+cure_stepc__chom003huis01_01.xml__ch22__suiker__47579,chom003huis01_01.xml,Suiker,body,753,,,True,descriptive,False,Van een gezwollen Tong.,CURE,COOKING_CREATION
+cure_stepc__chom003huis01_01.xml__ch21__kaneel__23319,chom003huis01_01.xml,Kaneel,body,297,,,True,descriptive,False,Siroop van Kweperen.,CURE,NONE
+cure_stepc__chom003huis01_01.xml__ch4__kruidnagels__17638,chom003huis01_01.xml,Kruidnagels,near_head,56,,COOKING_CREATION,True,descriptive,False,Om het water van Angelica te maken.,CURE,NONE
+cure_stepc__chom003huis01_01.xml__ch13__amandelen__48177,chom003huis01_01.xml,Amandelen,body,666,,CURE,True,descriptive,False,Geneesmiddelen voor een Uitterende koors.,CURE,CURE
+cure_stepc__chom003huis01_01.xml__ch19__azyn__71210,chom003huis01_01.xml,Azyn,body,953,,CURE,False,descriptive,False,PYN in de LIEZEN. Zie letter L.,CURE,CURE
+cure_stepc__chom003huis01_01.xml__ch11__kervel__47405,chom003huis01_01.xml,Kervel,body,7848,MEDICAL,CURE,False,descriptive,False,Genees-middelen voor de Haemorrhoides.,CURE,CURE
+cure_stepc__chom003huis01_01.xml__ch11__kruidnagelen__11771,chom003huis01_01.xml,Kruidnagelen,near_head,123,,,True,descriptive,False,Ragout van een Haasje.,COOKING_CREATION,COOKING_CREATION
+cure_stepc__chom003huis01_01.xml__ch21__gerst__31472,chom003huis01_01.xml,Gerst,body,5083,,COOKING_CREATION,False,descriptive,False,"De manier, waar op men die Medicynen gebruikt, is als volgt.",CURE,CURE
+cure_stepc__chom003huis01_01.xml__ch7__honing__14870,chom003huis01_01.xml,Honing,body,1836,,COOKING_CREATION,False,descriptive,False,"Manier, om zamen gemengde Wateren te distilleeren.",CURE,NONE
+cure_stepc__chom003huis01_01.xml__ch22__salie__68404,chom003huis01_01.xml,Salie,near_head,26,,COOKING_CREATION,True,descriptive,False,Om de tanden vast te zetten.,CURE,CURE
+ingest_stepc__chom003huis01_01.xml__ch11__bier__12513,chom003huis01_01.xml,Bier,body,1073,,,True,descriptive,False,hop,COOKING_CREATION,COOKING_CREATION
+ingest_stepc__chom003huis01_01.xml__ch13__boter__27091,chom003huis01_01.xml,Boter,body,1399,,,True,descriptive,False,Graveel Kolyk.,INGESTION,NONE
+ingest_stepc__chom003huis01_01.xml__ch21__kaas__59074,chom003huis01_01.xml,Kaas,near_head,85,,,True,descriptive,False,Voordeel in de maand van September te behalen.,PRESERVING,NONE
+ingest_stepc__chom003huis01_01.xml__ch22__beschuit__29994,chom003huis01_01.xml,Beschuit,near_head,113,,,True,bare,True,Kersse Taart.,COOKING_CREATION,NONE
+ingest_stepc__chom003huis01_01.xml__ch19__peren__57853,chom003huis01_01.xml,Peren,body,1795,,,False,descriptive,False,Beschryving der tamme Perenboom.,DROPPED,COOKING_CREATION
+tabak_pilot__chom003huis01_01.xml__ch20__tabak__102212,chom003huis01_01.xml,Tabak,body,6662,MEDICAL,CURE,True,descriptive,False,remedie.,CURE,NONE
+chom003huis01_01.xml__ch19__v_genezen__vlees,chom003huis01_01.xml,vlees,near_head,124,,COOKING_CREATION,True,descriptive,False,"Manier, om’er zich van te bedienen.",DROPPED,CURE
+chom003huis01_01.xml__ch19__v_genezen__suiker,chom003huis01_01.xml,suiker,body,607,MEDICAL,CURE,True,descriptive,False,Inwendig Bewaarmiddel tegen de Pest.,CURE,COOKING_CREATION
+chom003huis01_01.xml__ch7__v_eigen__roozen,chom003huis01_01.xml,roozen,body,1922,,,True,descriptive,False,dolheid,CURE,CURE
+chom003huis01_01.xml__ch15__v_eten__vlees,chom003huis01_01.xml,vlees,body,838,,,True,descriptive,False,murmeldier,INGESTION,NONE
+chom003huis01_01.xml__ch26__v_innemen__saffraan,chom003huis01_01.xml,saffraan,body,766,,COOKING_CREATION,False,anaphoric,False,Andere manier van openende Mars te maken.,DROPPED,COOKING_CREATION
+chom003huis01_01.xml__ch14__v_eten__water,chom003huis01_01.xml,water,near_head,72,,,True,descriptive,False,Gebruik der Lupynen voor de Paarden.,COOKING_CREATION,NONE
+chom003huis01_01.xml__ch11__v_eten__siroop,chom003huis01_01.xml,siroop,body,655,,,True,descriptive,False,Hulpmiddelen voor den Hik.,CURE,CURE
+chom003huis01_01.xml__ch13__v_eten__jenever,chom003huis01_01.xml,jenever,near_head,14,,,True,descriptive,False,Hun Eten.,INGESTION,COOKING_CREATION
+chom003huis01_01.xml__ch11__v_blyven__kiekens,chom003huis01_01.xml,kiekens,body,1382,,COOKING_CREATION,False,descriptive,False,"Manier, om de Eyeren te laten uitbroeijen.",DROPPED,DROPPED
+chom003huis01_01.xml__ch25__v_goed voor__anys,chom003huis01_01.xml,anys,head,0,,,True,descriptive,False,"Kunstwyn van Rozen, Dillen en Anys.",CURE,CURE
+chom003huis01_01.xml__ch21__v_goed voor__lever,chom003huis01_01.xml,lever,body,576,,,True,descriptive,False,sphondelium,CURE,NONE
+chom003huis01_01.xml__ch5__v_goed voor__lever,chom003huis01_01.xml,lever,body,1001,,,True,descriptive,False,boelkenskruid,CURE,DROPPED
+chom003huis01_01.xml__ch5__v_goed voor__meel,chom003huis01_01.xml,meel,near_head,85,,,True,descriptive,False,Eigenschap der Vygeboonen.,CURE,COOKING_CREATION
+chom003huis01_01.xml__ch19__v_genezen__wortelen,chom003huis01_01.xml,wortelen,body,443,MEDICAL,CURE,False,descriptive,False,Vallende ZIEKTE. Zie letter V.,DROPPED,CURE
+chom003huis01_01.xml__ch18__v_goed voor__wortel,chom003huis01_01.xml,wortel,near_head,128,,,True,descriptive,False,onzinnigheid,CURE,NONE
+chom003huis01_01.xml__ch13__v_drogen__kruim,chom003huis01_01.xml,kruim,body,1175,,,False,anaphoric,False,Andere Zuivering.,PRESERVING,NONE
+chom003huis01_01.xml__ch10__v_zwellen__wortel,chom003huis01_01.xml,wortel,body,721,,,True,descriptive,False,Aanmerkingen.,DROPPED,COOKING_CREATION
+chom003huis01_01.xml__ch7__v_gisting__roozen,chom003huis01_01.xml,roozen,body,1028,,COOKING_CREATION,False,descriptive,False,"Toebereiding der stoffen, die gedistilleert moeten worden.",DROPPED,COOKING_CREATION
+inception_nl_v2__selected_texts_txt__admin__s30__9142__rode,chom003huis01_01.xml,rode,body,252,MEDICAL,CURE,True,anaphoric,False,Ander middel voor de Daaglykse koors.,INGESTION,
+inception_nl_v2__selected_texts_txt__altink__s1__62__honing,chom003huis01_01.xml,Honing,body,1359,,CURE,False,descriptive,False,Krankheden der Byen.,NONE,
+inception_nl_v2__selected_texts_txt__altink__s3__819__kruiden,chom003huis01_01.xml,Kruiden,body,2114,,CURE,False,descriptive,False,Krankheden der Byen.,INGESTION,
+inception_nl_v2__selected_texts_txt__altink__s3__833__zeelbast,chom003huis01_01.xml,Zeelbast,body,2128,,CURE,False,descriptive,False,Krankheden der Byen.,INGESTION,
+inception_nl_v2__selected_texts_txt__altink__s3__850__berg_peper,chom003huis01_01.xml,Berg-peper,body,2145,,CURE,False,descriptive,False,Krankheden der Byen.,INGESTION,
+inception_nl_v2__selected_texts_txt__altink__s3__870__wolfsbezie,chom003huis01_01.xml,Wolfsbezie,body,2165,,CURE,False,descriptive,False,Krankheden der Byen.,INGESTION,
+inception_nl_v2__selected_texts_txt__altink__s3__896__bloessem,chom003huis01_01.xml,bloessem,body,2191,,CURE,False,descriptive,False,Krankheden der Byen.,INGESTION,
+inception_nl_v2__selected_texts_txt__altink__s3__1028__honing,chom003huis01_01.xml,Honing,body,2323,,CURE,False,descriptive,False,Krankheden der Byen.,INGESTION,
+inception_nl_v2__selected_texts_txt__altink__s5__1502__byen_poeijer,chom003huis01_01.xml,Byen-poeijer,body,2795,,CURE,False,descriptive,False,Krankheden der Byen.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s6__1571__noote_muskaat,chom003huis01_01.xml,Noote-muskaat,body,2863,,CURE,False,descriptive,False,Krankheden der Byen.,INGESTION,
+inception_nl_v2__selected_texts_txt__altink__s6__1589__bevergeil,chom003huis01_01.xml,Bevergeil,body,2881,,CURE,False,descriptive,False,Krankheden der Byen.,INGESTION,
+inception_nl_v2__selected_texts_txt__altink__s6__1669__honing,chom003huis01_01.xml,Honing,body,2961,,CURE,False,descriptive,False,Krankheden der Byen.,INGESTION,
+inception_nl_v2__selected_texts_txt__altink__s7__2253__bye_poeijers,chom003huis01_01.xml,Bye-poeijers,body,210,,,True,descriptive,False,Bye-kruid. Zie Melisse.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s9__2745__beerewortel,chom003huis01_01.xml,Beerewortel,body,700,,,False,descriptive,False,Bye-kruid. Zie Melisse.,COOKING_CREATION,
+inception_nl_v2__selected_texts_txt__altink__s10__3190__poeijer,chom003huis01_01.xml,Poeijer,body,1542,,,False,descriptive,False,Bye-kruid. Zie Melisse.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s10__3332__honing,chom003huis01_01.xml,Honing,body,1527,,,False,descriptive,False,Bye-kruid. Zie Melisse.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s11__3490__poeijer,chom003huis01_01.xml,Poeijer,body,1841,,,False,descriptive,False,Bye-kruid. Zie Melisse.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s12__3697__geven,chom003huis01_01.xml,geven,body,2047,,,False,descriptive,False,Bye-kruid. Zie Melisse.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s23__6371__voedzel,chom003huis01_01.xml,Voedzel,near_head,36,MEDICAL,CURE,False,descriptive,False,Middelen voor de Alledaagse Koors.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s23__6449__ey,chom003huis01_01.xml,Ey,near_head,114,MEDICAL,CURE,False,descriptive,False,Middelen voor de Alledaagse Koors.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s23__6500__potspys,chom003huis01_01.xml,Potspys,near_head,165,MEDICAL,CURE,False,descriptive,False,Middelen voor de Alledaagse Koors.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s23__6565__olyven,chom003huis01_01.xml,Olyven,body,230,MEDICAL,CURE,False,descriptive,False,Middelen voor de Alledaagse Koors.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s23__6573__rasynen,chom003huis01_01.xml,Rasynen,body,238,MEDICAL,CURE,False,descriptive,False,Middelen voor de Alledaagse Koors.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s23__6585__gebrade,chom003huis01_01.xml,gebrade,body,250,MEDICAL,CURE,False,descriptive,False,Middelen voor de Alledaagse Koors.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s23__6593__brood,chom003huis01_01.xml,Brood,body,258,MEDICAL,CURE,False,descriptive,False,Middelen voor de Alledaagse Koors.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s23__6603__biscuit,chom003huis01_01.xml,Biscuit,body,268,MEDICAL,CURE,False,descriptive,False,Middelen voor de Alledaagse Koors.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s23__6618__waters,chom003huis01_01.xml,waters,body,283,MEDICAL,CURE,False,descriptive,False,Middelen voor de Alledaagse Koors.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s23__6629__andere,chom003huis01_01.xml,andere,body,294,MEDICAL,CURE,False,descriptive,False,Middelen voor de Alledaagse Koors.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s23__6636__vogt,chom003huis01_01.xml,vogt,body,301,MEDICAL,CURE,False,descriptive,False,Middelen voor de Alledaagse Koors.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s24__6660__drank,chom003huis01_01.xml,Drank,body,324,MEDICAL,CURE,False,descriptive,False,Middelen voor de Alledaagse Koors.,NONE,
+inception_nl_v2__selected_texts_txt__altink__s26__7717__theriac,chom003huis01_01.xml,Theriac,body,1379,MEDICAL,CURE,False,descriptive,False,Middelen voor de Alledaagse Koors.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s29__8791__alzemwyn,chom003huis01_01.xml,Alzemwyn,body,204,,CURE,False,descriptive,False,Een Drankje voor de Alledaagse Koors.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s30__8937__t,chom003huis01_01.xml,t,near_head,6,MEDICAL,CURE,True,anaphoric,False,Ander middel voor de Daaglykse koors.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s33__9769__wyn,chom003huis01_01.xml,Wyn,near_head,176,,,False,anaphoric,False,Andere ALLEDAAGSE KOORS.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s38__11183__afziedsel,chom003huis01_01.xml,Afziedsel,body,346,,CURE,False,descriptive,False,Zwelling van de zyden eens Paards.,COOKING_CREATION,
+inception_nl_v2__selected_texts_txt__altink__s38__11193__van,chom003huis01_01.xml,van,body,322,,CURE,False,descriptive,False,Zwelling van de zyden eens Paards.,COOKING_CREATION,
+inception_nl_v2__selected_texts_txt__altink__s40__11828__toestopt,chom003huis01_01.xml,toestopt,body,990,,CURE,False,descriptive,False,Zwelling van de zyden eens Paards.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s46__12244__gras,chom003huis01_01.xml,gras,near_head,165,,CURE,False,descriptive,False,Zwelling der Koejen.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s49__12818__opleggen,chom003huis01_01.xml,opleggen,near_head,138,,CURE,True,descriptive,False,Zwelling van den hals der Koejen.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s51__13180__smeren,chom003huis01_01.xml,smeren,body,498,,CURE,False,descriptive,False,Zwelling van den hals der Koejen.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s52__13418__brandnetels,chom003huis01_01.xml,Brandnetels,body,735,,CURE,False,descriptive,False,Zwelling van den hals der Koejen.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s55__14240__mensen_pis,chom003huis01_01.xml,Mensen-pis,body,470,,CURE,False,descriptive,False,Zwelling der Schapen.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s55__14606__wyn,chom003huis01_01.xml,Wyn,body,299,,CURE,True,descriptive,False,"Zwelling, die de Geiten overkomt.",CURE,
+inception_nl_v2__selected_texts_txt__altink__s56__14705__ooft,chom003huis01_01.xml,Ooft,near_head,63,,CURE,False,descriptive,False,Zwelling der Varkens.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s56__14918__kool,chom003huis01_01.xml,Kool,body,223,,CURE,False,descriptive,False,Zwelling der Varkens.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s56__14933__eten,chom003huis01_01.xml,eten,near_head,25,,CURE,False,descriptive,False,Zwelling der Varkens.,CURE,
+inception_nl_v2__selected_texts_txt__altink__s59__15361__gestooten,chom003huis01_01.xml,gestooten,near_head,185,,CURE,False,descriptive,False,Uitnemend Afziedsel voor zwelling.,COOKING_CREATION,
+inception_nl_v2__selected_texts_txt__altink__s59__15371__kristal,chom003huis01_01.xml,Kristal,near_head,195,,CURE,False,descriptive,False,Uitnemend Afziedsel voor zwelling.,COOKING_CREATION,
+inception_nl_v2__selected_texts_txt__altink__s60__15436__glazen,chom003huis01_01.xml,glazen,body,259,,CURE,False,descriptive,False,Uitnemend Afziedsel voor zwelling.,CURE,
+inception_nl_v2__selected_texts_txt__dejong__s28__8723__witte,chom003huis01_01.xml,witte,near_head,137,,CURE,True,descriptive,False,Een Drankje voor de Alledaagse Koors.,INGESTION,
+inception_nl_v2__selected_texts_txt__dejong__s31__9383__bladen,chom003huis01_01.xml,bladen,body,492,MEDICAL,CURE,False,anaphoric,False,Ander middel voor de Daaglykse koors.,CURE,
+inception_nl_v2__selected_texts_txt__dejong__s31__9390__van,chom003huis01_01.xml,van,body,499,MEDICAL,CURE,False,anaphoric,False,Ander middel voor de Daaglykse koors.,CURE,
+inception_nl_v2__selected_texts_txt__dejong__s33__9803__afziedzel,chom003huis01_01.xml,Afziedzel,body,210,,,False,anaphoric,False,Andere ALLEDAAGSE KOORS.,CURE,
+inception_nl_v2__selected_texts_txt__dejong__s33__9813__van,chom003huis01_01.xml,van,body,220,,,False,anaphoric,False,Andere ALLEDAAGSE KOORS.,CURE,
+inception_nl_v2__selected_texts_txt__dejong__s47__12512__afziedsel,chom003huis01_01.xml,afziedsel,body,432,,CURE,False,descriptive,False,Zwelling der Koejen.,CURE,
+inception_nl_v2__selected_texts_txt__dejong__s47__12522__van,chom003huis01_01.xml,van,body,442,,CURE,False,descriptive,False,Zwelling der Koejen.,CURE,
+inception_nl_v2__selected_texts_txt__dejong__s49__12814__pap,chom003huis01_01.xml,Pap,near_head,134,,CURE,True,descriptive,False,Zwelling van den hals der Koejen.,CURE,
+inception_nl_v2__selected_texts_txt__dejong__s50__12984__heumst,chom003huis01_01.xml,Heumst,body,303,,CURE,False,descriptive,False,Zwelling van den hals der Koejen.,CURE,
+inception_nl_v2__selected_texts_txt__dejong__s56__14846__afziedsel,chom003huis01_01.xml,afziedsel,body,204,,CURE,False,descriptive,False,Zwelling der Varkens.,CURE,
+inception_nl_v2__selected_texts_txt__dejong__s56__14856__van,chom003huis01_01.xml,van,near_head,99,,CURE,False,descriptive,False,Zwelling der Varkens.,CURE,
+inception_nl_v2__selected_texts_txt__dejong__s56__14860__rode,chom003huis01_01.xml,rode,body,218,,CURE,False,descriptive,False,Zwelling der Varkens.,CURE,
+inception_nl_v2__selected_texts_txt__dejong__s56__14865__kool,chom003huis01_01.xml,Kool,body,223,,CURE,False,descriptive,False,Zwelling der Varkens.,CURE,
+inception_nl_v2__selected_texts_txt__dekker__s33__9855__en,chom003huis01_01.xml,en,near_head,113,,,False,anaphoric,False,Andere ALLEDAAGSE KOORS.,CURE,
+inception_nl_v2__selected_texts_txt__dekker__s52__13410__pap,chom003huis01_01.xml,Pap,body,727,,CURE,False,descriptive,False,Zwelling van den hals der Koejen.,CURE,
+inception_nl_v2__selected_texts_txt__dekker__s52__13414__van,chom003huis01_01.xml,van,body,731,,CURE,False,descriptive,False,Zwelling van den hals der Koejen.,CURE,
+inception_nl_v2__selected_texts_txt__dekker__s58__15150__afziedsel,chom003huis01_01.xml,Afziedsel,head,0,,CURE,True,descriptive,False,Uitnemend Afziedsel voor zwelling.,NONE,
+eman001lang01_01.xml__ch6__kalkoen,eman001lang01_01.xml,kalkoen,body,336,,,True,descriptive,False,Thebe.,DROPPED,NONE
+eman001lang01_01.xml__ch4__v_houden__brood,eman001lang01_01.xml,brood,body,9524,,,False,descriptive,False,Op den Nijl.,COOKING_CREATION,INGESTION
+eman001lang01_01.xml__ch5__v_eten__wijn,eman001lang01_01.xml,wijn,body,27728,,,False,descriptive,False,II.,NONE,COOKING_CREATION
+eman001lang01_01.xml__ch3__v_steenen__water,eman001lang01_01.xml,water,body,20277,,,False,descriptive,False,Een groote Beiram in Cairo.,DROPPED,DROPPED
+fric007drie01_01.xml__ch35__peper,fric007drie01_01.xml,Peper,body,109324,,,False,descriptive,False,"Summa, van de Saxische nae Oost-Indien gevaerne, gestorven 16. Persoonen.",COOKING_CREATION,COOKING_CREATION
+fric007drie01_01.xml__ch40__kool,fric007drie01_01.xml,Kool,body,284729,,,False,descriptive,False,"Summa, van de Saxische nae Oost-Indien gevaerne, gestorven 16. Persoonen.",NONE,INGESTION
+fric007drie01_01.xml__ch33__edick__1,fric007drie01_01.xml,Edick,body,59861,,,False,descriptive,False,"Summa, van de Saxische nae Oost-Indien gevaerne, gestorven 16. Persoonen.",INGESTION,COOKING_CREATION
+fric007drie01_01.xml__ch34__v_houden__bier,fric007drie01_01.xml,bier,body,78286,,,False,descriptive,False,"Summa, van de Saxische nae Oost-Indien gevaerne, gestorven 16. Persoonen.",PRESERVING,NONE
+gram004madj01_01.xml__ch4__wortel,gram004madj01_01.xml,wortel,body,62993,,,False,descriptive,False,Voorrede.,DROPPED,NONE
+hein008denv01_01.xml__ch9__kruidnagels,hein008denv01_01.xml,kruidnagels,body,515015,,,False,descriptive,False,Op de Titel-plaat.,NONE,COOKING_CREATION
+hein008denv01_01.xml__ch9__citroen,hein008denv01_01.xml,Citroen,body,514988,,,False,descriptive,False,Op de Titel-plaat.,DROPPED,COOKING_CREATION
+hein008denv01_01.xml__ch9__v_houden__rosmaryn,hein008denv01_01.xml,rosmaryn,body,514850,,,False,descriptive,False,Op de Titel-plaat.,NONE,NONE
+hein008denv01_01.xml__ch9__v_voeden__brood,hein008denv01_01.xml,brood,body,589328,,,False,descriptive,False,Op de Titel-plaat.,DROPPED,INGESTION
+hein008denv01_01.xml__ch13__v_behalven__water,hein008denv01_01.xml,water,body,936155,,,False,descriptive,False,Op de Titel-plaat.,DROPPED,DROPPED
+hein008denv01_01.xml__ch11__v_likken__vet,hein008denv01_01.xml,vet,body,687480,,,False,descriptive,False,Op de Titel-plaat.,DROPPED,NONE
+hein008denv01_01.xml__ch10__v_eeten__kruiden,hein008denv01_01.xml,kruiden,body,632565,,,False,descriptive,False,Op de Titel-plaat.,INGESTION,NONE
+hond001dape02_01.xml__ch16__v_ghebroken__vet,hond001dape02_01.xml,vet,body,491,,,False,descriptive,False,"Aen mijn Heere Mijn Heere H. van Tvyll van Seroeskercke, Heere van Stavenisse, G",DROPPED,NONE
+hond001dape02_01.xml__ch13__kervel,hond001dape02_01.xml,kervel,body,50973,,,False,descriptive,False,Den sesten ganck. Spijse.,INGESTION,CURE
+hond001dape02_01.xml__ch12__v_allen__lever,hond001dape02_01.xml,lever,body,1835,MEDICAL,CURE,False,descriptive,False,Den viifden ganck. Genees-cruyden.,CURE,DROPPED
+hond001dape02_01.xml__ch13__v_drincken__boter,hond001dape02_01.xml,boter,body,2418,,,False,descriptive,False,Den sesten ganck. Spijse.,INGESTION,NONE
+joos025kley01_01.xml__ch6__appelen,joos025kley01_01.xml,appelen,body,81543,,,False,descriptive,False,Rusch.,NONE,NONE
+joos025kley01_01.xml__ch6__brooden,joos025kley01_01.xml,brooden,body,80714,,,False,descriptive,False,Rusch.,INGESTION,INGESTION
+joos025kley01_01.xml__ch6__v_houden__boonen,joos025kley01_01.xml,boonen,body,60426,,,False,descriptive,False,Rusch.,INGESTION,NONE
+tabak_pilot__joos025kley01_01.xml__ch6__toeback__58603,joos025kley01_01.xml,toeback,body,96796,,,False,descriptive,False,Rusch.,INGESTION,NONE
+kapp006zesj01_01.xml__ch3__munt,kapp006zesj01_01.xml,munt,body,83997,,,False,descriptive,False,Voorrede van den schrijver.,DROPPED,NONE
+kapp006zesj01_01.xml__ch6__v_maken__olie,kapp006zesj01_01.xml,olie,body,262925,,,False,descriptive,False,Voorrede van den schrijver.,DROPPED,COOKING_CREATION
+ingest_stepc__kapp006zesj01_01.xml__ch5__groenten__51702,kapp006zesj01_01.xml,groenten,body,173440,,,False,descriptive,False,Voorrede van den schrijver.,DROPPED,COOKING_CREATION
+tabak_pilot__kapp006zesj01_01.xml__ch7__tabak__45071,kapp006zesj01_01.xml,tabak,body,95308,,,False,descriptive,False,Zesde hoofdstuk.,DROPPED,NONE
+kapp006zesj01_01.xml__ch7__v_matrozen__jenever,kapp006zesj01_01.xml,jenever,body,29605,,,False,descriptive,False,Zesde hoofdstuk.,INGESTION,NONE
+kapp006zesj01_01.xml__ch7__v_drinken__hoenders,kapp006zesj01_01.xml,hoenders,body,10897,,,False,descriptive,False,Zesde hoofdstuk.,INGESTION,INGESTION
+kapp006zesj01_01.xml__ch7__v_eten__anijs,kapp006zesj01_01.xml,anijs,body,160429,,,False,descriptive,False,Zesde hoofdstuk.,INGESTION,INGESTION
+koer001bloe01_01.xml__ch4__v_slikken__water,koer001bloe01_01.xml,water,body,769,,,False,descriptive,False,E. L.,DROPPED,DROPPED
+koer001bloe01_01.xml__ch4__v_verbeteren__deeg,koer001bloe01_01.xml,deeg,body,31831,,,False,descriptive,False,R. E.,DROPPED,DROPPED
+magi007kooc02_01.xml__ch9__peper,magi007kooc02_01.xml,peper,body,357,,COOKING_CREATION,True,descriptive,False,Hoemen een Borst-stucxken van een Kalf op den rooster sal braden.,COOKING_CREATION,COOKING_CREATION
+magi007kooc02_01.xml__ch13__v_stucken__peper,magi007kooc02_01.xml,peper,body,235,,COOKING_CREATION,True,descriptive,False,"Inden eersten, hoemen Pasteyen van Kalfs-swesers backt.",COOKING_CREATION,COOKING_CREATION
+magi007kooc02_01.xml__ch9__v_braden__pepers,magi007kooc02_01.xml,pepers,body,357,,COOKING_CREATION,True,descriptive,False,Hoemen een Borst-stucxken van een Kalf op den rooster sal braden.,COOKING_CREATION,COOKING_CREATION
+magi007kooc02_01.xml__ch8__v_broeyen__vlees,magi007kooc02_01.xml,vlees,body,860,,COOKING_CREATION,False,descriptive,False,Hoemen een Pauwe braden sal.,COOKING_CREATION,COOKING_CREATION
+magi007kooc02_01.xml__ch15__v_koken__oesters,magi007kooc02_01.xml,oesters,body,291,,COOKING_CREATION,False,descriptive,False,Maniere om Visch te koken.,COOKING_CREATION,COOKING_CREATION
+magi007kooc02_01.xml__ch8__mostacciolen,magi007kooc02_01.xml,mostacciolen,near_head,155,,,False,descriptive,False,Sauce van Rosijnen ende Pruymen.,COOKING_CREATION,COOKING_CREATION
+magi007kooc02_01.xml__ch10__roosemarijn,magi007kooc02_01.xml,roosemarijn,body,1408,,,False,descriptive,False,Hoe datmen de lendenen van eenen Os oft Koe stoven sal.,COOKING_CREATION,COOKING_CREATION
+meer017tone02_01.xml__ch86__erwten,meer017tone02_01.xml,Erwten,body,73233,,,False,descriptive,False,Tot den Leezer.,INGESTION,INGESTION
+meer017tone02_01.xml__ch58__v_maken__appel,meer017tone02_01.xml,appel,body,46578,,,False,descriptive,False,Tot den Leezer.,NONE,NONE
+meer017tone02_01.xml__ch86__v_nuttigen__erwten,meer017tone02_01.xml,erwten,body,73233,,,False,descriptive,False,Tot den Leezer.,INGESTION,INGESTION
+meer017tone02_01.xml__ch100__v_maken__koe,meer017tone02_01.xml,koe,body,83003,,,False,descriptive,False,Tot den Leezer.,DROPPED,NONE
+meer017tone02_01.xml__ch34__v_eten__vis,meer017tone02_01.xml,vis,body,28828,,,False,descriptive,False,Tot den Leezer.,DROPPED,INGESTION
+pica002naau05_01.xml__ch30__v_eeten__brood,pica002naau05_01.xml,brood,body,536138,,,False,descriptive,False,Augustus.,INGESTION,INGESTION
+pica002naau05_01.xml__ch32__v_maken__rogge,pica002naau05_01.xml,rogge,body,645022,,,False,descriptive,False,Augustus.,DROPPED,COOKING_CREATION
+pica002naau05_01.xml__ch33__v_behandelen__schapen,pica002naau05_01.xml,schapen,body,796793,,,False,descriptive,False,Augustus.,DROPPED,DROPPED
+pica002naau05_01.xml__ch8__v_spyzen__brooden,pica002naau05_01.xml,brooden,body,334665,,,False,descriptive,False,Historische verhandelingen Over de hedendaagsche godtsdienst-plichten En gewoont,INGESTION,INGESTION
+poir001dens01_01.xml__ch12__v_houden__appelen,poir001dens01_01.xml,appelen,body,286827,,,False,descriptive,False,Aen de Alder-Heylighste en altyt on-bevleckte Moeder Godts ende Maeghet Maria. C,NONE,NONE
+roch007natu01_01.xml__ch12__gember,roch007natu01_01.xml,Gember,body,1114,,,False,descriptive,False,IX. Lid. Van het Eyland van Nieves.,NONE,NONE
+roch007natu01_01.xml__ch32__v_houden__water,roch007natu01_01.xml,water,body,2413,,,False,descriptive,False,III. Lid. Van een Onweder dat d'Eylanders Ouragan noemen.,DROPPED,DROPPED
+roch007natu01_01.xml__ch12__v_drinken__vis,roch007natu01_01.xml,vis,body,2031,,,False,descriptive,False,I. Lid. Van het Eyland van Dominikus.,DROPPED,INGESTION
+roch007natu01_01.xml__ch37__v_maken__vet,roch007natu01_01.xml,vet,body,103707,,,False,descriptive,False,Natuurlijke en zedelijke Historie van d'Eylanden de Voor-eylanden van Amerika. T,DROPPED,COOKING_CREATION
+roch007natu01_01.xml__ch50__brandewijn,roch007natu01_01.xml,brandewijn,body,188708,,,False,descriptive,False,"XI. Lid. Van de Huwelijken der Apalachiten, van d'opvoeding haar'er kinderen, va",INGESTION,INGESTION
+tabak_pilot__roch007natu01_01.xml__ch12__tabak__42219,roch007natu01_01.xml,Tabak,body,1129,,,False,descriptive,False,IX. Lid. Van het Eyland van Nieves.,DROPPED,NONE
+roch007natu01_01.xml__ch31__v_eten__wortel,roch007natu01_01.xml,wortel,body,3458,,,False,descriptive,False,VI. Lid. Van de Land- en Soet-water-Schild-padden.,DROPPED,COOKING_CREATION
+roch007natu01_01.xml__ch40__v_eten__verkens,roch007natu01_01.xml,verkens,body,146013,,,False,descriptive,False,Natuurlijke en zedelijke Historie van d'Eylanden de Voor-eylanden van Amerika. T,INGESTION,NONE
+sche471verm01_01.xml__ch26__hazen,sche471verm01_01.xml,Hazen,body,204723,,,False,descriptive,False,'t Vermaak der Tover-hekzen van Lap- en Fin-land.,DROPPED,NONE
+sche471verm01_01.xml__ch7__v_maken__huid,sche471verm01_01.xml,huid,body,45335,,,False,descriptive,False,'t Vermaak der Tover-hekzen van Lap- en Fin-land.,DROPPED,DROPPED
+teen002nege01_01.xml__ch6__huid,teen002nege01_01.xml,huid,body,40178,,,False,descriptive,False,Algemeene blik op de vrije bevolking van Paramaribo.,DROPPED,DROPPED
+teen002nege01_01.xml__ch9__v_trekken__potasch,teen002nege01_01.xml,potasch,body,60640,,,False,descriptive,False,Algemeene blik op de vrije bevolking van Paramaribo.,DROPPED,NONE
+teen002nege01_01.xml__ch13__v_behandelen__suiker,teen002nege01_01.xml,suiker,body,332,,,True,descriptive,False,"Beschouwing, hoe de slaven in de kolonie Suriname behandeld worden.",NONE,NONE
+tabak_pilot__teen002nege01_01.xml__ch19__tabak__103583,teen002nege01_01.xml,tabak,body,33229,,,False,descriptive,False,Pro Justitia. In naam des Konings. Vonnis.,INGESTION,NONE
+weye002ontl01_01.xml__ch17__amandelmelk,weye002ontl01_01.xml,Amandelmelk,body,8312,,,False,descriptive,False,Waarschouwing,INGESTION,NONE
+weye002ontl01_01.xml__ch16__v_opzetten__kreeft,weye002ontl01_01.xml,kreeft,body,567,,,True,descriptive,False,Een Glimp van Broeder Bon Homme..,DROPPED,DROPPED
+weye002ontl01_01.xml__ch39__v_zeven__munt,weye002ontl01_01.xml,munt,body,3152,,,False,descriptive,False,Copy van een Brief van den 15 July 1724.,DROPPED,DROPPED
+tabak_pilot__weye002ontl01_01.xml__ch22__tabak__86976,weye002ontl01_01.xml,Tabak,body,2669,,,False,descriptive,False,"Een Uittreksel, uit de vloeibaare Leevenswyze van S. Brandis, Portret- en Bloem ",INGESTION,NONE
+weye002ontl01_01.xml__ch3__v_drinken__schyf,weye002ontl01_01.xml,schyf,body,8667,,,False,descriptive,False,Inleiding tot de Coffihuis Geleertheid.,DROPPED,DROPPED
+wicq003jour01_01.xml__ch6__wortelen,wicq003jour01_01.xml,wortelen,body,197232,,,False,descriptive,False,"Stem: Couragie, couragie.",DROPPED,INGESTION
+wicq003jour01_01.xml__ch6__v_stucken__melk,wicq003jour01_01.xml,melk,body,62802,,,False,descriptive,False,"Stem: Couragie, couragie.",DROPPED,NONE
+ingest_stepc__wicq003jour01_01.xml__ch2__wijn__70613,wicq003jour01_01.xml,Wijn,body,1196,,,False,descriptive,False,Myn heeren.,DROPPED,NONE
+wits008noor02_01.xml__ch15__v_genezen__bloed,wits008noor02_01.xml,bloed,body,11058,,,False,descriptive,False,Namen der Maenden.,DROPPED,DROPPED
+wits008noor02_01.xml__ch4__v_braden__vlees,wits008noor02_01.xml,vlees,body,18526,,,False,descriptive,False,Niuche.,COOKING_CREATION,COOKING_CREATION
+wits008noor02_01.xml__ch44__patryzen,wits008noor02_01.xml,Patryzen,body,270380,,,False,descriptive,False,Namen der Maenden.,INGESTION,INGESTION
+ingest_stepc__wits008noor02_01.xml__ch146__appelen__80565,wits008noor02_01.xml,Appelen,body,134449,,,False,descriptive,False,Wel Edele Heer;,DROPPED,NONE
+tabak_pilot__wits008noor02_01.xml__ch4__toebak__92397,wits008noor02_01.xml,toebak,body,20038,,,False,descriptive,False,Niuche.,NONE,NONE
+tabak_pilot__wits008noor02_01.xml__ch32__tabak__26380,wits008noor02_01.xml,Tabak,body,178629,,,True,divider,False,O,NONE,NONE
+wits008noor02_01.xml__ch128__v_nuttigen__brood,wits008noor02_01.xml,brood,body,162595,,,False,descriptive,False,"Het Vader-Ons in de Jakutsche Spraek, op de Slavinische wys gevolgt.",DROPPED,NONE
+wits008noor02_01.xml__ch51__v_eeten__melk,wits008noor02_01.xml,melk,body,442118,,,False,descriptive,False,Namen der Maenden.,INGESTION,INGESTION
+wits008noor02_01.xml__ch65__v_drinken__bier,wits008noor02_01.xml,bier,body,8907,,,False,descriptive,False,"De rug-reize van de Gezanten, uit Chata na Heraat.",INGESTION,INGESTION
+wits008noor02_01.xml__ch34__v_eeten__garst,wits008noor02_01.xml,garst,body,21135,,,False,descriptive,False,"De Agno Scyticâ, seu frustu Borometz (Boranits.)",INGESTION,NONE
+wits008noor02_01.xml__ch116__v_matrozen__bier,wits008noor02_01.xml,bier,body,98244,,,False,descriptive,False,Morduinsche Naem en Woorden Lijst.,INGESTION,NONE
+wits008noor02_01.xml__ch32__v_eigen__bier,wits008noor02_01.xml,bier,body,9015,,,False,descriptive,False,Het Gebed des Heeren in het Moegaels.,COOKING_CREATION,NONE
+wits008noor02_01.xml__ch114__v_eeten__schapen,wits008noor02_01.xml,schapen,body,20551,,,False,descriptive,False,Morduinsche Naem en Woorden Lijst.,INGESTION,NONE
+wits008noor02_01.xml__ch133__v_behalven__schapen,wits008noor02_01.xml,schapen,body,52208,,,False,descriptive,False,"Volgt nader bericht uit de mond van eenige krygs-luiden, die zich te dier Oord h",DROPPED,NONE
+wolf016hist01_01.xml__ch20__struif,wolf016hist01_01.xml,struif,body,92696,,,False,descriptive,False,Nederlandsche Juffers!,DROPPED,NONE
+wolf016hist01_01.xml__ch147__v_zuren__appel,wolf016hist01_01.xml,appel,body,37082,,,False,descriptive,False,Verhaal.,INGESTION,NONE
+wolf016hist01_01.xml__ch11__groente,wolf016hist01_01.xml,groente,body,46626,,,False,descriptive,False,Nederlandsche Juffers!,INGESTION,INGESTION
+wolf016hist01_01.xml__ch11__v_eeten__groente,wolf016hist01_01.xml,groente,body,46626,,,False,descriptive,False,Nederlandsche Juffers!,INGESTION,INGESTION

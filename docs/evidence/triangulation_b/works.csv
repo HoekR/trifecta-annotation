@@ -1,0 +1,40 @@
+filename,ti_id,title,year,genre,regime,bytes,verb_candidates,stratum
+magi007kooc02_01.xml,magi007kooc02,Koock-boeck ofte familieren kevken-boeck,1663,non-fictie,RECIPE_PRACTICE,206712,,RECIPE
+_vol002volm01_01.xml,_vol002volm01,De volmaakte Hollandsche keuken-meid,1752,non-fictie,RECIPE_PRACTICE,585229,,RECIPE
+bate002secr02_01.xml,bate002secr02,Het secreet-boek vol heerlijke konsten,1694,non-fictie,RECIPE_PRACTICE,983547,,RECIPE
+alke003nede03_01.xml,alke003nede00,Nederlands displegtigheden,1732,non-fictie,RECIPE_PRACTICE,871970,,RECIPE
+_pha002phar01_01.xml,_pha002phar01,"Pharmacopoea Roterodamensis Galeno-Chymica, of Rotterdamsche Galenische en Chymische Apotheek",1709,non-fictie,MEDICAL,238149,,MEDICAL
+_pha001phar03_01.xml,_pha001phar03,"Pharmacopaea Amstelredamensis, of d'Amsterdammer apotheek",1686,non-fictie,MEDICAL,364721,,MEDICAL
+_aan004aanw01_01.xml,_aan004aanw01,Aanwijzingen tot het gebruik der medicynen voor zeevarenden,1839,non-fictie,MEDICAL,43938,,MEDICAL
+blan012kart01_01.xml,blan012kart01,"De Kartesiaanse academie ofte, institutie der medicyne",1683,non-fictie,MEDICAL,881037,,MEDICAL
+_lee024leeu03_01.xml,_lee024leeu03,"Leeuwarder Apotheek, volgens de Galenische en Chimische wyze; door den arbeit van t Genoodschap der Artzen dier stede opgemaakt, en door dachtbaarheid der Majestraat bevestigt",1712,non-fictie,MEDICAL,247303,,MEDICAL
+hoof012memo01_01.xml,hoof012memo01,Memoriën en adviezen (2 delen),1871,non-fictie,UNKNOWN,1919347,9.0,non-fictie
+craa001wand07_01.xml,craa001wand00,Wandelingen door Nederland met pen en potlood (7 delen),1875,non-fictie,UNKNOWN,1242930,18.0,non-fictie
+_bek006bekn01_01.xml,_bek006bekn01,Beknopt verhaal wegens het verongelukken van verscheide schepen in het jaar 1777,1779,non-fictie,LITERARY,26884,5.0,non-fictie
+quac001soci06_01.xml,quac001soci00,De socialisten: Personen en stelsels,1875,non-fictie,UNKNOWN,2271308,21.0,non-fictie
+bowr001brie01_01.xml,bowr001brie01,Brieven,1830,non-fictie,UNKNOWN,611319,9.0,non-fictie
+drex002sonn02_01.xml,drex002sonn02,De sonne-bloeme,1700,non-fictie,UNKNOWN,945634,19.0,non-fictie
+busk001brie01_01.xml,busk001brie01,Vragen en antwoorden. Brieven over den Bijbel,1863,non-fictie,UNKNOWN,744334,17.0,non-fictie
+spin003nage01_01.xml,spin003nage01,Nagelate schriften,1677,non-fictie,UNKNOWN,2484923,27.0,non-fictie
+_vro028vrol01_01.xml,_vro028vrol01,Het vrolijke bleekersmeisje,1841,poëzie,UNKNOWN,109795,6.0,poëzie
+vers012geza01_01.xml,vers012geza01,Gezangen der vrije-metzelaaren,1799,poëzie,UNKNOWN,228408,3.0,poëzie
+_ghe009ghee02_01.xml,_ghe009ghee02,Een gheestelijck lust hofken,1722,poëzie,UNKNOWN,432825,8.0,poëzie
+_zin004zing02_01.xml,_zin004zing02,De zingende koddenaar,1774,poëzie,UNKNOWN,150780,10.0,poëzie
+buit010bloe01_01.xml,buit010bloe01,"Bloem-hof, verciert met geestelijcke lof-sangen",1659,poëzie,UNKNOWN,1271611,18.0,poëzie
+duym001spie01_01.xml,duym001spie01,Spiegelboeck,1600,poëzie,UNKNOWN,568186,13.0,poëzie
+love002poly01_01.xml,love002poly01,Polydoor en Theodoor en andere novellen en schetsen,1883,proza,UNKNOWN,256947,10.0,proza
+weye002echo02_01.xml,weye002echo00,Den echo des weerelds (2 delen),1726,proza,UNKNOWN,925637,24.0,proza
+ecre001teut02_01.xml,ecre001teut02,"De Drossaert Clercx, eene omwerking van De Teuten in de Limburger Kempen",1846,proza,UNKNOWN,381882,12.0,proza
+kist001leve01_01.xml,kist001leve01,"Het leven, gevoelens en zonderlinge reize van den landjonker Govert Hendrik Godefroi van Blankenheim tot den Stronk (2 delen)",1800,proza,UNKNOWN,697254,21.0,proza
+kink001post01_01.xml,kink001post00,De Post van den Helicon,1788,proza,UNKNOWN,762938,10.0,proza
+char007kind01_01.xml,char007kind01,Kinderpoëzij,1860,jeugdliteratuur,UNKNOWN,151673,9.0,jeugdliteratuur
+goev001oomw01_01.xml,goev001oomw01,Oom Willem en zijne buurkindertjes. Een schoolboekje,1878,jeugdliteratuur,UNKNOWN,105220,4.0,jeugdliteratuur
+zegg002inde01_01.xml,zegg002inde01,In de speeluren,1850,jeugdliteratuur,UNKNOWN,119121,4.0,jeugdliteratuur
+zett001marg01_01.xml,zett001marg01,Margaretha van Constantinopelen,1846,drama,UNKNOWN,233508,3.0,drama
+weye002holl01_01.xml,weye002holl01,De Hollandsche sinnelykheid,1713,drama,UNKNOWN,83786,3.0,drama
+duym001ghed01_01.xml,duym001ghed01,Ghedenck-boeck,1606,drama,UNKNOWN,797504,20.0,drama
+_taa001taal06_01.xml,_taa001taal06,De Taalgids. Jaargang 6,1864,sec - taalkunde,UNKNOWN,828027,21.0,sec - taalkunde
+drie015nede01_01.xml,drie015nede01,Nederduitsche tael- en letterkundige lessen voor school- en zelfonderricht,1860,sec - taalkunde,UNKNOWN,1018778,18.0,sec - taalkunde
+roor005over01_01.xml,roor005over01,Over de deelen der rede en de rede-ontleding,1852,sec - taalkunde,UNKNOWN,658410,4.0,sec - taalkunde
+_die003185501_01.xml,_die003185501,Dietsche Warande. Jaargang 1,1855,sec - letterkunde,UNKNOWN,1408459,23.0,sec - letterkunde
+herl001besc01_01.xml,herl001besc01,Beschryvinge van de volk-plantinge Zuriname,1718,sec - letterkunde,UNKNOWN,538113,84.0,sec - letterkunde

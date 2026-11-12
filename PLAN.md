@@ -357,6 +357,7 @@ Baseline freeze and training pivot. Steps are **iterative** — expect to loop b
 | Indies food names (which name, where, when) | in progress — [plans/steps/INDIES_NAMES.md](plans/steps/INDIES_NAMES.md); food-harvest stream, not kg_mockup |
 | Food harvest for colleagues (export + starter notebook) | shared in Trifecta-event (10 Nov); later: run without install (HTML / SURF Jupyter / Colab) — [plans/steps/FOOD_HARVEST_SHARING.md](plans/steps/FOOD_HARVEST_SHARING.md) |
 | Cooking times in the cookbooks | **parked** (9 Nov 2026: needs recipe-as-unit) — [plans/steps/COOKING_TIMES.md](plans/steps/COOKING_TIMES.md) |
+| Evaluation without new gold: gold by position, food/verb triangulation, two-level cascade | in progress (12 Nov 2026) — [plans/steps/TRIANGULATION.md](plans/steps/TRIANGULATION.md); gold agreement on TEI rows 0.48, not 75% |
 
 ---
 
