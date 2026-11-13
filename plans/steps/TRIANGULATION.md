@@ -75,6 +75,10 @@ Dependencies: T1 → T1b → T5. T2 → T3 → T4a. T6 runs independently.
   insufficient on its own. That gives a reason to keep a food-first route (cost question, see
   `project_pipeline_economics`).
 
+### T0 — Verb lexicon (prerequisite for T1b's annotation)
+
+The verb route's word list is infinitive-only and partly junk. See [VERB_LEXICON.md](VERB_LEXICON.md). T1's 91% and T1b's 4.2% are measured with that list, so T1b is re-selected after the fix and goes back to G2.
+
 ### T1b — Passage-first triangulation on a stratified sample
 
 **Progress (12 Nov 2026): steps 1–3 done, waiting at G2.**
