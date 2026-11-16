@@ -125,3 +125,28 @@ Each would be checked against the C3 labels, not against reachability.
 
 **Open:** the 8 full-trigger verbs in non-recipe strata, 105 contexts in
 `docs/evidence/verb_lexicon/keep_verbs_contexts.xlsx`, for Rik to read (food_relevant y/n).
+
+## Keep-verb contexts read (Rik, 16 Nov; `keep_verbs_contexts.xlsx`, 83 of 105 marked)
+
+| verb | food-relevant | not | decision |
+|---|---:|---:|---|
+| koken | 14 | 1 | full trigger (*Kook* in *kookhuizen*: stem now gated) |
+| drinken | 13 | 2 | full trigger |
+| eten | 10 | 5 | full trigger |
+| bakken | 8 | 3 | full trigger (*bak/bakken* as noun: stem gated) |
+| voeden | 3 | 1 | full trigger |
+| gebruiken | 4 | 11 | **light** |
+| suikeren | 0 | 8 | **light**. The hits were the noun *suiker* listed as a verb form; *suiker/suyker/zuiker* and *melk/melc* removed as forms |
+
+**Form-level gating:** a new override decision, `flag-form`. *kook, bak, gebruik* (imperative stem = noun) are
+gated; the lemmas stay full triggers.
+
+**Tested and rejected: same sentence / tighter window.** "Not the same context" was the most common reason for
+*n*.
+- A `. ! ?` boundary between verb and food term removed 9 of 31 *n* but also 7 of 52 *y*: precision 63% → 67%,
+  recall −13%.
+- A 40-char window: 14 *n* vs 12 *y* removed.
+- Historical punctuation is no sentence marker (Rik). The surface can't separate these, so the later stages
+  (Step A, LLM), which read the context, have to.
+- **Sheet error (Claude):** the highlighted verb was the first substring match. *eten* in *vergheten*, *eet* in
+  *eetwaren* were highlighted wrongly; the matcher itself compares whole words.

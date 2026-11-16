@@ -554,7 +554,7 @@ def _top_frame(cell: str) -> str:
     return max(parts, key=lambda p: int(p[1]))[0] if parts else ""
 
 
-def reviewed_lemmas() -> tuple[dict[str, dict], set[str]]:
+def reviewed_lemmas() -> tuple[dict[str, dict], set[str], dict[str, set[str]]]:
     """Rik's decisions per lemma, from `verb_lexicon_review_2.xlsx` + `review_overrides.csv` (overrides win).
 
     Empty decision = the proposal stands ("keep unless", 13 Nov). Notes are read with `read_as`;
@@ -626,10 +626,16 @@ def reviewed_lemmas() -> tuple[dict[str, dict], set[str]]:
             put(t, "keep", frame, forms, "merge")
     ovr = pd.read_csv(OUT / "review_overrides.csv", dtype=str).fillna("")
     dropped_forms: set[str] = set()
+    form_flags: dict[str, set[str]] = {}
     for o in ovr.to_dict("records"):
         if o["lemma"] == "*":
             continue
         name, forms = o["lemma"].strip().lower(), _split_forms(o["match_forms"])
+        if o["decision"] == "flag-form":
+            # a noun-like form of a kept lemma (kook, bak, gebruik): the form is gated, the lemma is not
+            for f in forms:
+                form_flags.setdefault(f, set()).update(filter(None, o["flag"].split(";")))
+            continue
         if o["decision"] == "drop-form":
             # a wrong form under a kept lemma (weg / wech under wegnemen): remove the form, keep the lemma
             for e in lem.values():
@@ -654,7 +660,7 @@ def reviewed_lemmas() -> tuple[dict[str, dict], set[str]]:
         frame = o.get("frame", "") or inherited
         put(name, "keep" if o["decision"] == "split" else o["decision"], frame, forms, "override", o["flag"])
         lem[name]["flags"].discard("check")          # an override is Rik's decision: nothing left to check
-    return lem, dropped_forms
+    return lem, dropped_forms, form_flags
 
 
 def export() -> None:
@@ -669,7 +675,7 @@ def export() -> None:
     from trifecta_annotation.frame_verbs import _manual_lexicon
     from trifecta_annotation.verb_forms import forms_for
 
-    lem, dropped_forms = reviewed_lemmas()
+    lem, dropped_forms, form_flags = reviewed_lemmas()
     manual = _manual_lexicon()
     vocab: Counter = Counter()
     for text, _ in load_texts().values():
@@ -689,6 +695,7 @@ def export() -> None:
             if "ambiguous" not in e.get("unflags", set()) and (
                     f in HOMOGRAPHS or verdict.get(f) == "ambiguous" or (f in share and share[f] < AMBIGUOUS_SHARE)):
                 ff.add("ambiguous")          # unless Rik kept the lemma as a full trigger ("-ambiguous")
+            ff |= form_flags.get(f, set())
             row = {"form": f, "lemma": name, "frame": frame or "NONE", "decision": e["decision"],
                    "flags": ";".join(sorted(ff)), "origin": "reviewed" if f in e["forms"] else "paradigm",
                    "lemma_sources": ";".join(sorted(e["sources"])), "freq_probe_works": vocab[f]}

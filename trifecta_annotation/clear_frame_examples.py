@@ -315,6 +315,9 @@ def score_snippet_for_frame(
         ):
             continue
 
+        # No same-sentence or tighter-window rule: tested on Rik's 83 marked keep-verb contexts (16 Nov), a
+        # '. ! ?' boundary removed 9 of 31 non-relevant hits but also 7 of 52 relevant ones, and a 40-char
+        # window 14 vs 12. Historical punctuation is no sentence marker; the later stages read the context.
         food_target = pick_food_near_verb(hit.start, food_positions)
         if food_target is None:
             continue

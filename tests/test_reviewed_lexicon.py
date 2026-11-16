@@ -116,3 +116,4 @@ def test_never_terms_are_no_target_even_in_recipes() -> None:
     terms = ["zult", "brood", "blad"]
     assert food_terms_for_regime(terms, TextRegime.RECIPE_PRACTICE) == ["brood", "blad"]
     assert food_terms_for_regime(terms, TextRegime.LITERARY) == ["brood"]
+
