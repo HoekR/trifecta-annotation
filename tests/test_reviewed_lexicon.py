@@ -92,3 +92,19 @@ def test_core_verb_bonus_counts_inflected_forms_via_lemma() -> None:
     cand = score_snippet_for_frame(snippet, ["hoenders"], TrifectaFrame.COOKING_CREATION,
                                    regime=TextRegime.RECIPE_PRACTICE)
     assert cand is not None and "core_verb" in cand.reasons
+
+
+def test_weak_reviewed_verb_needs_a_preferred_regime() -> None:
+    # 'bleef' (blijven, flagged light) next to a food term: not a trigger in literary text, fine in a recipe
+    snippet = "Hy bleef by het brood en de boter, en sprak niet."
+    lit = score_snippet_for_frame(snippet, ["brood"], TrifectaFrame.COOKING_CREATION, regime=TextRegime.LITERARY)
+    assert lit is None or "bleef" not in lit.discovery_verb.lower()
+
+
+def test_body_part_terms_are_food_only_in_recipe_and_medical_texts() -> None:
+    from trifecta_annotation.clear_frame_examples import body_part_terms, food_terms_for_regime
+
+    assert {"hart", "voet", "oog", "bloed"} <= body_part_terms()
+    terms = ["hart", "brood", "voet"]
+    assert food_terms_for_regime(terms, TextRegime.LITERARY) == ["brood"]
+    assert food_terms_for_regime(terms, TextRegime.RECIPE_PRACTICE) == terms

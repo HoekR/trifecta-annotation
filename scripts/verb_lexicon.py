@@ -661,7 +661,7 @@ def export() -> None:
     calls 'not verb' are left out; forms the probe reads as a verb < 80% of the time, or listed homographs,
     are flagged `ambiguous`. Dropped lemmas are written too (decision=drop), so the loader can remove their
     forms from the older manual list. A form claimed by a kept and a dropped lemma stays kept."""
-    from scripts.verb_probe import HOMOGRAPHS, load_texts
+    from scripts.verb_probe import HOMOGRAPHS, LIGHT_VERBS, load_texts
     from trifecta_annotation.frame_verbs import _manual_lexicon
     from trifecta_annotation.verb_forms import forms_for
 
@@ -676,7 +676,7 @@ def export() -> None:
     rows: dict[str, dict] = {}
     for name, e in sorted(lem.items()):
         frame = e["frame"] or (manual[name].frame.value if name in manual else "")
-        flags = set(e["flags"]) | ({"no-frame"} if not frame else set())
+        flags = set(e["flags"]) | ({"no-frame"} if not frame else set()) | ({"light"} if name in LIGHT_VERBS else set())
         generated = {f for f in forms_for(name) if vocab[f] > 0 and verdict.get(f) != "not verb"}
         for f in sorted((e["forms"] | generated) - {""} - dropped_forms):
             if len(f) < 3 or " " in f:

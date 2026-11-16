@@ -34,4 +34,8 @@ sheet,lemma,match_forms,decision,flag,frame,note
 2 New lemmas,dragen,draag;draagen;draagt;draeg;draegt;dragen;droeg;droegen;gedraagt;gedraegt;gedragen;verdraagen;verdragen,keep,light,,"Rik 16 Nov: kept, flagged light (generic verb; costs hits and inflates reachability; most should be sieved)"
 2 New lemmas,gaan,gaat;gaet;gaan;gaande;gaen;gaende;gaenden;ging,keep,light,,"Rik 16 Nov: kept, flagged light (generic verb; costs hits and inflates reachability; most should be sieved)"
 2 New lemmas,krijgen,crijcht;kreeg;krijgen;krijg;krijgt;kryg;krygen;krygt;verkrijgen;verkrijgt;verkrygt,keep,light,,"Rik 16 Nov: kept, flagged light (generic verb; costs hits and inflates reachability; most should be sieved)"
+2 New lemmas,sta[ae]n,sta[ae]n;staat;staet,drop,,,"Rik 16 Nov (re-harvest v3, reharvest_v3.md option c): same lemma as staan (dropped 13 Nov); escaped through its bracketed name"
+2 New lemmas,tappen,tap,drop-form,,,"Rik 16 Nov (re-harvest v3, reharvest_v3.md option c): 'tap' is the noun (op de tap)"
+1 Lemmas,behandelen,behandeling,drop-form,,,"Rik 16 Nov (re-harvest v3, reharvest_v3.md option c): 'behandeling' is the noun"
+2 New lemmas,lossen,verlost,drop-form,,,"Rik 16 Nov (re-harvest v3, reharvest_v3.md option c): verlost = verlossen (redeem/deliver), a different verb merged into lossen"
 *,*,,rule,,,"Rik 13 Nov: a note with 'stem is' / 'merge with' / 'participium of' / 'past tense of' / 'corruption of' / 'variant of' means merge into that lemma, not drop; 'not a verb' / 'auxiliary' / 'not food related' means drop"

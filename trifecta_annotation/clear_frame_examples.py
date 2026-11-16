@@ -13,6 +13,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import pandas as pd
+
 from trifecta_annotation.adapters.food_snippets import load_food_snippets_frame
 from trifecta_annotation.frame_verbs import (
     bewaren_context_ok,
@@ -197,10 +199,6 @@ def _passes_guideline_gate(
     """
     if "guideline" in sources:
         return True
-    # Rik's reviewed list (VERB_LEXICON.md V3) is curated vocabulary too. Its flagged forms pass here but
-    # are penalised in the score (ambiguous) or get no core-verb bonus (multi-frame).
-    if "reviewed" in sources:
-        return True
     if is_indication and target_frame == TrifectaFrame.CURE:
         return True
     if target_frame == TrifectaFrame.PRESERVING:
@@ -209,6 +207,60 @@ def _passes_guideline_gate(
         if any(source.startswith("technique:") for source in sources):
             return True
     return False
+
+
+# Reviewed forms that are not a trigger on their own (VERB_LEXICON V3; re-harvest 16 Nov: opening the gate to
+# the whole reviewed list made 17 of 51 non-food C3 targets verb-selected, docs/evidence/triangulation_b/
+# reharvest_v3.md).
+WEAK_REVIEWED_FLAGS = frozenset({"light", "ambiguous", "aux-ambiguous", "multi-frame", "check", "no-frame"})
+
+
+def _passes_reviewed_gate(hit, target_frame: TrifectaFrame, *, regime: TextRegime, supported: bool) -> bool:
+    """A reviewed form passes when unflagged. A weak one (light verb, homograph, several frames) passes only
+    in a regime that prefers the target frame (recipe/medical texts), or next to a strong hit of the same
+    frame."""
+    if "reviewed" not in hit.lexicon_sources:
+        return False
+    if not (set(hit.flags) & WEAK_REVIEWED_FLAGS):
+        return True
+    return regime in PREFERRED_REGIMES.get(target_frame, frozenset()) or supported
+
+
+def _is_strong(hit, target_frame: TrifectaFrame) -> bool:
+    sources = set(hit.lexicon_sources)
+    if _passes_guideline_gate(sources, target_frame, is_indication="indication" in sources):
+        return True
+    return "reviewed" in sources and not (set(hit.flags) & WEAK_REVIEWED_FLAGS)
+
+
+# Body-part food terms (offal, cure ingredients: hart, voet, oog, bloed …) are food only in recipe and medical
+# texts; elsewhere they are almost always the body (C3: about 30 of 52 non-food targets). Rik, 16 Nov.
+BODY_PART_TERMS_PATH = Path(__file__).resolve().parent / "assets" / "body_part_terms.csv"
+BODY_PART_REGIMES = frozenset({TextRegime.RECIPE_PRACTICE, TextRegime.MEDICAL})
+_BODY_PART_TERMS: frozenset[str] | None = None
+_FOOD_TERMS_CACHE: dict[tuple[int, int], list[str]] = {}
+
+
+def body_part_terms() -> frozenset[str]:
+    global _BODY_PART_TERMS
+    if _BODY_PART_TERMS is None:
+        if BODY_PART_TERMS_PATH.exists():
+            frame = pd.read_csv(BODY_PART_TERMS_PATH, dtype=str).fillna("")
+            _BODY_PART_TERMS = frozenset(normalize_hist_dutch(t) for t in frame.term if t)
+        else:
+            _BODY_PART_TERMS = frozenset()
+    return _BODY_PART_TERMS
+
+
+def food_terms_for_regime(food_terms: list[str], regime: TextRegime) -> list[str]:
+    """The food terms to look for in a snippet: body-part terms only in recipe and medical texts."""
+    if regime in BODY_PART_REGIMES:
+        return food_terms
+    key = (id(food_terms), len(food_terms))
+    if key not in _FOOD_TERMS_CACHE:
+        body = body_part_terms()
+        _FOOD_TERMS_CACHE[key] = [t for t in food_terms if normalize_hist_dutch(t) not in body]
+    return _FOOD_TERMS_CACHE[key]
 
 
 def score_snippet_for_frame(
@@ -227,7 +279,7 @@ def score_snippet_for_frame(
     if not hits:
         return None
 
-    food_positions = term_positions(snippet, food_terms)
+    food_positions = term_positions(snippet, food_terms_for_regime(food_terms, regime))
     if not food_positions:
         return None
 
@@ -235,12 +287,15 @@ def score_snippet_for_frame(
     if not frame_hits:
         return None
 
+    strong = [hit for hit in frame_hits if _is_strong(hit, target_frame)]
     best: ClearFrameCandidate | None = None
     for hit in frame_hits:
         sources = set(hit.lexicon_sources)
         is_indication = "indication" in sources
-        if guideline_only and not _passes_guideline_gate(
-            sources, target_frame, is_indication=is_indication,
+        supported = any(s is not hit and abs(s.start - hit.start) <= conflict_window for s in strong)
+        if guideline_only and not (
+            _passes_guideline_gate(sources, target_frame, is_indication=is_indication)
+            or _passes_reviewed_gate(hit, target_frame, regime=regime, supported=supported)
         ):
             continue
 

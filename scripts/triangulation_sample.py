@@ -123,7 +123,11 @@ def sample() -> None:
     print(f"wrote {len(picked)} works -> {WORKS} (seed {SEED})")
 
 
-def harvest() -> None:
+def harvest(tag: str = "") -> None:
+    """`tag` writes to `triangulation_b_<tag>_…` instead of the original inputs, which stay for comparison
+    (and are the parent of the C3 sample)."""
+    food_name = FOOD_INPUTS.replace("triangulation_b_", f"triangulation_b_{tag}_") if tag else FOOD_INPUTS
+    verb_name = VERB_INPUTS.replace("triangulation_b_", f"triangulation_b_{tag}_") if tag else VERB_INPUTS
     works = pd.read_csv(WORKS)
     terms = load_food_terms()
     canonical = alt_label_index(terms)
@@ -176,18 +180,20 @@ def harvest() -> None:
         if key not in seen:
             seen.add(key)
             dedup.append(v)
-    for rows, name, desc in ((food_rows, FOOD_INPUTS, "every food-noun occurrence, uncapped, noun-centred"),
-                             (dedup, VERB_INPUTS, "verb-route rows (verb-centred) for verb-selected occurrences")):
+    for rows, name, desc in ((food_rows, food_name, "every food-noun occurrence, uncapped, noun-centred"),
+                             (dedup, verb_name, "verb-route rows (verb-centred) for verb-selected occurrences")):
         out = save_semi_structured(rows, logical_name=name, parent_sources=["dbnl_xml"],
                                    description=f"T1b triangulation sample (40 works): {desc}", script=SCRIPT)
         print(f"wrote {len(rows)} rows -> {out}", flush=True)
 
 
-def estimate() -> None:
+def estimate(tag: str = "") -> None:
     def load(name):
         with open(resolve(name), encoding="utf-8") as fh:
             return pd.DataFrame([json.loads(l) for l in fh if l.strip()])
-    f, v = load(FOOD_INPUTS), load(VERB_INPUTS)
+    food_name = FOOD_INPUTS.replace("triangulation_b_", f"triangulation_b_{tag}_") if tag else FOOD_INPUTS
+    verb_name = VERB_INPUTS.replace("triangulation_b_", f"triangulation_b_{tag}_") if tag else VERB_INPUTS
+    f, v = load(food_name), load(verb_name)
     weak = ~f.text_regime.isin(["RECIPE_PRACTICE", "MEDICAL"])
     per = f.groupby("stratum").agg(works=("source_path", "nunique"), occurrences=("record_id", "size"),
                                    verb_selected=("verb_selected", "sum"))
@@ -205,7 +211,7 @@ def estimate() -> None:
              "a rough figure since the sieve's saving was measured on verb rows):", "",
              f"- food-anchored: **~{calls_food:,.0f}**", f"- verb-centred: **~{calls_verb:,.0f}**", "",
              f"G2a (power): passages with both anchors = {int(f.verb_selected.sum())} (want ≥ ~100).", ""]
-    (OUT / "estimate.md").write_text("\n".join(lines))
+    (OUT / (f"estimate_{tag}.md" if tag else "estimate.md")).write_text("\n".join(lines))
     print("\n".join(lines))
 
 
@@ -357,7 +363,12 @@ def report() -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=["sample", "harvest", "estimate", "select", "annotate", "report"])
-    {"sample": sample, "harvest": harvest, "estimate": estimate, "select": select, "annotate": annotate, "report": report}[ap.parse_args().cmd]()
+    ap.add_argument("--tag", default="", help="harvest/estimate: write and read triangulation_b_<tag>_* (e.g. v3)")
+    a = ap.parse_args()
+    if a.cmd in ("harvest", "estimate"):
+        {"harvest": harvest, "estimate": estimate}[a.cmd](a.tag)
+        return
+    {"sample": sample, "select": select, "annotate": annotate, "report": report}[a.cmd]()
 
 
 if __name__ == "__main__":
