@@ -179,6 +179,39 @@ lines from the DBNL text.
   - `keep=auto` rows don't load;
   - the reviewed list round-trips.
 
+**Done (16 Nov 2026), not committed:**
+- **Export:** `scripts/verb_lexicon.py export` writes `trifecta_annotation/assets/verb_lexicon.csv` from
+  `verb_lexicon_review_2.xlsx` + `review_overrides.csv` (overrides win, and are authoritative for the forms
+  they list). One row per form: lemma, frame, decision, flags, origin.
+- **Forms:** forms Rik saw or added, plus the paradigm restricted to forms attested in the 41 probe works.
+  Generated forms the probe calls *not verb* are left out. The paradigm closes the *-t* gap (*haalt*).
+- **Result:** 349 lemmas kept, 209 dropped. 1,966 kept forms (1,024 reviewed, 942 paradigm); 1,068 dropped
+  forms.
+- **Flags:** *ambiguous* (166 forms: homographs or probe verb share < 0.8), *multi-frame*, *aux-ambiguous*,
+  *check*.
+- **Spelling rules** in `verb_forms._variants`, from the phonetic diagnosis: *vv → w*, final *-c*, *cu/ku*.
+- **Loader:** `frame_verbs.load_reviewed_lexicon`. Rik's drops remove forms whatever their source. His
+  lemma, frame and flags win. The auto-kept mined corpus list is no longer loaded.
+- **Matcher:**
+  - word lookup instead of one regex alternation: same hits, 56× faster;
+  - enclitic forms (*kooktse, doetmen, doet'er*; stop list *gieter*) match their host;
+  - `VerbHit` carries `lemma` and `flags`.
+- **Scorer:**
+  - `reviewed` passes the guideline gate;
+  - core-verb bonus on the lemma (not for *multi-frame*);
+  - **−2 for ambiguous forms (provisional, measured in C4/C5)**.
+- **Separable verbs (skip-gram, Rik 16 Nov):** after a verb hit, look up to 7 words ahead for a particle that
+  *closes the clause*. That means punctuation or a conjunction follows it, not *te* and not a noun phrase. If
+  particle + lemma is a known lemma, the hit takes that lemma and frame and is flagged `separable:<base>`.
+  - Measured on 4 works: 553 hits. The parse was right in 23 of 25 sampled.
+  - Misses: *dampen* as a noun, and *op te leggen*; the latter is fixed.
+- **Tests:** `tests/test_reviewed_lexicon.py`, `tests/test_verb_forms.py`. Full suite 338 passed.
+- **Open:**
+  - 15 lemmas flagged `check`: Rik marked drop, but the note says "stem is …";
+  - the form *at*: 2-letter forms are excluded (*eet* is in);
+  - lemma names from unfixed proposals (*stooteen, bieen*) are cosmetic, since the forms map correctly;
+  - C4/C5.
+
 ## 4. Evaluation: how we know coverage is OK
 
 The references are kept independent of each other where possible.
@@ -188,11 +221,22 @@ The references are kept independent of each other where possible.
 | C1 | Gold, Dutch *verb* LUs only (baseline computed first) | % of gold verb-LU tokens matched by the list | reported |
 | C2 | Leave one generator out: build without silver, measure on silver; build without paradigms, measure on silver; and so on | what each generator adds; silver's bias towards selected rows | reported |
 | C3 | **Independent of every list:** ~150 random sentences with a food noun from the 39 T1b works, stratified by genre. Rik marks the frame-evoking word (verb, noun, construction, heading, none). | share evoked by a verb (the route's ceiling); share implicit / without a verb; the list's coverage of the verb share | **≥ 80%** of verb-evoked cases covered |
-| C4 | 100 random hits per generator source, read by Rik | precision per source, and for light verbs separately | new forms ≥ old hits − 10 points; light verbs decided by their own precision |
+| C4 | 100 random hits per generator source, read by Rik | precision per source, and for light verbs separately; *hebben* (kept, flag `aux-ambiguous`, see `review_overrides.csv`) on its own | new forms ≥ old hits − 10 points; light verbs and *hebben* decided by their own precision |
 | C5 | No LLM: T1 reachability, T1b verb-selected share (4.2%), the funnel; before/after per genre | effect size, with n and CI | reported |
 
 C3 also answers whether "91% unreachable" is an artefact of the lexicon or a fact of the texts. It can
 start at once, because it needs no list.
+
+**Decision rule for C5 (set 16 Nov 2026, before the re-run; thresholds are a proposal, Rik to adjust).**
+The step-back review (TRIANGULATION.md §2b) predicts a ceiling. If recipes name their goal in the
+heading, adding paradigm forms will not reach those frames. Re-run T1 with the reviewed list:
+- unreachable share stays **≥ 75%** → the lexicon was not the bottleneck. Stop extending it after V3 and
+  put the effort into the entry route (T2/T3).
+- unreachable share drops **below 50%** → it was the lexicon. Keep improving it (light verbs, C4).
+- in between → C3 decides (the share of frames evoked by a verb at all).
+
+This lexicon work is one fix with a diagnosed cause (infinitive-only list), not a series of failed fixes,
+so it is legitimate. The rule records where we would stop.
 
 **Then:** re-run T1b harvest → estimate → select, and go back to gate G2 before any annotation.
 

@@ -119,6 +119,12 @@ def _variants(form: str) -> set[str]:
     out |= {f.replace("kk", "ck") for f in list(out) if "kk" in f}                            # bakken -> backen
     out |= {re.sub(r"(?<=[aeiou])k(?![kc])", "ck", f) for f in list(out)}                     # bakt -> backt
     out |= {re.sub(r"^ge", "ghe", f) for f in list(out) if f.startswith("ge")}
+    # Two rules from Rik's phonetic diagnosis (16 Nov, docs/evidence/verb_lexicon/c3_patterns.md); the other
+    # confirmed variants (d/t, s/z, ie/i) are not rules because the same rule merges frequent non-verbs.
+    out |= {f.replace("w", "vv") for f in list(out) if "w" in f}                  # vv for w in early print: brouvven
+    out |= {f[:-2] + "c" if f.endswith("ck") else f[:-1] + "c" for f in list(out)
+            if f.endswith("k") and not f.endswith("kk")}                         # final -c: brac, stac
+    out |= {("k" if f[0] == "c" else "c") + f[1:] for f in list(out) if f[:2] in ("cu", "ku")}   # cureert/kureert
     # open syllable spelled with a double vowel in older texts, and the reverse: koken <-> kooken
     # (not in the prefixes ge-/ghe-/be-: "geegeeten")
     out |= {re.sub(r"(?<![aeiou])(?<!^g)(?<!^gh)(?<!^b)([aeo])(?=[^aeiou][aeiou])", r"\1\1", f) for f in list(out)}

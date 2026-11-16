@@ -197,6 +197,10 @@ def _passes_guideline_gate(
     """
     if "guideline" in sources:
         return True
+    # Rik's reviewed list (VERB_LEXICON.md V3) is curated vocabulary too. Its flagged forms pass here but
+    # are penalised in the score (ambiguous) or get no core-verb bonus (multi-frame).
+    if "reviewed" in sources:
+        return True
     if is_indication and target_frame == TrifectaFrame.CURE:
         return True
     if target_frame == TrifectaFrame.PRESERVING:
@@ -292,9 +296,22 @@ def score_snippet_for_frame(
             score -= 2
             reasons.append(f"regime_mismatch_{regime.value}")
 
-        if verb_norm in CORE_VERBS.get(target_frame, frozenset()):
+        # On the lemma, so inflected forms count (kookt, gekookt -> koken); not for lemmas Rik marked as used
+        # in several frames.
+        lemma_norm = normalize_hist_dutch(hit.lemma) if hit.lemma else verb_norm
+        flags = set(hit.flags)
+        if "multi-frame" not in flags and (
+            lemma_norm in CORE_VERBS.get(target_frame, frozenset())
+            or verb_norm in CORE_VERBS.get(target_frame, frozenset())
+        ):
             score += 2
             reasons.append("core_verb")
+
+        # A homograph form (zout, was, week; probe verb share < 0.8) is not a bare trigger: it needs the rest
+        # of the evidence (food near, regime) to reach a tier. Provisional; C4/C5 measure it.
+        if flags & {"ambiguous", "aux-ambiguous"}:
+            score -= 2
+            reasons.append("ambiguous_form")
 
         if conflicts:
             score -= 4 * len(conflicts)

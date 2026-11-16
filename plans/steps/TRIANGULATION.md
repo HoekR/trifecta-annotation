@@ -39,6 +39,25 @@ Interpretation:
   - heading vs sentence;
   - food noun (the *Ingestibles* element) vs the verb that evokes the frame.
 
+## 2b. Step back: what the attempts shared (16 Nov 2026)
+
+The lens is from dighum_template `wisdom/topics/step-back-review.md`: when different approaches all fail,
+that agreement is a result. The diagnostic question is *what did all the attempts have in common?*
+
+| Series | Attempts | Shared assumption | Outcome |
+|---|---|---|---|
+| Step C qualia | bigger model, grounding, BERT span extraction, mBERT/XLM-R, retrieval, frame-selective | sentence/snippet as unit | goal is in the title (PLAN §9e) |
+| Step B PRESERVING/CURE | few-shots ×2, two-stage split classifier, heading as context (handful, below) | one frame per occurrence, decided per sentence | see T3: two levels |
+| `text_regime` readings | genre-effect reading, failed-inference reading (both retracted) | the field means what its name says | mode marker, a bug (PLAN §9i) |
+| Cooking times | duration regex + nearest food word | sentence as unit for attribution | needs recipe as unit (COOKING_TIMES.md) |
+
+Across the series, selection, classification, extraction and attribution all share
+`KwicInput.context_text`, a KWIC window. The unit is built into the I/O contract, not into any one
+step. T3 is the matching redesign.
+
+Caveat: this is retrodiction, so the lens could not fail here. Its predictions are tested in T3 (done as a
+handful) and in VERB_LEXICON.md §4 (decision rule for C5).
+
 ## 3. Scope
 
 - **In:** DBNL TEI works, structured by `render_tei` entries and heads. This is most of the corpus.
@@ -139,6 +158,30 @@ The verb route's word list is infinitive-only and partly junk. See [VERB_LEXICON
   it on the same rows.
 - **Decision:** adopt only if the sentence-level result does not get worse and the entry level adds
   frames the sentence route can't reach.
+
+**Test design caveats (Rik, 16 Nov):**
+- (a) **Not universal:** recipes also occur outside entry-structured books. Always report coverage, i.e.
+  the share of the target rows that sit in works with headings at all.
+- (b) **Headings are not always findable:** heading detection has its own error. Evaluate on rows whose
+  heading was found and checked by hand, and report not-found rows separately.
+- (c) **Entry structure ≠ cooking:** dictionaries, herbals and pharmacopoeias have the same structure. The
+  heading's purpose must be classified, not assumed.
+
+Stratify by *structure present* × *heading found and verified* × *genre*, with n per cell. Claim only for
+the cells where it helps.
+
+**Handful result, PRESERVING/CURE (16 Nov):** `docs/evidence/heading_context/handful.md`.
+- 18 three-frame confusions; at most 2–5 could be fixed by passing the heading in. 5 had the heading in
+  the context already. So the prototype run is not justified for this question as posed.
+- Gold splits COOKING_CREATION / CURE on the same entry type (*Syrupus*, *Oleum*, *Trochisci*).
+- **Rik's reading:** both frames apply, at different levels:
+  - COOKING_CREATION = the procedure (sentence);
+  - CURE = the purpose (heading/entry).
+- Weak first check (record-id verbs): purpose verbs in the sentence → gold CURE; procedure only → gold
+  COOKING_CREATION.
+- **Implication for T3:** the entry level is not a hint for the sentence label but a label of its own.
+  "Don't overwrite sentence labels" is then not a precaution but the design.
+- **To do:** read the full contexts of the split rows.
 
 ### T4 — Gold of a different unit
 

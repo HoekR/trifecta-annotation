@@ -1,0 +1,30 @@
+sheet,lemma,match_forms,decision,flag,frame,note
+2 New lemmas,slaan,geslagen,keep,,,"Rik 13 Nov: keep (geslagen, verslagen, gheslagen -> slaan); scarce as food verb, sieve decides"
+2 New lemmas,heten,heten,drop,,,Rik 13 Nov: drop
+2 New lemmas,smijten,smyten;smijt,drop,,,Rik 13 Nov: drop
+2 New lemmas,drukken,drukken,drop,,,Rik 13 Nov: drop
+2 New lemmas,hebben,hebben;heeft;had,keep,aux-ambiguous,,"Rik 13 Nov: both auxiliary and full verb ('een ui heeft geneeskrachtige eigenschappen' must stay); known false-result source, track its hits separately"
+1 Lemmas,legen,legen,split,,,Rik 13 Nov: split from leggen (legen = empty; leggen = lay)
+2 New lemmas,kneden,kneden;kneed,keep,,,"Rik 13 Nov: agreed table (merge, not drop)"
+2 New lemmas,stoten,gestooten;stootet,keep,,,"Rik 13 Nov: agreed table (merge, not drop)"
+2 New lemmas,vullen,gevuld,keep,,,"Rik 13 Nov: agreed table (merge, not drop)"
+2 New lemmas,verteren,verteeren,keep,,,"Rik 13 Nov: agreed table (merge, not drop)"
+2 New lemmas,zuiveren,zuiveren,keep,,,"Rik 13 Nov: agreed table (merge, not drop)"
+2 New lemmas,strijken,strijkt;stryken,keep,,,"Rik 13 Nov: agreed table (merge, not drop)"
+2 New lemmas,zweten,sweeten,keep,,,"Rik 13 Nov: agreed table (merge, not drop)"
+2 New lemmas,brengen,gebracht,keep,,,"Rik 13 Nov: agreed table (merge, not drop)"
+2 New lemmas,krijgen,kreeg;krijgen,keep,,,"Rik 13 Nov: agreed table (merge, not drop)"
+2 New lemmas,doen,doe,keep,,,"Rik 13 Nov: agreed table (merge, not drop)"
+2 New lemmas,kopen,kocht,drop,,,"Rik 13 Nov: kopen dropped, so its past tense too"
+2 New lemmas,staan,staan;staen,drop,,,Rik 13 Nov: 'I dont think this is an actual variant' -> drop stands
+2 New lemmas,den,den,drop,,,Rik 16 Nov: article in older language
+2 New lemmas,gaaren,gaar;gaert;vergaert,keep,ambiguous,,"Rik 16 Nov: the question mark in the proposed lemma was spurious; gaar (done, cooked) is kept as food-related; garen / gaeren is ambiguous (thread; vergaren = gather), so the probe decides per occurrence"
+2 New lemmas,weken,weken;week;weeken;geweekt;weekt,keep,ambiguous,,"Rik 16 Nov: also 'weeks' (time), noun homograph; the probe decides per occurrence"
+2 New lemmas,plukken,plukken;plukt;geplukt;plukte;pluckt;plucken;plucke,keep,multi-frame,,Rik 16 Nov: many verbs are used in several contexts; the frame column is not fixed for this lemma
+2 New lemmas,hangen,hangen;hangt;hanght;hanghen,keep,multi-frame,,Rik 16 Nov: many verbs are used in several contexts; the frame column is not fixed for this lemma
+2 New lemmas,houwen,houwt;houwen;gehouwen;haut;hauwt;hieuw,keep,,COOKING_CREATION,"Rik 16 Nov: missing lemma found via phonetic diag (haut = houwt, 'klieven'); COOKING_CREATION as hakken; 'hout' (wood) ambiguous if it appears"
+2 New lemmas,wegnemen,weg;wech,drop-form,,,Rik 16 Nov (via separable check): bare particle weg/wech is not a form of wegnemen; separable 'neemt ... weg' reaches the lemma
+2 New lemmas,wegnemen,wegnemen;wegneemt;wegneemen,keep,multi-frame,CURE,"Rik 16 Nov: 'remove' (stains, smell, leaves); CURE only when a symptom is removed"
+1 Lemmas,afgieten,afgieten;afgiet,keep,,COOKING_CREATION,"Rik 16 Nov: draining (giet het water af), not PRESERVING"
+1 Lemmas,leggen,,keep,multi-frame,COOKING_CREATION,"Rik 16 Nov: light verb, frame CURE came from the old list; separable inleggen carries PRESERVING"
+*,*,,rule,,,"Rik 13 Nov: a note with 'stem is' / 'merge with' / 'participium of' / 'past tense of' / 'corruption of' / 'variant of' means merge into that lemma, not drop; 'not a verb' / 'auxiliary' / 'not food related' means drop"
