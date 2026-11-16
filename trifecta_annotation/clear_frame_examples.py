@@ -233,33 +233,41 @@ def _is_strong(hit, target_frame: TrifectaFrame) -> bool:
     return "reviewed" in sources and not (set(hit.flags) & WEAK_REVIEWED_FLAGS)
 
 
-# Body-part food terms (offal, cure ingredients: hart, voet, oog, bloed …) are food only in recipe and medical
-# texts; elsewhere they are almost always the body (C3: about 30 of 52 non-food targets). Rik, 16 Nov.
-BODY_PART_TERMS_PATH = Path(__file__).resolve().parent / "assets" / "body_part_terms.csv"
-BODY_PART_REGIMES = frozenset({TextRegime.RECIPE_PRACTICE, TextRegime.MEDICAL})
-_BODY_PART_TERMS: frozenset[str] | None = None
-_FOOD_TERMS_CACHE: dict[tuple[int, int], list[str]] = {}
+# Food terms that are not food everywhere (Rik, 16 Nov; assets/restricted_food_terms.csv):
+# - scope "recipe-only": food only in recipe and medical texts, elsewhere mostly something else. Body parts
+#   (hart, voet, oog, bloed: about 30 of 52 non-food C3 targets) and round-3 nouns (blad, tong, vogel …).
+# - scope "never": not food in this corpus (zult = 'will', voren = 'before', names): never a target.
+RESTRICTED_FOOD_TERMS_PATH = Path(__file__).resolve().parent / "assets" / "restricted_food_terms.csv"
+RECIPE_REGIMES = frozenset({TextRegime.RECIPE_PRACTICE, TextRegime.MEDICAL})
+_RESTRICTED: dict[str, str] | None = None
+_FOOD_TERMS_CACHE: dict[tuple[int, int, bool], list[str]] = {}
+
+
+def restricted_food_terms() -> dict[str, str]:
+    """normalised term -> scope ('recipe-only' or 'never')."""
+    global _RESTRICTED
+    if _RESTRICTED is None:
+        _RESTRICTED = {}
+        if RESTRICTED_FOOD_TERMS_PATH.exists():
+            frame = pd.read_csv(RESTRICTED_FOOD_TERMS_PATH, dtype=str).fillna("")
+            _RESTRICTED = {normalize_hist_dutch(t): s or "recipe-only" for t, s in zip(frame.term, frame.scope) if t}
+    return _RESTRICTED
 
 
 def body_part_terms() -> frozenset[str]:
-    global _BODY_PART_TERMS
-    if _BODY_PART_TERMS is None:
-        if BODY_PART_TERMS_PATH.exists():
-            frame = pd.read_csv(BODY_PART_TERMS_PATH, dtype=str).fillna("")
-            _BODY_PART_TERMS = frozenset(normalize_hist_dutch(t) for t in frame.term if t)
-        else:
-            _BODY_PART_TERMS = frozenset()
-    return _BODY_PART_TERMS
+    """Terms that count as food only in recipe and medical texts (body parts and round-3 nouns)."""
+    return frozenset(t for t, s in restricted_food_terms().items() if s == "recipe-only")
 
 
 def food_terms_for_regime(food_terms: list[str], regime: TextRegime) -> list[str]:
-    """The food terms to look for in a snippet: body-part terms only in recipe and medical texts."""
-    if regime in BODY_PART_REGIMES:
-        return food_terms
-    key = (id(food_terms), len(food_terms))
+    """The food terms to look for in a snippet: 'never' terms not at all, 'recipe-only' terms only in recipe and
+    medical texts."""
+    recipe = regime in RECIPE_REGIMES
+    key = (id(food_terms), len(food_terms), recipe)
     if key not in _FOOD_TERMS_CACHE:
-        body = body_part_terms()
-        _FOOD_TERMS_CACHE[key] = [t for t in food_terms if normalize_hist_dutch(t) not in body]
+        restricted = restricted_food_terms()
+        drop = {"never"} if recipe else {"never", "recipe-only"}
+        _FOOD_TERMS_CACHE[key] = [t for t in food_terms if restricted.get(normalize_hist_dutch(t)) not in drop]
     return _FOOD_TERMS_CACHE[key]
 
 

@@ -108,3 +108,11 @@ def test_body_part_terms_are_food_only_in_recipe_and_medical_texts() -> None:
     terms = ["hart", "brood", "voet"]
     assert food_terms_for_regime(terms, TextRegime.LITERARY) == ["brood"]
     assert food_terms_for_regime(terms, TextRegime.RECIPE_PRACTICE) == terms
+
+
+def test_never_terms_are_no_target_even_in_recipes() -> None:
+    from trifecta_annotation.clear_frame_examples import food_terms_for_regime
+
+    terms = ["zult", "brood", "blad"]
+    assert food_terms_for_regime(terms, TextRegime.RECIPE_PRACTICE) == ["brood", "blad"]
+    assert food_terms_for_regime(terms, TextRegime.LITERARY) == ["brood"]

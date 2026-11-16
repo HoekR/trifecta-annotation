@@ -69,10 +69,10 @@ def c3_sample() -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=["c3-sample", "candidates", "lemmas", "variation-check", "review-xlsx",
-                                    "review-xlsx-2", "export"])
+                                    "review-xlsx-2", "export", "review-xlsx-3"])
     cmd = ap.parse_args().cmd
     {"c3-sample": c3_sample, "candidates": candidates, "lemmas": lemmas, "variation-check": variation_check, "review-xlsx": review_xlsx,
-     "export": export,
+     "export": export, "review-xlsx-3": review_xlsx_3,
      "review-xlsx-2": lambda: review_xlsx(REVIEW_XLSX_2, carry_from=REVIEW_XLSX)}[cmd]()
 
 
@@ -576,8 +576,12 @@ def reviewed_lemmas() -> tuple[dict[str, dict], set[str]]:
         e["frame"] = frame.strip() or e["frame"]
         e["forms"] |= forms | {name}
         e["sources"].add(source)
-        if flag:
-            e["flags"].add(flag)
+        for f in filter(None, flag.split(";")):
+            if f.startswith("-"):                     # "-light": Rik keeps a light verb as a full trigger
+                e["flags"].discard(f[1:])
+                e.setdefault("unflags", set()).add(f[1:])
+            else:
+                e["flags"].add(f)
 
     def resolve_decision(d: str, name: str) -> tuple[str, str, str]:
         """-> (decision, lemma, flag)."""
@@ -676,14 +680,15 @@ def export() -> None:
     rows: dict[str, dict] = {}
     for name, e in sorted(lem.items()):
         frame = e["frame"] or (manual[name].frame.value if name in manual else "")
-        flags = set(e["flags"]) | ({"no-frame"} if not frame else set()) | ({"light"} if name in LIGHT_VERBS else set())
+        flags = set(e["flags"]) | ({"no-frame"} if not frame else set()) | ({"light"} if name in LIGHT_VERBS and "light" not in e.get("unflags", set()) else set())
         generated = {f for f in forms_for(name) if vocab[f] > 0 and verdict.get(f) != "not verb"}
         for f in sorted((e["forms"] | generated) - {""} - dropped_forms):
             if len(f) < 3 or " " in f:
                 continue
             ff = set(flags)
-            if f in HOMOGRAPHS or verdict.get(f) == "ambiguous" or (f in share and share[f] < AMBIGUOUS_SHARE):
-                ff.add("ambiguous")
+            if "ambiguous" not in e.get("unflags", set()) and (
+                    f in HOMOGRAPHS or verdict.get(f) == "ambiguous" or (f in share and share[f] < AMBIGUOUS_SHARE)):
+                ff.add("ambiguous")          # unless Rik kept the lemma as a full trigger ("-ambiguous")
             row = {"form": f, "lemma": name, "frame": frame or "NONE", "decision": e["decision"],
                    "flags": ";".join(sorted(ff)), "origin": "reviewed" if f in e["forms"] else "paradigm",
                    "lemma_sources": ";".join(sorted(e["sources"])), "freq_probe_works": vocab[f]}
@@ -700,6 +705,112 @@ def export() -> None:
           f"forms kept {len(keep)} ({keep.origin.value_counts().to_dict()}), dropped {int((df.decision == 'drop').sum())}")
     print("flags on kept forms:", Counter(x for c in keep["flags"] for x in c.split(";") if x))
     print("kept forms by frame:", keep.frame.value_counts().to_dict())
+
+
+REVIEW_XLSX_3 = OUT / "verb_lexicon_review_3.xlsx"
+
+
+def review_xlsx_3() -> None:
+    """Round 3 (16 Nov): what still selects in the literary strata of the v3b re-harvest
+    (docs/evidence/triangulation_b/reharvest_v3.md), for Rik to mark. Three sheets:
+    verbs (keep / light / drop), nouns (keep / recipe-only / drop), the remaining `check` lemmas (keep / drop).
+    Refuses to overwrite."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
+    from openpyxl.worksheet.datavalidation import DataValidation
+
+    from trifecta_annotation.clear_frame_examples import body_part_terms
+    from trifecta_annotation.frame_verbs import get_frame_verb_lexicon
+
+    if REVIEW_XLSX_3.exists():
+        raise SystemExit(f"{REVIEW_XLSX_3} exists (it may hold your decisions). Move it aside to rebuild.")
+    with open(resolve("triangulation_b_v3b_kwic_inputs"), encoding="utf-8") as fh:
+        d = pd.DataFrame([json.loads(line) for line in fh if line.strip()])
+    lit = d[~d.stratum.isin(["RECIPE", "MEDICAL"]) & d.verb_selected].copy()
+    rec = d[d.stratum.isin(["RECIPE", "MEDICAL"]) & d.verb_selected]
+    lex = get_frame_verb_lexicon()
+    entry = lambda v: lex.entry_for(v)
+    lit["lemma"] = lit.verb_discovery_verb.map(lambda v: entry(v).canonical_lemma if entry(v) else v)
+    rec_lemma = rec.verb_discovery_verb.map(lambda v: entry(v).canonical_lemma if entry(v) else v).value_counts()
+
+    def ctx(rows: pd.DataFrame, word_col: str, k: int = 3) -> list[str]:
+        out = []
+        for r in rows.head(k).itertuples():
+            c, w = str(r.context_text), str(getattr(r, word_col))
+            i = c.lower().find(w.lower())
+            out.append("…" + c[max(0, i - 70):i + 70].replace("\n", " ") + "…")
+        return out + [""] * (k - len(out))
+
+    verbs = []
+    for lemma, grp in lit.groupby("lemma"):
+        e = entry(grp.verb_discovery_verb.iloc[0])
+        flags = sorted(e.flags) if e else []
+        verbs.append({"lemma": lemma, "frame": e.frame.value if e else "", "flags": ";".join(flags),
+                      "literary_hits": len(grp), "recipe_medical_hits": int(rec_lemma.get(lemma, 0)),
+                      **dict(zip(["example_1", "example_2", "example_3"],
+                                 ctx(grp.sample(min(3, len(grp)), random_state=1), "verb_discovery_verb"))),
+                      "decision": "", "notes": ""})
+    verbs = pd.DataFrame(verbs).sort_values("literary_hits", ascending=False).head(60)
+    body = body_part_terms()
+    lit["t"] = lit.target_word.str.lower()
+    nouns = []
+    for t, grp in lit[~lit.t.isin(body)].groupby("t"):
+        nouns.append({"term": t, "literary_hits": len(grp),
+                      "recipe_medical_hits": int((rec.target_word.str.lower() == t).sum()),
+                      **dict(zip(["example_1", "example_2", "example_3"],
+                                 ctx(grp.sample(min(3, len(grp)), random_state=1), "target_word"))),
+                      "decision": "", "notes": ""})
+    nouns = pd.DataFrame(nouns).sort_values("literary_hits", ascending=False).head(40)
+    asset = pd.read_csv(LEXICON_ASSET, dtype=str).fillna("")
+    chk = asset[(asset.decision == "keep") & asset["flags"].str.contains("check")]
+    checks = chk.groupby("lemma").form.apply(lambda s: ", ".join(s)).reset_index().rename(columns={"form": "forms"})
+    checks = checks.assign(decision="", notes="")
+
+    wb = Workbook()
+    rm = wb.active
+    rm.title = "Read me"
+    for i, (t, bold) in enumerate([
+        ("Verb lexicon review, round 3 (docs/evidence/triangulation_b/reharvest_v3.md)", True),
+        ("What still selects in the literary strata of the v3b re-harvest. Counts: verb-selected food-noun "
+         "occurrences in the 39 T1b works; examples are random.", False),
+        ("1 Verbs: keep / light (needs a recipe-medical text or a strong verb nearby) / drop. Empty = keep.", False),
+        ("2 Nouns: keep / recipe-only (food only in recipe and medical texts, like the body parts) / drop.", False),
+        ("3 Check: lemmas you marked drop where the note said 'stem is'. keep / drop. Empty = keep.", False),
+    ], 1):
+        c = rm.cell(row=i, column=1, value=t)
+        c.font = Font(bold=bold)
+        c.alignment = Alignment(wrap_text=True)
+    rm.column_dimensions["A"].width = 120
+    fill = PatternFill("solid", fgColor="FFF2CC")
+    for name, df, choices, widths in [
+        ("1 Verbs", verbs, ["keep", "light", "drop"], {"example_1": 60, "example_2": 60, "example_3": 60}),
+        ("2 Nouns", nouns, ["keep", "recipe-only", "drop"], {"example_1": 60, "example_2": 60, "example_3": 60}),
+        ("3 Check", checks, ["keep", "drop"], {"forms": 60}),
+    ]:
+        ws = wb.create_sheet(name)
+        cols = list(df.columns)
+        ws.append(cols)
+        for r in df.itertuples(index=False):
+            ws.append(list(r))
+        for j, col in enumerate(cols, 1):
+            ws.cell(row=1, column=j).font = Font(bold=True)
+            ws.column_dimensions[get_column_letter(j)].width = widths.get(col, 14)
+            if col in ("decision", "notes"):
+                for i in range(2, len(df) + 2):
+                    ws.cell(row=i, column=j).fill = fill
+            if col == "decision":
+                dv = DataValidation(type="list", formula1='"' + ",".join(choices) + '"', allow_blank=True)
+                ws.add_data_validation(dv)
+                dv.add(f"{get_column_letter(j)}2:{get_column_letter(j)}{len(df) + 1}")
+        for row in ws.iter_rows(min_row=2):
+            for c in row:
+                c.alignment = Alignment(wrap_text=True, vertical="top")
+        ws.freeze_panes = "B2"
+    wb.save(REVIEW_XLSX_3)
+    print(f"wrote {REVIEW_XLSX_3}: verbs {len(verbs)}, nouns {len(nouns)}, check {len(checks)}")
+    print(verbs[["lemma", "flags", "literary_hits", "recipe_medical_hits"]].head(20).to_string(index=False))
+    print(nouns[["term", "literary_hits", "recipe_medical_hits"]].head(15).to_string(index=False))
 
 
 if __name__ == "__main__":

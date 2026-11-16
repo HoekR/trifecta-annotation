@@ -96,3 +96,32 @@ Each would be checked against the C3 labels, not against reachability.
   (light/drop).
 
 **Status:** v3b adopted as the current selection (Rik to confirm); the remaining items are listed for review.
+
+## v3c: Rik's round-3 review (verb_lexicon_review_3.xlsx) → `triangulation_b_v3c_*`, `estimate_v3c.md`
+
+**Decisions:**
+- Verbs: 24 drop; 27 light (including *bewaren, leggen, zetten, smaken*, changed from drop after the cost
+  check); 8 kept as full triggers, with no light and no ambiguous flag (*eten, suikeren, melken, drinken,
+  koken, gebruiken, bakken, voeden*).
+- Nouns: 16 recipe-only, 9 never (`assets/restricted_food_terms.csv`, column `scope`).
+- The 8 `check` lemmas are kept.
+
+| stratum | old | v3b | **v3c** |
+|---|---:|---:|---:|
+| RECIPE | 6.0% | 27.3% | **26.6%** |
+| MEDICAL | 4.9% | 28.5% | **26.4%** |
+| drama | 2.5% | 9.5% | **1.2%** |
+| jeugdliteratuur | 4.0% | 12.2% | 3.5% |
+| non-fictie | 1.7% | 7.4% | 2.2% |
+| poëzie | 2.3% | 12.1% | 3.6% |
+| proza | 2.3% | 9.4% | 3.6% |
+| sec - letterkunde | 4.5% | 12.2% | 8.0% |
+| sec - taalkunde | 2.7% | 10.8% | 3.6% |
+| **total** | 4.2% (1,870) | 19.5% (8,632) | **16.1% (7,163)** |
+
+- C3: food 4/18 and non-food 1/51 selected, the same as v3b.
+- Verb-centred cost: ~16.9k LLM calls.
+- The recipe/medical gain is kept (×4.4 and ×5.4). The literary strata are back near the old level.
+
+**Open:** the 8 full-trigger verbs in non-recipe strata, 105 contexts in
+`docs/evidence/verb_lexicon/keep_verbs_contexts.xlsx`, for Rik to read (food_relevant y/n).
