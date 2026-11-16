@@ -559,6 +559,8 @@ def reviewed_lemmas() -> tuple[dict[str, dict], set[str]]:
 
     Empty decision = the proposal stands ("keep unless", 13 Nov). Notes are read with `read_as`;
     `forms-of+X` / `merge` / "merge with X" put the row's forms under lemma X."""
+    from trifecta_annotation.spelling_key import loose_key
+
     x = pd.read_excel(REVIEW_XLSX_2, sheet_name=None, dtype=str)
     s1, s2 = x["1 Lemmas"].fillna(""), x["2 New lemmas"].fillna("")
     lem: dict[str, dict] = {}
@@ -638,9 +640,12 @@ def reviewed_lemmas() -> tuple[dict[str, dict], set[str]]:
             if other != name and e["forms"] & (forms | {name}):
                 inherited = inherited or e["frame"]
                 e["forms"] -= forms | {name}
-                if o["decision"] == "drop":
-                    # the same lemma under another spelling (smyten for smijten, verkogten for kopen's
-                    # past tense): Rik dropped the lemma, not just the forms he happened to list
+                if o["decision"] == "drop" and ("check" in e["flags"] or not e["forms"]
+                                                or loose_key(other) == loose_key(name)):
+                    # the same lemma under another spelling (smyten for smijten), or an unconfirmed sheet
+                    # lemma that held its forms (verkogten for kopen's past tense): Rik dropped the lemma,
+                    # not just the forms he listed. A confirmed lemma that merely shares a form (sieden
+                    # 'siet' with zien) keeps its decision.
                     e["decision"] = "drop"
         frame = o.get("frame", "") or inherited
         put(name, "keep" if o["decision"] == "split" else o["decision"], frame, forms, "override", o["flag"])

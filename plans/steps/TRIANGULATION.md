@@ -56,7 +56,11 @@ Across the series, selection, classification, extraction and attribution all sha
 step. T3 is the matching redesign.
 
 Caveat: this is retrodiction, so the lens could not fail here. Its predictions are tested in T3 (done as a
-handful) and in VERB_LEXICON.md §4 (decision rule for C5).
+handful) and in VERB_LEXICON.md §4.
+
+The C5 rule there is retracted (16 Nov). Verb reachability is proximity, so it rises with any list. Reach is
+structural, so it belongs to T2/T3, not to the vocabulary. T1's "91% unreachable" therefore says where
+frames are *not*: near a listed verb. It does not say whether the list is good.
 
 ## 3. Scope
 

@@ -224,10 +224,34 @@ The references are kept independent of each other where possible.
 | C4 | 100 random hits per generator source, read by Rik | precision per source, and for light verbs separately; *hebben* (kept, flag `aux-ambiguous`, see `review_overrides.csv`) on its own | new forms ≥ old hits − 10 points; light verbs and *hebben* decided by their own precision |
 | C5 | No LLM: T1 reachability, T1b verb-selected share (4.2%), the funnel; before/after per genre | effect size, with n and CI | reported |
 
+**What dropping costs (16 Nov, Rik: "measure what we miss").**
+- *komen* and *zien* are dropped; *vragen, blijven, dragen, gaan, krijgen* are flagged `light`. Together:
+  - **0 of 349 gold** LUs;
+  - 172 of 17,860 silver LUs (1.0%);
+  - 0 of 18 C3 food passages.
+- The light verbs (*geven, nemen, maken, doen, gebruiken, leggen …*) are a different case: **92 of 349 gold
+  LUs (26%)**, and 1 of 18 C3 passages (*laat bruin worden*). They must stay.
+- C5 is therefore read between the *unflagged* and *specific* levels (`scripts/c5_reach.py`). It also writes a
+  reading sample: real frames reached only by weak verbs, to check whether that verb was the evoker.
+
 C3 also answers whether "91% unreachable" is an artefact of the lexicon or a fact of the texts. It can
 start at once, because it needs no list.
 
-**Decision rule for C5 (set 16 Nov 2026, before the re-run; thresholds are a proposal, Rik to adjust).**
+**RETRACTED (16 Nov 2026, Rik): the C5 decision rule below.** The answer was wrong; the question stands.
+- **Why:** reachability ("a verb candidate within ±150 chars") measures *proximity*, not *evocation*.
+  - It can only rise as the list grows.
+  - The 20-work trial (unreachable 13/14 → 8/14) showed new rows reached through verbs that are merely
+    nearby (*Legt* in a fishing poem, *doet* in a verse).
+  - Whether a frame is reachable by verb at all is structural: where the frame lives (heading, entry,
+    noun, construction, implicit). It is not a matter of vocabulary.
+- **Instead:**
+  - judge the vocabulary on coverage of *verb-evoked* cases (C3, small n, reported with its interval);
+  - judge reach structurally: the share of food-first frames under a heading that names the purpose, as
+    `eval_gold_by_position` did for gold. That is TRIANGULATION T2/T3.
+- **Status of the run:** the full re-run of T1 was stopped. `scripts/c5_reach.py` and the `pool_verbs`
+  column in `triangulate_harvests.py` stay as tools, but are not a gate.
+
+~~**Decision rule for C5 (set 16 Nov 2026, before the re-run; thresholds are a proposal, Rik to adjust).**~~
 The step-back review (TRIANGULATION.md §2b) predicts a ceiling. If recipes name their goal in the
 heading, adding paradigm forms will not reach those frames. Re-run T1 with the reviewed list:
 - unreachable share stays **≥ 75%** → the lexicon was not the bottleneck. Stop extending it after V3 and

@@ -27,4 +27,11 @@ sheet,lemma,match_forms,decision,flag,frame,note
 2 New lemmas,wegnemen,wegnemen;wegneemt;wegneemen,keep,multi-frame,CURE,"Rik 16 Nov: 'remove' (stains, smell, leaves); CURE only when a symptom is removed"
 1 Lemmas,afgieten,afgieten;afgiet,keep,,COOKING_CREATION,"Rik 16 Nov: draining (giet het water af), not PRESERVING"
 1 Lemmas,leggen,,keep,multi-frame,COOKING_CREATION,"Rik 16 Nov: light verb, frame CURE came from the old list; separable inleggen carries PRESERVING"
+1 Lemmas,komen,gekomen;komen;komt;koom;koomen;koomt;kwam,drop,,,"Rik 16 Nov: drop (was 'check': marked drop, note said 'stem is')"
+1 Lemmas,zien,side;siden;sien;siet;sit;sitten;zien;ziet;zit;zitten,drop,,,Rik 16 Nov: drop (was 'check'); also held zitten forms (false merge)
+2 New lemmas,vragen,gevraagd;gevraagt;gevraegd;gevraegt;vraag;vraagde;vraagen;vraagt;vraeg;vraegde;vraegden;vraegt;vragen,keep,light,,"Rik 16 Nov: kept, flagged light (generic verb; costs hits and inflates reachability; most should be sieved)"
+2 New lemmas,blijven,bleef;blijf;blijft;blijven;blyf;blyft;blyven,keep,light,,"Rik 16 Nov: kept, flagged light (generic verb; costs hits and inflates reachability; most should be sieved)"
+2 New lemmas,dragen,draag;draagen;draagt;draeg;draegt;dragen;droeg;droegen;gedraagt;gedraegt;gedragen;verdraagen;verdragen,keep,light,,"Rik 16 Nov: kept, flagged light (generic verb; costs hits and inflates reachability; most should be sieved)"
+2 New lemmas,gaan,gaat;gaet;gaan;gaande;gaen;gaende;gaenden;ging,keep,light,,"Rik 16 Nov: kept, flagged light (generic verb; costs hits and inflates reachability; most should be sieved)"
+2 New lemmas,krijgen,crijcht;kreeg;krijgen;krijg;krijgt;kryg;krygen;krygt;verkrijgen;verkrijgt;verkrygt,keep,light,,"Rik 16 Nov: kept, flagged light (generic verb; costs hits and inflates reachability; most should be sieved)"
 *,*,,rule,,,"Rik 13 Nov: a note with 'stem is' / 'merge with' / 'participium of' / 'past tense of' / 'corruption of' / 'variant of' means merge into that lemma, not drop; 'not a verb' / 'auxiliary' / 'not food related' means drop"
