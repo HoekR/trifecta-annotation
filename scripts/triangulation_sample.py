@@ -58,6 +58,9 @@ VERB_INPUTS = "triangulation_b_verbctx_kwic_inputs"
 RUN_INPUTS = "triangulation_b_run_kwic_inputs"
 RUN_ANNOTATIONS = "triangulation_b_annotations"
 RECIPE_VERB_CAP = 300               # G2 (12 Nov): RECIPE alone had 1,035 verb-selected occurrences
+# G2 for the re-harvests (Rik, 16 Nov): with the reviewed list MEDICAL has 1,805 verb-selected occurrences, so it
+# is capped like RECIPE. The untagged (12 Nov) selection keeps its RECIPE-only cap, so it stays reproducible.
+VERB_CAPS_TAGGED = {"RECIPE": 300, "MEDICAL": 300}
 PER_STRATUM_FOOD_ONLY = 200          # G2: random non-verb-selected occurrences per stratum
 SEED = 20261112
 # Works per stratum (40 total). Every genre gets at least 2 works, so no stratum is a single anecdote.
@@ -215,7 +218,7 @@ def estimate(tag: str = "") -> None:
     print("\n".join(lines))
 
 
-def select() -> None:
+def select(tag: str = "") -> None:
     """G2 decision (Rik, 12 Nov 2026): about 4k rows instead of 44k. Each row gets a `tri_set`:
 
     - `verb_noun`: verb-selected occurrence, noun-centred (RECIPE capped at RECIPE_VERB_CAP, evenly spaced);
@@ -226,7 +229,10 @@ def select() -> None:
     def load(name):
         with open(resolve(name), encoding="utf-8") as fh:
             return [json.loads(l) for l in fh if l.strip()]
-    food, verb = load(FOOD_INPUTS), load(VERB_INPUTS)
+    t = (lambda n: n.replace("triangulation_b_", f"triangulation_b_{tag}_")) if tag else (lambda n: n)
+    food_name, verb_name, run_name = t(FOOD_INPUTS), t(VERB_INPUTS), t(RUN_INPUTS)
+    caps = VERB_CAPS_TAGGED if tag else {"RECIPE": RECIPE_VERB_CAP}
+    food, verb = load(food_name), load(verb_name)
     verb_by_pair = {v["pair_record_id"]: v for v in verb}
     rng = random.Random(SEED)
     run, weights = [], {}
@@ -235,8 +241,9 @@ def select() -> None:
         by_stratum[r["stratum"]]["verb" if r["verb_selected"] else "food_only"].append(r)
     for stratum, d in sorted(by_stratum.items()):
         vs = sorted(d["verb"], key=lambda r: (r["source_path"], r["target_char_offset"]))
-        if stratum == "RECIPE" and len(vs) > RECIPE_VERB_CAP:
-            vs = [vs[k * len(vs) // RECIPE_VERB_CAP] for k in range(RECIPE_VERB_CAP)]
+        cap = caps.get(stratum)
+        if cap and len(vs) > cap:
+            vs = [vs[k * len(vs) // cap] for k in range(cap)]      # evenly spaced over the works
         for r in vs:
             run.append({**r, "tri_set": "verb_noun", "tri_weight": 1.0})
             v = verb_by_pair.get(r["record_id"])
@@ -253,8 +260,8 @@ def select() -> None:
         if r["record_id"] not in seen:
             seen.add(r["record_id"])
             dedup.append(r)
-    (OUT / "weights.json").write_text(json.dumps(weights, indent=2, ensure_ascii=False))
-    out = save_semi_structured(dedup, logical_name=RUN_INPUTS, parent_sources=[FOOD_INPUTS, VERB_INPUTS],
+    (OUT / (f"weights_{tag}.json" if tag else "weights.json")).write_text(json.dumps(weights, indent=2, ensure_ascii=False))
+    out = save_semi_structured(dedup, logical_name=run_name, parent_sources=[food_name, verb_name],
                                description="T1b annotation set (G2: verb-selected + verb-centred + 200 food-only/stratum)",
                                script=SCRIPT)
     print(json.dumps(weights, indent=1, ensure_ascii=False))
@@ -365,10 +372,10 @@ def main() -> None:
     ap.add_argument("cmd", choices=["sample", "harvest", "estimate", "select", "annotate", "report"])
     ap.add_argument("--tag", default="", help="harvest/estimate: write and read triangulation_b_<tag>_* (e.g. v3)")
     a = ap.parse_args()
-    if a.cmd in ("harvest", "estimate"):
-        {"harvest": harvest, "estimate": estimate}[a.cmd](a.tag)
+    if a.cmd in ("harvest", "estimate", "select"):
+        {"harvest": harvest, "estimate": estimate, "select": select}[a.cmd](a.tag)
         return
-    {"sample": sample, "select": select, "annotate": annotate, "report": report}[a.cmd]()
+    {"sample": sample, "annotate": annotate, "report": report}[a.cmd]()
 
 
 if __name__ == "__main__":

@@ -159,3 +159,20 @@ gated; the lemmas stay full triggers.
 - **Current list.** Next: `select` (the annotation set), then gate G2 (Rik).
 - One-page overview: `docs/evidence/triangulation_b/overview.html` (`scripts/overview_html.py`; re-run after
   every harvest).
+
+## Annotation set from v3d (G2 step 1; Rik, 16 Nov) → `triangulation_b_v3d_run_kwic_inputs`, `weights_v3d.json`
+
+**Cap:** MEDICAL capped at 300 like RECIPE (Rik's choice). Uncapped, MEDICAL would give 1,805 rows, ~7.3k in
+total, ~29k calls.
+
+| | 12 Nov set | **v3d set** |
+|---|---:|---:|
+| rows | 3,905 | **4,045** |
+| verb-selected, noun-centred | 1,135 | 1,241 |
+| verb-centred pairs | 970 | 1,004 |
+| food-only (200 per stratum) | 1,800 | 1,800 |
+| LLM calls (5.28/row, sieve −43% outside recipe/medical) | ~15.3k | **~15.5k** |
+
+- The 12 Nov set and its annotations are untouched (md5 checked).
+- The untagged `select` keeps its RECIPE-only cap and stays reproducible.
+- **Pending: G2 (Rik): run the LLM annotation on the v3d set.**
