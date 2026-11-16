@@ -58,9 +58,10 @@ step. T3 is the matching redesign.
 Caveat: this is retrodiction, so the lens could not fail here. Its predictions are tested in T3 (done as a
 handful) and in VERB_LEXICON.md §4.
 
-The C5 rule there is retracted (16 Nov). Verb reachability is proximity, so it rises with any list. Reach is
-structural, so it belongs to T2/T3, not to the vocabulary. T1's "91% unreachable" therefore says where
-frames are *not*: near a listed verb. It does not say whether the list is good.
+The C5 rule there is retracted (16 Nov) and kept in T8. T1 as *triangulation* stands: the food route finds
+frames the verb route doesn't (G1). What T1 cannot do is judge the vocabulary. Verb reachability is
+proximity, so it rises with any list. Whether a frame is verb-reachable is structural and genre-dependent
+(T8).
 
 ## 3. Scope
 
@@ -224,6 +225,42 @@ the cells where it helps.
 - **Record:** add entries to a claims ledger (claim, evidence path, date, status: adopted / deferred /
   retracted).
 
+### T8 — Where frames live, by genre (added 16 Nov 2026, Rik)
+
+- **Question:** per genre, what evokes the frame? The options are a verb, a heading or entry, a noun, a
+  construction, or nothing explicit. That decides which route can reach it at all. Reach is structural, not
+  a matter of vocabulary.
+- **Why genre:**
+  - C3 (69 passages): RECIPE 5/6 food, MEDICAL 2/8, literary/linguistic strata about 10/55.
+  - Headings evoke frames only in the recipe and medical strata.
+  - Entry structure differs between dictionary, formulary and prose (`project_genre_predicate`: unit
+    density is not a genre classifier).
+- **Data, no new run:**
+  - C3 (`evoking_kind` × stratum, `c3_prefill.csv`);
+  - gold by position (head / near_head / body × genre, E1);
+  - T1 rows with `pool_verbs`. The T1 run with the new list was stopped; the 20-work trial is in
+    `$TMPDIR` only. Re-run per genre if needed.
+- **Measure:**
+  - evoking kind × genre, and position in the entry × genre, with n and CI;
+  - **not** verb reachability as a yardstick for the vocabulary.
+- **Decision:** routing per genre (verb route, entry/heading route, food route), as input to T3's two
+  levels and to the cost question (`project_pipeline_economics`).
+- Compatible with "don't stratify the sweep by `text_regime`" (§6): this stratifies the *analysis*, not
+  the harvest.
+
+**Retracted here (16 Nov 2026): the C5 decision rule from VERB_LEXICON.md §4.** The answer was wrong; the
+question stands, as T8.
+- **Why:** reachability ("a verb candidate within ±150 chars") measures proximity, not evocation.
+  - It can only rise as the list grows.
+  - The 20-work trial (unreachable 13/14 → 8/14) showed rows reached through verbs that are merely nearby
+    (*Legt* in a fishing poem, *doet* in a verse).
+- **The rule as it was written:** ~~re-run T1 with the reviewed list:~~
+  - ~~≥ 75% unreachable → the lexicon was not the bottleneck; put the effort into the entry route;~~
+  - ~~< 50% → it was the lexicon;~~
+  - ~~in between → C3 decides.~~
+- **Tools kept:** `scripts/c5_reach.py`, and `triangulate_harvests.py --out` with the `pool_verbs` column.
+  They are tools, not a gate.
+
 ## 5. Evaluation and gates per step
 
 Rules for every step:
@@ -247,6 +284,7 @@ Rules for every step:
 | **T5** | Verb-aware Step B | The same rows without the verb | Handful: the ~11 explicit E1 misses. Then T1b rows: INGESTION recall/precision with CI | **G7 (handful):** fewer than 6 of 11 flip correctly → stop; it's not the anchor. **G8 (scale):** recall up, precision not clearly down → adopt for food-anchored rows. |
 | **T6** | Structure markers for cookbooks/newspapers | Rik's reading of sample pages/articles | Marker precision by sequence/position on ~20 pages/articles per source | **G9:** markers pass the read sample → repeat T1b/T3 for that source type. Otherwise that source type stays sentence-only, labelled as such. |
 | **T7** | The headline | E1 (0.48) and the July 75% | Step B agreement with CI per source type and genre, on works never used for prompts | No gate. Replaces the quoted headline; logged in the claims ledger. |
+| **T8** | Where frames live, by genre | C3 strata; E1 positions | Evoking kind × genre; entry position × genre; n and CI per cell | Decision rule to be set before the analysis. Not verb reachability (retracted C5 rule, see T8). |
 
 Known threats to validity:
 - **Shared judge:** both routes go through the same Step B model.
@@ -272,3 +310,4 @@ Known threats to validity:
 5. T3 prototype on the T1b works.
 6. T7 once T4 exists.
 7. T6 later, per source type.
+8. T8 from existing data (C3, E1) at any time. It feeds the routing in T3.

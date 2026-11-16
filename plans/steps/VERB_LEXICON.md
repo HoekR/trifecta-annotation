@@ -237,30 +237,12 @@ The references are kept independent of each other where possible.
 C3 also answers whether "91% unreachable" is an artefact of the lexicon or a fact of the texts. It can
 start at once, because it needs no list.
 
-**RETRACTED (16 Nov 2026, Rik): the C5 decision rule below.** The answer was wrong; the question stands.
-- **Why:** reachability ("a verb candidate within ±150 chars") measures *proximity*, not *evocation*.
-  - It can only rise as the list grows.
-  - The 20-work trial (unreachable 13/14 → 8/14) showed new rows reached through verbs that are merely
-    nearby (*Legt* in a fishing poem, *doet* in a verse).
-  - Whether a frame is reachable by verb at all is structural: where the frame lives (heading, entry,
-    noun, construction, implicit). It is not a matter of vocabulary.
-- **Instead:**
-  - judge the vocabulary on coverage of *verb-evoked* cases (C3, small n, reported with its interval);
-  - judge reach structurally: the share of food-first frames under a heading that names the purpose, as
-    `eval_gold_by_position` did for gold. That is TRIANGULATION T2/T3.
-- **Status of the run:** the full re-run of T1 was stopped. `scripts/c5_reach.py` and the `pool_verbs`
-  column in `triangulate_harvests.py` stay as tools, but are not a gate.
-
-~~**Decision rule for C5 (set 16 Nov 2026, before the re-run; thresholds are a proposal, Rik to adjust).**~~
-The step-back review (TRIANGULATION.md §2b) predicts a ceiling. If recipes name their goal in the
-heading, adding paradigm forms will not reach those frames. Re-run T1 with the reviewed list:
-- unreachable share stays **≥ 75%** → the lexicon was not the bottleneck. Stop extending it after V3 and
-  put the effort into the entry route (T2/T3).
-- unreachable share drops **below 50%** → it was the lexicon. Keep improving it (light verbs, C4).
-- in between → C3 decides (the share of frames evoked by a verb at all).
-
-This lexicon work is one fix with a diagnosed cause (infinitive-only list), not a series of failed fixes,
-so it is legitimate. The rule records where we would stop.
+**C5 is not a gate for the vocabulary (16 Nov 2026, Rik).**
+- Verb reachability measures *proximity*, not *evocation*, and rises with any list.
+- Whether a frame is reachable by verb is structural and depends on genre. That question moved to
+  **TRIANGULATION.md T8**, where the retracted C5 decision rule is kept, visibly.
+- The vocabulary is judged on coverage of *verb-evoked* cases (C3, small n, with its interval) and on
+  precision (C4).
 
 **Then:** re-run T1b harvest → estimate → select, and go back to gate G2 before any annotation.
 
