@@ -268,13 +268,15 @@ def select(tag: str = "") -> None:
     print(f"wrote {len(dedup)} rows -> {out}; " + ", ".join(f"{k}: {v}" for k, v in Counter(r['tri_set'] for r in dedup).items()))
 
 
-def annotate() -> None:
+def annotate(tag: str = "") -> None:
     from trifecta_annotation.batch import load_inputs, run_batch
 
+    t = (lambda n: n.replace("triangulation_b_", f"triangulation_b_{tag}_")) if tag else (lambda n: n)
+    run_inputs, run_annotations = t(RUN_INPUTS), t(RUN_ANNOTATIONS)
     model_dir = Path(resolve("trifecta_step_a_keepdrop_models")) / "globertise-keepdrop" / "model"
     run_batch(
-        load_inputs(input_logical=RUN_INPUTS), output_logical=RUN_ANNOTATIONS, resume=True,
-        parent_sources=[RUN_INPUTS], step_a_sieve_model=model_dir,
+        load_inputs(input_logical=run_inputs), output_logical=run_annotations, resume=True,
+        parent_sources=[run_inputs], step_a_sieve_model=model_dir,
         description="A->B->C annotations for the T1b triangulation set (local Ollama, Step A sieve as routed)",
         script=SCRIPT,
     )
@@ -372,10 +374,10 @@ def main() -> None:
     ap.add_argument("cmd", choices=["sample", "harvest", "estimate", "select", "annotate", "report"])
     ap.add_argument("--tag", default="", help="harvest/estimate: write and read triangulation_b_<tag>_* (e.g. v3)")
     a = ap.parse_args()
-    if a.cmd in ("harvest", "estimate", "select"):
-        {"harvest": harvest, "estimate": estimate, "select": select}[a.cmd](a.tag)
+    if a.cmd in ("harvest", "estimate", "select", "annotate"):
+        {"harvest": harvest, "estimate": estimate, "select": select, "annotate": annotate}[a.cmd](a.tag)
         return
-    {"sample": sample, "annotate": annotate, "report": report}[a.cmd]()
+    {"sample": sample, "report": report}[a.cmd]()
 
 
 if __name__ == "__main__":
