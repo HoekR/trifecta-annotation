@@ -150,3 +150,12 @@ gated; the lemmas stay full triggers.
   (Step A, LLM), which read the context, have to.
 - **Sheet error (Claude):** the highlighted verb was the first substring match. *eten* in *vergheten*, *eet* in
   *eetwaren* were highlighted wrongly; the matcher itself compares whole words.
+
+## v3d: keep-verb decisions applied → `triangulation_b_v3d_*`, `estimate_v3d.md`
+
+- Total 15.9% (7,060); RECIPE 26.8%, MEDICAL 25.3%, other genres 1.2–7.3%.
+- C3: food 5/18, non-food 1/51 (precision 5/6).
+- Verb-centred cost ~16.7k LLM calls.
+- **Current list.** Next: `select` (the annotation set), then gate G2 (Rik).
+- One-page overview: `docs/evidence/triangulation_b/overview.html` (`scripts/overview_html.py`; re-run after
+  every harvest).
