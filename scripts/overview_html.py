@@ -27,6 +27,7 @@ RUNS = [  # tag, label, what changed
     ("v3b", "v3b", "gate narrowed, body parts recipe-only, list fixes"),
     ("v3c", "v3c", "round 3: verbs drop/light/keep, nouns recipe-only/never"),
     ("v3d", "v3d", "keep-verb reading: gebruiken/suikeren light, noun stems gated"),
+    ("v3e", "v3e", "body parts food in recipe books only; scopes on the food route too"),
 ]
 RECIPE = {"RECIPE", "MEDICAL"}
 DECISIONS = [

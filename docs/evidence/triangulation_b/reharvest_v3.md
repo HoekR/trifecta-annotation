@@ -176,3 +176,30 @@ total, ~29k calls.
 - The 12 Nov set and its annotations are untouched (md5 checked).
 - The untagged `select` keeps its RECIPE-only cap and stays reproducible.
 - **Pending: G2 (Rik): run the LLM annotation on the v3d set.**
+
+## v3e: body parts food in recipe books only; scopes on the food route too (Rik, 17 Nov) → `triangulation_b_v3e_*`, `estimate_v3e.md`
+
+Until v3d only the verb route honoured the restricted-term scopes; the food route took every vocabulary
+word, including body parts and 'never' words. Now both routes use `term_allowed`.
+
+| stratum | occurrences v3d | **v3e** | verb-selected v3d | **v3e** |
+|---|---:|---:|---:|---:|
+| RECIPE | 17,196 | 16,985 | 4,614 | 4,614 |
+| MEDICAL | 7,134 | 4,157 | 1,805 | **1,086** |
+| non-fictie | 8,122 | **1,671** | 158 | 158 |
+| proza | 3,442 | 1,032 | 118 | 118 |
+| poëzie | 2,642 | 832 | 94 | 94 |
+| sec - letterkunde | 2,624 | 1,394 | 192 | 192 |
+| sec - taalkunde | 1,674 | 509 | 53 | 53 |
+| drama | 1,111 | 226 | 13 | 13 |
+| jeugdliteratuur | 427 | 188 | 13 | 13 |
+| **total** | 44,372 | **26,994** (−39%) | 7,060 | 6,341 |
+
+- Outside recipe books, 50–80% of the food-route occurrences were restricted terms.
+- Uncapped LLM cost (food-anchored + verb-centred): ~205k → **~144k** calls.
+
+**Medical books, re-asked on the v3d annotations minus the excluded rows:**
+- frame share with a verb nearby 84% (77–89%, n=155) vs food word only 63% (53–71%, n=107);
+- before the filter it was 54% vs 48%: the body parts had pulled both down;
+- Rik's reading of the remaining food-only medical frames: 3 of 6 right (tiny n).
+- So in medical books a verb now clearly helps, as in the other non-recipe genres.

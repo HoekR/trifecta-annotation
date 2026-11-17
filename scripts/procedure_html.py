@@ -113,6 +113,7 @@ DECISIONS = [
     ("17 Nov", "Recipe books need no verb filter", "94% of food-only passages are frames (Rik: 'to be expected')"),
     ("17 Nov", "Food-only frames read", "right: recipe 93%, medical 25%, other genres 33%"),
     ("17 Nov", "Body parts: food in recipe books only", "scopes now on both routes; food-only rows outside recipe books halve"),
+    ("17 Nov", "New harvest with the word restrictions", "44,372 → 26,994 occurrences; medical: verb 84% vs food-only 63%"),
     ("17 Nov", "Centring disagreements dropped", "not contradictions: the two windows read different sentences"),
 ]
 
@@ -165,12 +166,13 @@ def waiting() -> list[tuple[str, str, str]]:
         if p and p[0] < p[1]:
             items.append((what, f"{p[0]} of {p[1]} done", f"docs/evidence/triangulation_b/{name}"))
     items += [
-        ("Decide: which route for medical books?", "re-ask after the body-part filter: half of their "
-         "verb-selected rows were body parts", "plans/steps/TRIANGULATION.md"),
+        ("Decide: which route for medical books?", "after the filter a verb clearly helps (84% vs 63%); "
+         "proposal: verb route, food route in recipe books only", "docs/evidence/triangulation_b/reharvest_v3.md"),
         ("Decide: the verb bestellen", "no decision yet", "docs/evidence/verb_lexicon/"),
         ("Label about 150 entry headings with their purpose", "about an afternoon; the reference for two levels",
          "plans/steps/TRIANGULATION.md"),
-        ("When: the full uncapped run", "about 50k passages, 2–6 days locally", ""),
+        ("When: the full run", "with routing (all food words in recipe books, verb route elsewhere) about "
+         "19k passages, ~16 h at the measured 3 s each; unrouted ~32k, ~1–2 days", ""),
     ]
     ahead = git("rev-list", "--count", "main..verb-lexicon-v3")
     if ahead and ahead != "0":
