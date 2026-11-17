@@ -74,7 +74,9 @@ STAGES = [
      "plans/steps/TRIANGULATION.md"),
     ("Outputs", "working",
      "Analysis export; food harvest shared with colleagues (10 Nov); knowledge-graph mock-up on SURF.",
-     "Annotations have no date, so nothing per year yet.",
+     "Annotations have no date, so nothing per year yet. The latest results go to the knowledge-graph "
+     "mock-up only after the full run with per-genre routing (17 Nov): the test sample is quota-drawn, "
+     "counts verb passages twice and is not yet checked.",
      "plans/steps/FOOD_HARVEST_SHARING.md"),
 ]
 
