@@ -290,6 +290,27 @@ Share of passages that get a real frame (cooking, eating, cure, preserving):
     living, *vleesch des Heeren*), language examples, names. Without a verb, the food route outside recipe
     books mostly finds noise; the verb filter stays.
   - CURE is the weakest label (6 of 21 right), mostly because of the body parts.
+- **Decision (Rik, 17 Nov): body parts are food in recipe books only**, not in medical books (new scope
+  `recipe-books-only` for the 72 body-part rows of `assets/restricted_food_terms.csv`; the round-3 nouns
+  stay `recipe-only`, i.e. recipe and medical). **And the scopes now apply to the food route too**
+  (`term_allowed`, used in `triangulation_sample.py harvest`): until now only the verb route honoured
+  them, so the food-only sample held body parts and even 'never' words (*voren*, *zult*).
+  Effect measured on the v3d rows, no new run:
+
+  | | food-only rows excluded | verb-selected rows excluded |
+  |---|---:|---:|
+  | recipe books | 4 of 200 | 0 of 300 |
+  | medical books | 93 of 200 | **145 of 300** |
+  | other genres | 50–79% per genre (102–158 of 200) | 0 |
+
+  Most excluded: *bloed* 182, *hert* 89, *hart* 86, *noot* 86, *hooft* 75, *oogen* 64, *hoofd* 57,
+  *maag* 51, *oog* 50.
+  - In the reading: 22 of 100 rows excluded, 18 of them 'not food' (9 of 10 in medical books).
+  - Precision on what remains: recipe books 25/27 (93%), medical books 3 of 6, other genres 18/47 (38%).
+    Outside recipe books the food route is still mostly noise, but there is much less of it.
+  - **Medical books:** half of their verb-selected rows were body parts too. The route question for
+    medical books must be re-asked on the filtered rows.
+  - Production harvests (`build_colonial_kwic.py` `scan_text`) don't apply the scopes yet.
 - **Centring disagreements: not contradictions (Rik).** 24 of 183 read, then stopped: 8 'both', 7 'unsure',
   only 2 clearly one side. Four notes say the same thing: the two windows straddle a sentence boundary
   (period or semicolon), so each centring reads a *different* sentence and both labels can be right for

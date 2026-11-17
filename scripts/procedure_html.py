@@ -112,6 +112,7 @@ DECISIONS = [
     ("17 Nov", "Annotation run done", "3 h 26 min, 0 errors"),
     ("17 Nov", "Recipe books need no verb filter", "94% of food-only passages are frames (Rik: 'to be expected')"),
     ("17 Nov", "Food-only frames read", "right: recipe 93%, medical 25%, other genres 33%"),
+    ("17 Nov", "Body parts: food in recipe books only", "scopes now on both routes; food-only rows outside recipe books halve"),
     ("17 Nov", "Centring disagreements dropped", "not contradictions: the two windows read different sentences"),
 ]
 
@@ -164,9 +165,8 @@ def waiting() -> list[tuple[str, str, str]]:
         if p and p[0] < p[1]:
             items.append((what, f"{p[0]} of {p[1]} done", f"docs/evidence/triangulation_b/{name}"))
     items += [
-        ("Decide: body parts in medical books", "9 of 10 wrong food-only frames there are body parts "
-         "(hooft, gal, maag): make them recipe-books-only?", "plans/steps/TRIANGULATION.md"),
-        ("Decide: which route for medical books?", "54% with a verb vs 48% without; food-only precision 25%", ""),
+        ("Decide: which route for medical books?", "re-ask after the body-part filter: half of their "
+         "verb-selected rows were body parts", "plans/steps/TRIANGULATION.md"),
         ("Decide: the verb bestellen", "no decision yet", "docs/evidence/verb_lexicon/"),
         ("Label about 150 entry headings with their purpose", "about an afternoon; the reference for two levels",
          "plans/steps/TRIANGULATION.md"),

@@ -42,6 +42,7 @@ from scripts.build_colonial_kwic import (
     verb_first_hits,
 )
 from trifecta_annotation.adapters.food_snippets import DEFAULT_KWIC_CONTEXT_RADIUS
+from trifecta_annotation.clear_frame_examples import term_allowed
 from trifecta_annotation.corpus_genre_join import load_genre_records
 from trifecta_annotation.dbnl_genre import sweep_candidates, xml_filenames_by_stem
 from trifecta_annotation.tei_segmentation import attach_tei_scope_to_rows, render_tei
@@ -151,7 +152,8 @@ def harvest(tag: str = "") -> None:
             units = structural_units_for_document(text, title=title, source_path=fn, corpus=CORPUS)
             common = dict(pattern=pattern, canonical=canonical, source_path=fn, title=title, corpus=CORPUS,
                           date=date, regime=regime, units=units)
-            nouns = scan_text(text, **common)
+            # restricted food terms (body parts, 'never' words) by regime, on the food route too (Rik, 17 Nov)
+            nouns = [n for n in scan_text(text, **common) if term_allowed(n["target_word"], regime)]
             verbs = [row for _, row in verb_first_hits(text, food_terms_list=food_terms_list, **common)]
             # verb_first_hits' offset is the *verb*; its window is verb ± R. Index verb hits by target word.
             by_word = defaultdict(list)

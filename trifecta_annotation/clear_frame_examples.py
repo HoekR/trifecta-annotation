@@ -233,18 +233,20 @@ def _is_strong(hit, target_frame: TrifectaFrame) -> bool:
     return "reviewed" in sources and not (set(hit.flags) & WEAK_REVIEWED_FLAGS)
 
 
-# Food terms that are not food everywhere (Rik, 16 Nov; assets/restricted_food_terms.csv):
-# - scope "recipe-only": food only in recipe and medical texts, elsewhere mostly something else. Body parts
-#   (hart, voet, oog, bloed: about 30 of 52 non-food C3 targets) and round-3 nouns (blad, tong, vogel …).
-# - scope "never": not food in this corpus (zult = 'will', voren = 'before', names): never a target.
+# Food terms that are not food everywhere (Rik, 16–17 Nov; assets/restricted_food_terms.csv), per scope:
+# - "recipe-books-only": body parts (hart, voet, hooft, gal, maag). Food only in recipe books; in medical books
+#   they are the patient's body (9 of 10 wrong food-only frames there, Rik's reading 17 Nov).
+# - "recipe-only": round-3 nouns (blad, tong, vogel, vet …): food in recipe and medical texts only.
+# - "never": not food in this corpus (zult = 'will', voren = 'before', names): never a target.
+# Applies to both routes: the verb route (score_snippet_for_frame) and the food route (term_allowed).
 RESTRICTED_FOOD_TERMS_PATH = Path(__file__).resolve().parent / "assets" / "restricted_food_terms.csv"
 RECIPE_REGIMES = frozenset({TextRegime.RECIPE_PRACTICE, TextRegime.MEDICAL})
 _RESTRICTED: dict[str, str] | None = None
-_FOOD_TERMS_CACHE: dict[tuple[int, int, bool], list[str]] = {}
+_FOOD_TERMS_CACHE: dict[tuple[int, int, str], list[str]] = {}
 
 
 def restricted_food_terms() -> dict[str, str]:
-    """normalised term -> scope ('recipe-only' or 'never')."""
+    """normalised term -> scope ('recipe-books-only', 'recipe-only' or 'never')."""
     global _RESTRICTED
     if _RESTRICTED is None:
         _RESTRICTED = {}
@@ -255,18 +257,29 @@ def restricted_food_terms() -> dict[str, str]:
 
 
 def body_part_terms() -> frozenset[str]:
-    """Terms that count as food only in recipe and medical texts (body parts and round-3 nouns)."""
-    return frozenset(t for t, s in restricted_food_terms().items() if s == "recipe-only")
+    """Terms that are not food outside recipe (and for some, medical) texts: body parts and round-3 nouns."""
+    return frozenset(t for t, s in restricted_food_terms().items() if s in ("recipe-only", "recipe-books-only"))
+
+
+def _excluded_scopes(regime: TextRegime) -> frozenset[str]:
+    if regime == TextRegime.RECIPE_PRACTICE:
+        return frozenset({"never"})
+    if regime in RECIPE_REGIMES:
+        return frozenset({"never", "recipe-books-only"})
+    return frozenset({"never", "recipe-only", "recipe-books-only"})
+
+
+def term_allowed(term: str, regime: TextRegime) -> bool:
+    """Whether a food term counts as a food target in a text of this regime."""
+    return restricted_food_terms().get(normalize_hist_dutch(term)) not in _excluded_scopes(regime)
 
 
 def food_terms_for_regime(food_terms: list[str], regime: TextRegime) -> list[str]:
-    """The food terms to look for in a snippet: 'never' terms not at all, 'recipe-only' terms only in recipe and
-    medical texts."""
-    recipe = regime in RECIPE_REGIMES
-    key = (id(food_terms), len(food_terms), recipe)
+    """The food terms to look for in a snippet of this regime (see the scopes above)."""
+    drop = _excluded_scopes(regime)
+    key = (id(food_terms), len(food_terms), ",".join(sorted(drop)))
     if key not in _FOOD_TERMS_CACHE:
         restricted = restricted_food_terms()
-        drop = {"never"} if recipe else {"never", "recipe-only"}
         _FOOD_TERMS_CACHE[key] = [t for t in food_terms if restricted.get(normalize_hist_dutch(t)) not in drop]
     return _FOOD_TERMS_CACHE[key]
 

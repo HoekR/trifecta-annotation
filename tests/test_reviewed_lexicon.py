@@ -101,13 +101,30 @@ def test_weak_reviewed_verb_needs_a_preferred_regime() -> None:
     assert lit is None or "bleef" not in lit.discovery_verb.lower()
 
 
-def test_body_part_terms_are_food_only_in_recipe_and_medical_texts() -> None:
+def test_body_part_terms_are_food_only_in_recipe_books() -> None:
     from trifecta_annotation.clear_frame_examples import body_part_terms, food_terms_for_regime
 
-    assert {"hart", "voet", "oog", "bloed"} <= body_part_terms()
+    assert {"hart", "voet", "oog", "bloed", "hooft", "gal"} <= body_part_terms()
     terms = ["hart", "brood", "voet"]
     assert food_terms_for_regime(terms, TextRegime.LITERARY) == ["brood"]
+    assert food_terms_for_regime(terms, TextRegime.MEDICAL) == ["brood"]  # the patient's body (Rik, 17 Nov)
     assert food_terms_for_regime(terms, TextRegime.RECIPE_PRACTICE) == terms
+
+
+def test_round3_recipe_only_nouns_stay_food_in_medical_texts() -> None:
+    from trifecta_annotation.clear_frame_examples import food_terms_for_regime, term_allowed
+
+    assert food_terms_for_regime(["vet", "brood"], TextRegime.MEDICAL) == ["vet", "brood"]
+    assert not term_allowed("vet", TextRegime.LITERARY)
+
+
+def test_food_route_filter_matches_verb_route() -> None:
+    from trifecta_annotation.clear_frame_examples import term_allowed
+
+    assert term_allowed("brood", TextRegime.LITERARY)
+    assert not term_allowed("Hooft", TextRegime.MEDICAL)
+    assert term_allowed("hooft", TextRegime.RECIPE_PRACTICE)
+    assert not term_allowed("voren", TextRegime.RECIPE_PRACTICE)
 
 
 def test_never_terms_are_no_target_even_in_recipes() -> None:
