@@ -282,7 +282,7 @@ def annotate(tag: str = "") -> None:
     )
 
 
-def report() -> None:
+def report(tag: str = "") -> None:
     """Measures fixed before the labels were seen (12 Nov 2026):
 
     1. frame yield per set, with Wilson CI; food_only also weighted up to its stratum totals, giving the
@@ -293,14 +293,16 @@ def report() -> None:
     """
     from scripts.eval_gold_by_position import label, wilson
 
+    t = (lambda n: n.replace("triangulation_b_", f"triangulation_b_{tag}_")) if tag else (lambda n: n)
+    sfx = f"_{tag}" if tag else ""
     inputs = {}
-    with open(resolve(RUN_INPUTS), encoding="utf-8") as fh:
+    with open(resolve(t(RUN_INPUTS)), encoding="utf-8") as fh:
         for l in fh:
             if l.strip():
                 r = json.loads(l)
                 inputs[r["record_id"]] = r
     rows = []
-    with open(resolve(RUN_ANNOTATIONS), encoding="utf-8") as fh:
+    with open(resolve(t(RUN_ANNOTATIONS)), encoding="utf-8") as fh:
         for l in fh:
             if not l.strip():
                 continue
@@ -317,13 +319,13 @@ def report() -> None:
     df = pd.DataFrame(rows)
     REAL = {"COOKING_CREATION", "INGESTION", "CURE", "PRESERVING"}
     df["frame"] = df.label.isin(REAL)
-    df.to_csv(OUT / "rows.csv", index=False)
+    df.to_csv(OUT / f"rows{sfx}.csv", index=False)
 
     def ci(k, n):
         lo, hi = wilson(int(k), int(n))
         return f"{k / max(n, 1):.0%} ({lo:.0%}–{hi:.0%})"
 
-    weights = json.loads((OUT / "weights.json").read_text())
+    weights = json.loads((OUT / f"weights{sfx}.json").read_text())
     ylines = []
     for st in sorted(df.stratum.unique()):
         d = df[df.stratum == st]
@@ -342,13 +344,13 @@ def report() -> None:
     same = int((pairs.label == pairs.label_verbctx).sum())
     fo_frames = df[(df.set == "food_only") & df.frame].sample(frac=1, random_state=SEED).head(100)
     fo_frames[["work", "stratum", "target", "label", "context"]].assign(rik_correct="").to_csv(
-        OUT / "read_food_only_frames.csv", index=False)
+        OUT / f"read_food_only_frames{sfx}.csv", index=False)
     dis = pairs[pairs.label != pairs.label_verbctx]
     dis[["work", "target", "verb", "label", "label_verbctx", "context"]].assign(rik_which="").to_csv(
-        OUT / "read_centring_disagreements.csv")
+        OUT / f"read_centring_disagreements{sfx}.csv")
 
     lines = [
-        "# T1b: passage-first triangulation (39 works)", "",
+        f"# T1b: passage-first triangulation (39 works){' — ' + tag if tag else ''}", "",
         f"Rows annotated: {len(df)} of {len(inputs)} ({int(df.error.sum())} errors). "
         "Yield = share of rows with a real frame (CC/ING/CURE/PRES), Wilson 95% CI.", "",
         "## 1. Yield per route, and frames the food route adds", "",
@@ -365,7 +367,7 @@ def report() -> None:
         f"- `read_food_only_frames.csv`: 100 random food-only frames; fill in `rik_correct` (gate G3 input).",
         f"- `read_centring_disagreements.csv`: {len(dis)} rows; fill in `rik_which` (noun / verb / neither).", "",
     ]
-    (OUT / "report.md").write_text("\n".join(lines))
+    (OUT / f"report{sfx}.md").write_text("\n".join(lines))
     print("\n".join(lines))
 
 
@@ -374,10 +376,11 @@ def main() -> None:
     ap.add_argument("cmd", choices=["sample", "harvest", "estimate", "select", "annotate", "report"])
     ap.add_argument("--tag", default="", help="harvest/estimate: write and read triangulation_b_<tag>_* (e.g. v3)")
     a = ap.parse_args()
-    if a.cmd in ("harvest", "estimate", "select", "annotate"):
-        {"harvest": harvest, "estimate": estimate, "select": select, "annotate": annotate}[a.cmd](a.tag)
+    if a.cmd in ("harvest", "estimate", "select", "annotate", "report"):
+        {"harvest": harvest, "estimate": estimate, "select": select, "annotate": annotate,
+         "report": report}[a.cmd](a.tag)
         return
-    {"sample": sample, "report": report}[a.cmd]()
+    sample()
 
 
 if __name__ == "__main__":

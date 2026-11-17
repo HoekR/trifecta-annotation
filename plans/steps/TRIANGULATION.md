@@ -248,6 +248,34 @@ the cells where it helps.
 - Compatible with "don't stratify the sweep by `text_regime`" (§6): this stratifies the *analysis*, not
   the harvest.
 
+**First result (17 Nov 2026): the annotated v3d set, 4,045 passages, 0 errors.**
+Source: `docs/evidence/triangulation_b/report_v3d.md`.
+
+Share of passages that get a real frame (cooking, eating, cure, preserving):
+
+| genre | food word + verb nearby | food word only |
+|---|---:|---:|
+| recipe books | 84% (80–88%) | **94%** (90–97%) |
+| medical books | 54% (49–60%) | 48% (42–55%) |
+| prose | 73% (64–80%) | 18% (13–23%) |
+| drama | 77% (50–92%) | 8% (5–13%) |
+| poetry | 59% (48–68%) | 16% (12–22%) |
+| non-fiction | 47% (39–55%) | 6% (4–11%) |
+| secondary literature (literary studies) | 70% (64–76%) | 42% (36–49%) |
+| secondary literature (linguistics) | 42% (29–55%) | 13% (9–18%) |
+| youth literature | 69% (42–87%) | 27% (21–34%) |
+
+- **Recipe books:** every food word is in a frame; the genre evokes it, so a verb adds nothing (Rik: "to be
+  expected"). Route: harvest all food words, no verb filter.
+- **Literary and other genres:** a verb nearby multiplies the frame share by 4–10. Route: verb filter.
+- **Medical books:** a verb barely helps (54% vs 48%). This is the open case; a likely reason is that
+  remedies (food as cure) and plain description are mixed in one book.
+- **Whether context is centred on the food word or the verb** rarely changes the label: 82% of 1,004 pairs agree (79–84%).
+  Disagreements are mostly cooking↔cure and cooking↔eating, the two-level overlap from the heading test.
+- **Not yet verified:** the frames' precision. To read: `read_food_only_frames_v3d.csv` (100 rows; better
+  drawn from non-recipe genres only, since recipe precision is not in doubt) and
+  `read_centring_disagreements_v3d.csv` (183 rows).
+
 **Retracted here (16 Nov 2026): the C5 decision rule from VERB_LEXICON.md §4.** The answer was wrong; the
 question stands, as T8.
 - **Why:** reachability ("a verb candidate within ±150 chars") measures proximity, not evocation.
