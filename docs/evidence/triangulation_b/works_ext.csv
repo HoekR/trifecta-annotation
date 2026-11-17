@@ -1,0 +1,96 @@
+filename,ti_id,title,year,genre,regime,bytes,verb_candidates,stratum,in_frozen_sample
+magi007kooc02_01.xml,magi007kooc02,Koock-boeck ofte familieren kevken-boeck,1663,non-fictie,RECIPE_PRACTICE,206712,,RECIPE,True
+_vol002volm01_01.xml,_vol002volm01,De volmaakte Hollandsche keuken-meid,1752,non-fictie,RECIPE_PRACTICE,585229,,RECIPE,True
+bate002secr02_01.xml,bate002secr02,Het secreet-boek vol heerlijke konsten,1694,non-fictie,RECIPE_PRACTICE,983547,,RECIPE,True
+alke003nede03_01.xml,alke003nede00,Nederlands displegtigheden,1732,non-fictie,RECIPE_PRACTICE,871970,,RECIPE,True
+_pha002phar01_01.xml,_pha002phar01,"Pharmacopoea Roterodamensis Galeno-Chymica, of Rotterdamsche Galenische en Chymische Apotheek",1709,non-fictie,MEDICAL,238149,,MEDICAL,True
+_pha001phar03_01.xml,_pha001phar03,"Pharmacopaea Amstelredamensis, of d'Amsterdammer apotheek",1686,non-fictie,MEDICAL,364721,,MEDICAL,True
+_aan004aanw01_01.xml,_aan004aanw01,Aanwijzingen tot het gebruik der medicynen voor zeevarenden,1839,non-fictie,MEDICAL,43938,,MEDICAL,True
+blan012kart01_01.xml,blan012kart01,"De Kartesiaanse academie ofte, institutie der medicyne",1683,non-fictie,MEDICAL,881037,,MEDICAL,True
+_lee024leeu03_01.xml,_lee024leeu03,"Leeuwarder Apotheek, volgens de Galenische en Chimische wyze; door den arbeit van t Genoodschap der Artzen dier stede opgemaakt, en door dachtbaarheid der Majestraat bevestigt",1712,non-fictie,MEDICAL,247303,,MEDICAL,True
+verb122chir01_01.xml,verb122chir01,Chirurgyns scheeps-Kist,1723,non-fictie,MEDICAL,155440,,MEDICAL,False
+krie024bata02_01.xml,krie024bata02,Bataviasche apotheek,1746,non-fictie,MEDICAL,310924,,MEDICAL,False
+bont009gebr01_01.xml,bont009gebr01,"Gebruik en Mis-bruik van de Thee, mitsgaders een Verhandelinge wegens de Deugden en Kragten van de Tabak",1686,proza,MEDICAL,260061,,MEDICAL,False
+pitt003list01_01.xml,pitt003list01,List en bedrog der medicynen,1705,non-fictie,MEDICAL,438746,,MEDICAL,False
+hoof012memo01_01.xml,hoof012memo01,Memoriën en adviezen (2 delen),1871,non-fictie,UNKNOWN,1919347,9.0,non-fictie,True
+craa001wand07_01.xml,craa001wand00,Wandelingen door Nederland met pen en potlood (7 delen),1875,non-fictie,UNKNOWN,1242930,18.0,non-fictie,True
+_bek006bekn01_01.xml,_bek006bekn01,Beknopt verhaal wegens het verongelukken van verscheide schepen in het jaar 1777,1779,non-fictie,LITERARY,26884,5.0,non-fictie,True
+quac001soci06_01.xml,quac001soci00,De socialisten: Personen en stelsels,1875,non-fictie,UNKNOWN,2271308,21.0,non-fictie,True
+bowr001brie01_01.xml,bowr001brie01,Brieven,1830,non-fictie,UNKNOWN,611319,9.0,non-fictie,True
+drex002sonn02_01.xml,drex002sonn02,De sonne-bloeme,1700,non-fictie,UNKNOWN,945634,19.0,non-fictie,True
+busk001brie01_01.xml,busk001brie01,Vragen en antwoorden. Brieven over den Bijbel,1863,non-fictie,UNKNOWN,744334,17.0,non-fictie,True
+spin003nage01_01.xml,spin003nage01,Nagelate schriften,1677,non-fictie,UNKNOWN,2484923,27.0,non-fictie,True
+_vad003187601_01.xml,_vad003187601,Vaderlandsche letteroefeningen. Jaargang 1876,1876,non-fictie,LITERARY,2676548,50.0,non-fictie,False
+zorg003bloe01_01.xml,zorg003bloe01,Bloeijende opkomst der aloude en hedendaagsche Groenlandsche visschery,1727,non-fictie,UNKNOWN,1366823,26.0,non-fictie,False
+_vro028vrol01_01.xml,_vro028vrol01,Het vrolijke bleekersmeisje,1841,poëzie,UNKNOWN,109795,6.0,poëzie,True
+vers012geza01_01.xml,vers012geza01,Gezangen der vrije-metzelaaren,1799,poëzie,UNKNOWN,228408,3.0,poëzie,True
+_ghe009ghee02_01.xml,_ghe009ghee02,Een gheestelijck lust hofken,1722,poëzie,UNKNOWN,432825,8.0,poëzie,True
+_zin004zing02_01.xml,_zin004zing02,De zingende koddenaar,1774,poëzie,UNKNOWN,150780,10.0,poëzie,True
+buit010bloe01_01.xml,buit010bloe01,"Bloem-hof, verciert met geestelijcke lof-sangen",1659,poëzie,UNKNOWN,1271611,18.0,poëzie,True
+duym001spie01_01.xml,duym001spie01,Spiegelboeck,1600,poëzie,UNKNOWN,568186,13.0,poëzie,True
+geze002vlae01_01.xml,geze002vlae01,Vlaemsche dichtoefeningen,1858,poëzie,LITERARY,265231,5.0,poëzie,False
+slui006geza01_01.xml,slui006geza01,Gezangen van Heilige en Godtvruchtige stoffe,1687,poëzie,UNKNOWN,605689,15.0,poëzie,False
+rave067trio01_01.xml,rave067trio01,"Triomf van Nederlandt, of vervolg op het Eerste Tweede en Derde deel van het Geuse Liedboek",1734,poëzie,UNKNOWN,192213,8.0,poëzie,False
+leeu035chri01_01.xml,leeu035chri01,Christelijcke plicht-rymen om te singen of te leesen,1648,poëzie,UNKNOWN,591956,5.0,poëzie,False
+love002poly01_01.xml,love002poly01,Polydoor en Theodoor en andere novellen en schetsen,1883,proza,UNKNOWN,256947,10.0,proza,True
+weye002echo02_01.xml,weye002echo00,Den echo des weerelds (2 delen),1726,proza,UNKNOWN,925637,24.0,proza,True
+ecre001teut02_01.xml,ecre001teut02,"De Drossaert Clercx, eene omwerking van De Teuten in de Limburger Kempen",1846,proza,UNKNOWN,381882,12.0,proza,True
+kist001leve01_01.xml,kist001leve01,"Het leven, gevoelens en zonderlinge reize van den landjonker Govert Hendrik Godefroi van Blankenheim tot den Stronk (2 delen)",1800,proza,UNKNOWN,697254,21.0,proza,True
+kink001post01_01.xml,kink001post00,De Post van den Helicon,1788,proza,UNKNOWN,762938,10.0,proza,True
+stij007armv01_01.xml,stij007armv01,Arm Vlaanderen,1884,proza,UNKNOWN,1088626,57.0,proza,False
+seip002uitl01_01.xml,seip002uitl01,Uit Limburg,1881,proza,UNKNOWN,381209,12.0,proza,False
+zett001simo01_01.xml,zett001simo01,Simon Cokkermoes; Egmont's einde,1850,proza,UNKNOWN,210457,8.0,proza,False
+char007kind01_01.xml,char007kind01,Kinderpoëzij,1860,jeugdliteratuur,UNKNOWN,151673,9.0,jeugdliteratuur,True
+goev001oomw01_01.xml,goev001oomw01,Oom Willem en zijne buurkindertjes. Een schoolboekje,1878,jeugdliteratuur,UNKNOWN,105220,4.0,jeugdliteratuur,True
+zegg002inde01_01.xml,zegg002inde01,In de speeluren,1850,jeugdliteratuur,UNKNOWN,119121,4.0,jeugdliteratuur,True
+_lee010leer01_01.xml,_lee010leer01,Leerzaam gedenkboek voor de Nederlandsche jeugd,1817,jeugdliteratuur,UNKNOWN,231221,9.0,jeugdliteratuur,False
+_uit007uitg01_01.xml,_uit007uitg01,Het uitgescheurde bijbelblad,1870,jeugdliteratuur,UNKNOWN,323000,5.0,jeugdliteratuur,False
+_gro014groo01_01.xml,_gro014groo01,"Groot en vermakelijk prenttafereel, bestaande in meer dan vier honderd soorten van afbeeldingen en figuren, als menschen, beesten, vogelen, visschen, schepen enz.",1810,jeugdliteratuur,UNKNOWN,43553,5.0,jeugdliteratuur,False
+duys002gedi02_01.xml,duys002gedi02,Gedichtjes voor kinderen,1849,jeugdliteratuur,LITERARY,73274,3.0,jeugdliteratuur,False
+neuf002acht01_01.xml,neuf002acht01,Acht oorspronkelijk Nederduitsche verhalen voor de jeugd,1840,jeugdliteratuur,UNKNOWN,123579,5.0,jeugdliteratuur,False
+louw005vlis01_01.xml,louw005vlis01,Vlissinger Michiel,1880,jeugdliteratuur,UNKNOWN,406096,13.0,jeugdliteratuur,False
+razo001aard01_01.xml,razo001aard01,Een aardig prentenboek met leerzame vertellingen,1848,jeugdliteratuur,UNKNOWN,17107,3.0,jeugdliteratuur,False
+calc002uitv01_01.xml,calc002uitv01,Uit verre landen en van nabij (onder pseudoniem Elise),1850,jeugdliteratuur,UNKNOWN,170472,3.0,jeugdliteratuur,False
+reni001fabe01_01.xml,reni001fabe01,Fabelen,1842,jeugdliteratuur,UNKNOWN,284326,16.0,jeugdliteratuur,False
+goej001doch02_01.xml,goej001doch01,De dochter van den kozak. Een historisch verhaal voor meisjes,1861,jeugdliteratuur,LITERARY,495509,9.0,jeugdliteratuur,False
+andr018onze01_01.xml,andr018onze01,Onze huisdieren,1876,jeugdliteratuur,UNKNOWN,15755,5.0,jeugdliteratuur,False
+hoop002hoem01_01.xml,hoop002hoem01,Hoe men zijn brood verdient. ABC,1855,jeugdliteratuur,UNKNOWN,19895,3.0,jeugdliteratuur,False
+duys003leve01_01.xml,duys003leve01,Levensschetsen van jeugdige Christenen,1850,jeugdliteratuur,UNKNOWN,211643,9.0,jeugdliteratuur,False
+korb002kwee01_01.xml,korb002kwee01,De kweekeling van den invalide. Een verhaal uit de oorlogsjaren 1809-1813,1850,jeugdliteratuur,LITERARY,284347,4.0,jeugdliteratuur,False
+bale003slav01_01.xml,bale003slav01,De slavenhaler. Tooneelen van Afrika's westkust en reis naar het land der Peuls,1884,jeugdliteratuur,TRAVEL,346901,7.0,jeugdliteratuur,False
+vegt005alex02_01.xml,vegt005alex02,"Alexis en Iwan, of de overwintering op Spitsbergen",1845,jeugdliteratuur,UNKNOWN,297426,11.0,jeugdliteratuur,False
+anth001uith01_01.xml,anth001uith01,Uit het hart!,1874,jeugdliteratuur,UNKNOWN,143771,4.0,jeugdliteratuur,False
+zett001marg01_01.xml,zett001marg01,Margaretha van Constantinopelen,1846,drama,UNKNOWN,233508,3.0,drama,True
+weye002holl01_01.xml,weye002holl01,De Hollandsche sinnelykheid,1713,drama,UNKNOWN,83786,3.0,drama,True
+duym001ghed01_01.xml,duym001ghed01,Ghedenck-boeck,1606,drama,UNKNOWN,797504,20.0,drama,True
+focq001mini02_01.xml,focq001mini02,De min in 't Lazarus-huys,1732,drama,UNKNOWN,205464,9.0,drama,False
+zuyl001osma01_01.xml,zuyl001osma01,Osman en Ophelia,1790,drama,UNKNOWN,167560,4.0,drama,False
+krul001pamp02_01.xml,krul001pamp02,Pampiere wereld,1681,drama,UNKNOWN,2392296,81.0,drama,False
+moli015schy01_01.xml,moli015schy01,"De schynheilige, zynde het gevolg van de blyspelen genaamt: het gedwongen huwelyk, en Lubbert Lubbertsz",1686,drama,UNKNOWN,68975,3.0,drama,False
+vena001vert01_01.xml,vena001vert01,Een claer ende doorluchtich vertooch van d'Alckmaersche kerckelicke gheschillen,1611,drama,UNKNOWN,266053,6.0,drama,False
+roel019fami01_01.xml,roel019fami01,De familie Kregels,1877,drama,UNKNOWN,134012,3.0,drama,False
+_qua002quae02_01.xml,_qua002quae02,De qua grieten,1729,drama,UNKNOWN,68587,6.0,drama,False
+eemb001soph01_01.xml,eemb001soph01,Sophonisba,1621,drama,UNKNOWN,150940,3.0,drama,False
+vond001pete01_01.xml,vond001pete01,Peter en Pauwels,1641,drama,UNKNOWN,133844,6.0,drama,False
+hoop001hanv01_01.xml,hoop001hanv01,Han van IJsland,1837,drama,UNKNOWN,289559,4.0,drama,False
+nore003list01_01.xml,nore003list01,"De listige minnaars, of De jonker boer, en boer jonker",1705,drama,UNKNOWN,125100,4.0,drama,False
+kolm001batt01_01.xml,kolm001batt01,Battaefsche vrienden-spieghel,1615,drama,UNKNOWN,193518,3.0,drama,False
+lang020juli01_01.xml,lang020juli01,Julius Cezar en Kato,1720,drama,UNKNOWN,126126,4.0,drama,False
+ling001ontd01_01.xml,ling001ontd01,De ontdekte schyndeugd,1687,drama,UNKNOWN,105083,3.0,drama,False
+peen001klae01_01.xml,peen001klae01,Klaes Kapoen,1843,drama,UNKNOWN,94882,8.0,drama,False
+kats002denv02_01.xml,kats002denv02,Den verlichten boer,1835,drama,UNKNOWN,54623,3.0,drama,False
+ouda001haag01_01.xml,ouda001haag01,Haagsche broeder-moord of dolle blydschap,1673,drama,UNKNOWN,213032,11.0,drama,False
+_taa001taal06_01.xml,_taa001taal06,De Taalgids. Jaargang 6,1864,sec - taalkunde,UNKNOWN,828027,21.0,sec - taalkunde,True
+drie015nede01_01.xml,drie015nede01,Nederduitsche tael- en letterkundige lessen voor school- en zelfonderricht,1860,sec - taalkunde,UNKNOWN,1018778,18.0,sec - taalkunde,True
+roor005over01_01.xml,roor005over01,Over de deelen der rede en de rede-ontleding,1852,sec - taalkunde,UNKNOWN,658410,4.0,sec - taalkunde,True
+coni007punt01_01.xml,coni007punt01,Punt- en kleine mengeldichten,1837,sec - taalkunde,LITERARY,380244,3.0,sec - taalkunde,False
+_jaa002186101_01.xml,_jaa002186101,"Jaarboek van de Maatschappij der Nederlandse Letterkunde, 1861",1861,sec - taalkunde,UNKNOWN,598333,9.0,sec - taalkunde,False
+lind037rabi01_01.xml,lind037rabi01,"Rabies Rabidi Rabi. Anders Rabbelary van de rabbelende P. Rabus, Boeksaal-schrijver van Europa",1698,sec - taalkunde,UNKNOWN,408893,5.0,sec - taalkunde,False
+will028verh01_01.xml,will028verh01,"Verhandeling over de Nederduytsche tael- en letterkunde, opzigtelyk de Zuydelyke provintien der Nederlanden",1819,sec - taalkunde,ADMIN_TRADE,1168981,7.0,sec - taalkunde,False
+_noo001188401_01.xml,_noo001188401,Noord en Zuid. Jaargang 7,1884,sec - taalkunde,UNKNOWN,1694995,31.0,sec - taalkunde,False
+_die003185501_01.xml,_die003185501,Dietsche Warande. Jaargang 1,1855,sec - letterkunde,UNKNOWN,1408459,23.0,sec - letterkunde,True
+herl001besc01_01.xml,herl001besc01,Beschryvinge van de volk-plantinge Zuriname,1718,sec - letterkunde,UNKNOWN,538113,84.0,sec - letterkunde,True
+_sur003185601_01.xml,_sur003185601,Suriname. Jaarboekje voor het jaar 1856,1856,sec - letterkunde,UNKNOWN,338433,4.0,sec - letterkunde,False
+slee003lite01_01.xml,slee003lite00,Literatuur en kunst (2 delen),1880,sec - letterkunde,UNKNOWN,436778,9.0,sec - letterkunde,False
+boek019uitm01_01.xml,boek019uitm01,'Uit mijn verleden.' Bijdrage tot de kennis van Suriname,1874,sec - letterkunde,UNKNOWN,222304,8.0,sec - letterkunde,False
+hofd001gesc01_01.xml,hofd001gesc01,Geschiedenis der Nederlandsche letterkunde,1857,sec - letterkunde,UNKNOWN,1066467,27.0,sec - letterkunde,False

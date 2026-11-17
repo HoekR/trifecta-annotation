@@ -67,6 +67,12 @@ SEED = 20261112
 # Works per stratum (40 total). Every genre gets at least 2 works, so no stratum is a single anecdote.
 QUOTA = {"RECIPE": 5, "MEDICAL": 5, "non-fictie": 8, "poëzie": 6, "proza": 5, "jeugdliteratuur": 3,
          "drama": 3, "sec - taalkunde": 3, "sec - letterkunde": 2}
+# Extended sample (Rik, 17 Nov: "up the cap a bit for the rest"): the same seed and pools, drawn further down,
+# so the 39 frozen works stay in. Aim: ~100+ verb passages per genre (drama and youth literature had 13 each).
+WORKS_EXT = OUT / "works_ext.csv"
+QUOTA_EXT = {"RECIPE": 5, "MEDICAL": 9, "non-fictie": 10, "poëzie": 10, "proza": 8, "jeugdliteratuur": 20,
+             "drama": 20, "sec - taalkunde": 8, "sec - letterkunde": 6}
+EXT_TAGS = {"v3f"}  # tags that harvest the extended works list
 MIN_VERB, MAX_VERB = 3, 100        # mid-sized: uncapped verb candidates per work (weak-regime counts)
 MAX_BYTES = 3_000_000              # leave out dictionary-sized outliers (Chomel and the like)
 CALLS_PER_ROW = 5.28               # project_pipeline_economics: LLM calls per annotated row
@@ -80,9 +86,7 @@ def _genre(rec: dict) -> str:
     return vals[0] if vals else "?"
 
 
-def sample() -> None:
-    if WORKS.exists():
-        raise SystemExit(f"{WORKS} exists: the sample is frozen. Delete it deliberately to redraw.")
+def _pools() -> dict[str, list[dict]]:
     zip_path = resolve("dbnl_xml")
     recs = load_genre_records()
     by_id = {r["ti_id"]: r for r in recs if r.get("ti_id")}
@@ -108,10 +112,14 @@ def sample() -> None:
                 pools["RECIPE" if regime is TextRegime.RECIPE_PRACTICE else "MEDICAL"].append(rec)
         elif rec["verb_candidates"] is not None and MIN_VERB <= rec["verb_candidates"] <= MAX_VERB:
             pools[rec["genre"]].append(rec)
+    return pools
 
+
+def _pick(pools: dict[str, list[dict]], quota: dict[str, int]) -> list[dict]:
+    """Deterministic: a larger quota takes the same works first, then more from the same shuffled pool."""
     rng = random.Random(SEED)
     picked = []
-    for stratum, n in QUOTA.items():
+    for stratum, n in quota.items():
         pool = sorted(pools[stratum], key=lambda r: r["filename"])
         rng.shuffle(pool)
         take, series = [], set()
@@ -122,9 +130,31 @@ def sample() -> None:
                 take.append(r)
         print(f"{stratum}: {len(take)} of {len(pool)} eligible", flush=True)
         picked += [{**r, "stratum": stratum} for r in take]
+    return picked
+
+
+def sample() -> None:
+    if WORKS.exists():
+        raise SystemExit(f"{WORKS} exists: the sample is frozen. Delete it deliberately to redraw.")
+    picked = _pick(_pools(), QUOTA)
     OUT.mkdir(parents=True, exist_ok=True)
     pd.DataFrame(picked).to_csv(WORKS, index=False)
     print(f"wrote {len(picked)} works -> {WORKS} (seed {SEED})")
+
+
+def extend() -> None:
+    """Write works_ext.csv: the frozen sample plus more works per genre (QUOTA_EXT). Refuses to overwrite."""
+    if WORKS_EXT.exists():
+        raise SystemExit(f"{WORKS_EXT} exists. Delete it deliberately to redraw.")
+    picked = _pick(_pools(), QUOTA_EXT)
+    frozen = set(pd.read_csv(WORKS).filename)
+    missing = frozen - {r["filename"] for r in picked}
+    if missing:
+        raise SystemExit(f"extended draw lost frozen works: {sorted(missing)}")
+    df = pd.DataFrame(picked).assign(in_frozen_sample=lambda d: d.filename.isin(frozen))
+    df.to_csv(WORKS_EXT, index=False)
+    print(f"wrote {len(df)} works -> {WORKS_EXT} ({int(df.in_frozen_sample.sum())} frozen + "
+          f"{int((~df.in_frozen_sample).sum())} new)")
 
 
 def harvest(tag: str = "") -> None:
@@ -132,7 +162,7 @@ def harvest(tag: str = "") -> None:
     (and are the parent of the C3 sample)."""
     food_name = FOOD_INPUTS.replace("triangulation_b_", f"triangulation_b_{tag}_") if tag else FOOD_INPUTS
     verb_name = VERB_INPUTS.replace("triangulation_b_", f"triangulation_b_{tag}_") if tag else VERB_INPUTS
-    works = pd.read_csv(WORKS)
+    works = pd.read_csv(WORKS_EXT if tag in EXT_TAGS else WORKS)
     terms = load_food_terms()
     canonical = alt_label_index(terms)
     all_terms = (set(canonical) | {str(p).strip().lower() for p in terms["Pref_label"].dropna()}) - AMBIGUOUS_FUNCTION_WORDS
@@ -375,14 +405,14 @@ def report(tag: str = "") -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["sample", "harvest", "estimate", "select", "annotate", "report"])
+    ap.add_argument("cmd", choices=["sample", "extend", "harvest", "estimate", "select", "annotate", "report"])
     ap.add_argument("--tag", default="", help="harvest/estimate: write and read triangulation_b_<tag>_* (e.g. v3)")
     a = ap.parse_args()
     if a.cmd in ("harvest", "estimate", "select", "annotate", "report"):
         {"harvest": harvest, "estimate": estimate, "select": select, "annotate": annotate,
          "report": report}[a.cmd](a.tag)
         return
-    sample()
+    {"sample": sample, "extend": extend}[a.cmd]()
 
 
 if __name__ == "__main__":

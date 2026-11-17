@@ -1,0 +1,65 @@
+{
+  "MEDICAL": {
+    "food_only_total": 4527,
+    "sampled": 200,
+    "weight": 22.635,
+    "verb_selected_total": 1772,
+    "verb_selected_run": 300
+  },
+  "RECIPE": {
+    "food_only_total": 12371,
+    "sampled": 200,
+    "weight": 61.855,
+    "verb_selected_total": 4614,
+    "verb_selected_run": 300
+  },
+  "drama": {
+    "food_only_total": 1293,
+    "sampled": 200,
+    "weight": 6.465,
+    "verb_selected_total": 172,
+    "verb_selected_run": 172
+  },
+  "jeugdliteratuur": {
+    "food_only_total": 1311,
+    "sampled": 200,
+    "weight": 6.555,
+    "verb_selected_total": 190,
+    "verb_selected_run": 190
+  },
+  "non-fictie": {
+    "food_only_total": 3662,
+    "sampled": 200,
+    "weight": 18.31,
+    "verb_selected_total": 428,
+    "verb_selected_run": 428
+  },
+  "poëzie": {
+    "food_only_total": 1203,
+    "sampled": 200,
+    "weight": 6.015,
+    "verb_selected_total": 151,
+    "verb_selected_run": 151
+  },
+  "proza": {
+    "food_only_total": 1413,
+    "sampled": 200,
+    "weight": 7.065,
+    "verb_selected_total": 188,
+    "verb_selected_run": 188
+  },
+  "sec - letterkunde": {
+    "food_only_total": 1705,
+    "sampled": 200,
+    "weight": 8.525,
+    "verb_selected_total": 271,
+    "verb_selected_run": 271
+  },
+  "sec - taalkunde": {
+    "food_only_total": 1296,
+    "sampled": 200,
+    "weight": 6.48,
+    "verb_selected_total": 197,
+    "verb_selected_run": 197
+  }
+}
