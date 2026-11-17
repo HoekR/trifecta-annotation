@@ -272,9 +272,28 @@ Share of passages that get a real frame (cooking, eating, cure, preserving):
   remedies (food as cure) and plain description are mixed in one book.
 - **Whether context is centred on the food word or the verb** rarely changes the label: 82% of 1,004 pairs agree (79–84%).
   Disagreements are mostly cooking↔cure and cooking↔eating, the two-level overlap from the heading test.
-- **Not yet verified:** the frames' precision. To read: `read_food_only_frames_v3d.csv` (100 rows; better
-  drawn from non-recipe genres only, since recipe precision is not in doubt) and
-  `read_centring_disagreements_v3d.csv` (183 rows).
+- **Precision, read by Rik (17 Nov 2026; `triangulation_b/reading_v3d.xlsx`, built by
+  `scripts/reading_sheet.py`).** Food-only frames, 100 random:
+
+  | genre | right | not food | wrong frame | unsure |
+  |---|---:|---:|---:|---:|
+  | recipe books (29) | **27 (93%, 78–98%)** | 1 | 0 | 1 |
+  | medical books (16) | **4 (25%, 10–49%)** | 10 | 0 | 2 |
+  | all other genres (55) | **18 (33%, 22–46%)** | 29 | 5 | 3 |
+
+  - **Recipe books:** the food route is right. Its weighted ~11.8k frames are real; this is where the
+    food route earns its keep.
+  - **Medical books:** 9 of the 10 'not food' are body parts (*hooft* ×3, *gal* ×2, *maag*, *borst*,
+    *herssenen*, *vet*). The model labels the passage CURE, correctly, but the word is the patient's body,
+    not food. Cause: body parts are scoped 'recipe-only', and `RECIPE_REGIMES` includes MEDICAL.
+  - **Other genres:** two thirds wrong: idioms (*vleesch en bloed*, *vlees of vis*), metaphor (*brood* for
+    living, *vleesch des Heeren*), language examples, names. Without a verb, the food route outside recipe
+    books mostly finds noise; the verb filter stays.
+  - CURE is the weakest label (6 of 21 right), mostly because of the body parts.
+- **Centring disagreements: not contradictions (Rik).** 24 of 183 read, then stopped: 8 'both', 7 'unsure',
+  only 2 clearly one side. Four notes say the same thing: the two windows straddle a sentence boundary
+  (period or semicolon), so each centring reads a *different* sentence and both labels can be right for
+  their window. Centring is a window effect, not a model error; not worth reading further.
 
 **Retracted here (16 Nov 2026): the C5 decision rule from VERB_LEXICON.md §4.** The answer was wrong; the
 question stands, as T8.

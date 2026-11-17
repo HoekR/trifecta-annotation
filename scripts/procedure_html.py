@@ -34,6 +34,8 @@ GENRE_NAMES = {
     "sec - letterkunde": "studies of literature", "sec - taalkunde": "studies of language",
 }
 
+CLOSED_SHEETS = {"2 Disagreements"}  # stopped by Rik 17 Nov: window effects, not contradictions
+
 # state: done | working | question | parked | out
 STAGES = [
     ("Corpus", "done",
@@ -70,7 +72,8 @@ STAGES = [
      "PLAN.md"),
     ("Checking without new random gold", "working",
      "Compare the two routes on the same passages; read where they disagree; measure per genre.",
-     "Precision of the food-only frames is not known until your reading is done.",
+     "Read 17 Nov: food-only frames are right in recipe books (93%), mostly wrong elsewhere (33%) and in "
+     "medical books (25%, body parts). Centring disagreements are window effects, not contradictions.",
      "plans/steps/TRIANGULATION.md"),
     ("Outputs", "working",
      "Analysis export; food harvest shared with colleagues (10 Nov); knowledge-graph mock-up on SURF.",
@@ -108,6 +111,8 @@ DECISIONS = [
     ("16 Nov", "Annotation set chosen", "4,045 passages; recipe and medical capped at 300"),
     ("17 Nov", "Annotation run done", "3 h 26 min, 0 errors"),
     ("17 Nov", "Recipe books need no verb filter", "94% of food-only passages are frames (Rik: 'to be expected')"),
+    ("17 Nov", "Food-only frames read", "right: recipe 93%, medical 25%, other genres 33%"),
+    ("17 Nov", "Centring disagreements dropped", "not contradictions: the two windows read different sentences"),
 ]
 
 
@@ -143,7 +148,15 @@ def sheet_progress(name: str, col: str) -> tuple[int, int] | None:
 def waiting() -> list[tuple[str, str, str]]:
     """(what, detail, where); live parts first."""
     items = []
-    for name, col, what in [
+    from scripts.reading_sheet import WORKBOOK, progress
+    prog = progress()
+    if prog:
+        for sheet, what in [("1 Food-only frames", "Read 100 food-only frames: right or wrong?"),
+                            ("2 Disagreements", "Read the passages where the two routes disagree")]:
+            n, t = prog.get(sheet, (0, 0))
+            if n < t and sheet not in CLOSED_SHEETS:
+                items.append((what, f"{n} of {t} done · sheet '{sheet}'", str(WORKBOOK.relative_to(ROOT))))
+    for name, col, what in [] if prog else [
         (f"read_food_only_frames_{TAG}.csv", "rik_correct", "Read 100 food-only frames: right or wrong?"),
         (f"read_centring_disagreements_{TAG}.csv", "rik_which", "Read the passages where the two routes disagree"),
     ]:
@@ -151,9 +164,9 @@ def waiting() -> list[tuple[str, str, str]]:
         if p and p[0] < p[1]:
             items.append((what, f"{p[0]} of {p[1]} done", f"docs/evidence/triangulation_b/{name}"))
     items += [
-        ("Decide: draw the food-only sheet from non-recipe genres only?",
-         "recipe precision is hardly in doubt; the question is elsewhere", ""),
-        ("Decide: which route for medical books?", "54% with a verb vs 48% without", ""),
+        ("Decide: body parts in medical books", "9 of 10 wrong food-only frames there are body parts "
+         "(hooft, gal, maag): make them recipe-books-only?", "plans/steps/TRIANGULATION.md"),
+        ("Decide: which route for medical books?", "54% with a verb vs 48% without; food-only precision 25%", ""),
         ("Decide: the verb bestellen", "no decision yet", "docs/evidence/verb_lexicon/"),
         ("Label about 150 entry headings with their purpose", "about an afternoon; the reference for two levels",
          "plans/steps/TRIANGULATION.md"),
@@ -338,7 +351,7 @@ Verb-list history: <a href="triangulation_b/overview.html">verb lexicon overview
     <li><b>Recipe books:</b> every food word is in a frame; the genre evokes it. No verb filter needed.</li>
     <li><b>Other genres:</b> a verb nearby raises the share 4–10×. Keep the verb filter.</li>
     <li><b>Medical books:</b> a verb barely helps. Open.</li>
-    <li>Precision not yet checked: that is your reading.</li>
+    <li><b>Your reading:</b> food-only frames right in recipe books 93%, medical 25% (body parts), other genres 33%.</li>
    </ul>
    <details><summary>Table</summary><div class="scroll">{tbl}</div></details>
   </div>
