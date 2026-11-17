@@ -68,9 +68,12 @@ def c3_sample() -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["c3-sample", "candidates", "lemmas", "variation-check", "review-xlsx"])
+    ap.add_argument("cmd", choices=["c3-sample", "candidates", "lemmas", "variation-check", "review-xlsx",
+                                    "review-xlsx-2", "export", "review-xlsx-3"])
     cmd = ap.parse_args().cmd
-    {"c3-sample": c3_sample, "candidates": candidates, "lemmas": lemmas, "variation-check": variation_check, "review-xlsx": review_xlsx}[cmd]()
+    {"c3-sample": c3_sample, "candidates": candidates, "lemmas": lemmas, "variation-check": variation_check, "review-xlsx": review_xlsx,
+     "export": export, "review-xlsx-3": review_xlsx_3,
+     "review-xlsx-2": lambda: review_xlsx(REVIEW_XLSX_2, carry_from=REVIEW_XLSX)}[cmd]()
 
 
 ANNOTATION_SOURCES = ["trifecta_annotations", "dbnl_sweep_annotations", "weak_regime_verb_annotations",
@@ -343,21 +346,72 @@ def variation_check() -> None:
 
 
 REVIEW_XLSX = OUT / "verb_lexicon_review.xlsx"
+REVIEW_XLSX_2 = OUT / "verb_lexicon_review_2.xlsx"     # continues the first, decisions carried over
 FRAMES = ["COOKING_CREATION", "INGESTION", "CURE", "PRESERVING", "NONE"]
 
 
-def review_xlsx() -> None:
+_MERGE_RX = re.compile(r"(?:merge\s+with|participi\w*\s+of|past tense of|corruption of|variant of|derives from|"
+                       r"usual form is|should be added to)\s+([\w\[\]|/()-]+)", re.I)
+_DROP_RX = re.compile(r"not a verb|auxiliary|not food related|not part of food|not in the frame", re.I)
+
+
+def _infinitive(forms: str, proposed: str) -> str:
+    """A proposed lemma for a group of unmapped forms: the known lemma if the proposal names one, else the
+    most frequent non-participle form in -en, else stem + en (marked '?')."""
+    if "+" in str(proposed):
+        return str(proposed).split("+", 1)[1]
+    fs = [f.strip() for f in str(forms).split(",") if f.strip()]
+    inf = [f for f in fs if f.endswith("en") and not f.startswith(("ge", "ghe")) and not f.endswith(("den", "ten"))]
+    inf = inf or [f for f in fs if f.endswith("en") and not f.startswith(("ge", "ghe"))]
+    if inf:
+        return inf[0]
+    base = re.sub(r"^(ge|ghe)", "", fs[0]) if fs else ""
+    return re.sub(r"(dt|t|d|e)$", "", base) + "en?" if base else ""
+
+
+def read_as(decision: str, note: str, lemma_guess: str, prev_lemma: str = "") -> str:
+    """How a review row is read back (rule agreed with Rik, 13 Nov; review_overrides.csv)."""
+    decision, note = (decision or "").strip(), (note or "").strip()
+    m = _MERGE_RX.search(note)
+    if m:
+        return f"merge → {m.group(1).strip('.,;')}"
+    if re.search(r"same as previous", note, re.I) and prev_lemma:
+        return f"merge → {prev_lemma}"
+    if re.search(r"stem (?:is|key is)", note, re.I):
+        # Only the lemma name was wrong; a drop outside the agreed table (overrides) is Rik's to confirm.
+        return f"check: drop, or keep as {lemma_guess}?" if decision == "drop" else f"keep as {lemma_guess}"
+    if _DROP_RX.search(note):
+        return "drop"
+    return decision or ""
+
+
+def _overrides() -> dict[str, tuple[str, str]]:
+    f = OUT / "review_overrides.csv"
+    if not f.exists():
+        return {}
+    o = pd.read_csv(f).fillna("")
+    out = {}
+    for r in o.itertuples():
+        if r.lemma == "*":
+            continue
+        for k in [r.lemma, *[x for x in str(r.match_forms).split(";") if x]]:
+            out[(r.sheet, k)] = (r.lemma, r.decision, r.flag)
+    return out
+
+
+def review_xlsx(dest: Path = REVIEW_XLSX, carry_from: Path | None = None) -> None:
     """One workbook for Rik's review: a read-me sheet plus one sheet per task, with dropdowns.
 
     Refuses to overwrite an existing workbook, so filled-in decisions are never lost; move it aside to rebuild.
-    Empty decision = the proposal stands (default keep: "rather too large than too small")."""
+    Empty decision = the proposal stands (default keep: "rather too large than too small").
+    `carry_from`: an earlier workbook whose filled-in cells are copied over (matched on the row key)."""
     from openpyxl import Workbook
     from openpyxl.styles import Alignment, Font, PatternFill
     from openpyxl.utils import get_column_letter
     from openpyxl.worksheet.datavalidation import DataValidation
 
-    if REVIEW_XLSX.exists():
-        raise SystemExit(f"{REVIEW_XLSX} exists (it may hold your decisions). Move it aside to rebuild.")
+    if dest.exists():
+        raise SystemExit(f"{dest} exists (it may hold your decisions). Move it aside to rebuild.")
     lem = pd.read_csv(OUT / "lemma_review.csv")
     new = pd.read_csv(OUT / "new_lemma_candidates.csv")
     c3 = pd.read_csv(OUT / "c3_sample.csv")
@@ -392,7 +446,20 @@ def review_xlsx() -> None:
     fill = PatternFill("solid", fgColor="FFF2CC")
     head = Font(bold=True)
 
-    def sheet(name, df, cols, fill_cols, widths, lists):
+    old = pd.read_excel(carry_from, sheet_name=None, dtype=str) if carry_from else {}
+    ovr = _overrides()
+
+    def carry(name, df, key, cols):
+        """Copy filled-in cells from the earlier workbook, matched on `key`."""
+        if name not in old:
+            return df
+        o = old[name].fillna("").drop_duplicates(key).set_index(key)
+        for c in cols:
+            if c in o.columns:
+                df[c] = df[key].map(o[c]).fillna(df.get(c, "")).replace({float("nan"): ""})
+        return df
+
+    def sheet(name, df, cols, fill_cols, widths, lists, hidden=()):
         ws = wb.create_sheet(name)
         ws.append(cols)
         for r in df[cols].itertuples(index=False):
@@ -400,6 +467,7 @@ def review_xlsx() -> None:
         for j, col in enumerate(cols, 1):
             ws.cell(row=1, column=j).font = head
             ws.column_dimensions[get_column_letter(j)].width = widths.get(col, 14)
+            ws.column_dimensions[get_column_letter(j)].hidden = col in hidden
             if col in fill_cols:
                 for i in range(2, len(df) + 2):
                     ws.cell(row=i, column=j).fill = fill
@@ -413,20 +481,53 @@ def review_xlsx() -> None:
         ws.freeze_panes = "B2"
         ws.auto_filter.ref = ws.dimensions
 
+    def apply_overrides(df, sheet_name, lemma_col, forms_col=None):
+        """Rik's decisions from chat (review_overrides.csv) win over the cells; matched on lemma or a listed form."""
+        for i in df.index:
+            # Sheet 2 matches on observed forms only: a proposed lemma like 'brengen' also heads opbrengen.
+            cands = [x.strip() for x in str(df.at[i, forms_col]).split(",")] if forms_col else [df.at[i, lemma_col]]
+            hit = next((ovr[(sheet_name, c)] for c in cands if (sheet_name, c) in ovr), None)
+            if hit:
+                lemma, d, flag = hit
+                df.at[i, "read_as"] = (f"{d} as {lemma}" if d == "keep" else d) + (f" ({flag})" if flag else "")
+        return df
+
     lem = lem.rename(columns={"rik_decision": "decision", "rik_frame": "frame_fix"}).assign(notes="")
-    sheet("1 Lemmas", lem,
-          ["lemma", "variants", "lexicon_frame", "silver_frames", "forms", "forms_found", "silver_n", "gold_n",
-           "proposed", "decision", "frame_fix", "notes"],
-          {"decision", "frame_fix", "notes"},
-          {"lemma": 16, "variants": 22, "lexicon_frame": 18, "silver_frames": 30, "forms": 50, "notes": 30},
+    if old:
+        lem = carry("1 Lemmas", lem, "lemma", ["decision", "frame_fix", "notes"])
+        if "1 Lemmas" in old:
+            of = old["1 Lemmas"].fillna("").drop_duplicates("lemma").set_index("lemma")["forms"]
+            def added(r):
+                before = {x.strip() for x in str(r.forms if isinstance(r.forms, str) else "").split(",")}
+                after = {x.strip() for x in str(of.get(r.lemma, "")).split(",")}
+                return ", ".join(sorted(after - before - {""}))
+            lem["your_added_forms"] = lem.apply(added, axis=1)
+        prev = [""] + lem.lemma.tolist()[:-1]
+        lem["read_as"] = [read_as(r.decision, r.notes, r.lemma, p) for r, p in zip(lem.itertuples(), prev)]
+        lem = apply_overrides(lem, "1 Lemmas", "lemma")
+    lem = lem.rename(columns={"forms": "seen in silver"})
+    c1 = ["lemma", "variants", "lexicon_frame", "silver_frames", "seen in silver", "forms_found", "silver_n",
+          "gold_n", "proposed"] + (["your_added_forms", "read_as"] if old else []) + ["decision", "frame_fix", "notes"]
+    sheet("1 Lemmas", lem, c1, {"decision", "frame_fix", "notes"},
+          {"lemma": 16, "variants": 22, "lexicon_frame": 18, "silver_frames": 30, "seen in silver": 50,
+           "your_added_forms": 30, "read_as": 22, "notes": 30},
           {"decision": ["keep", "drop", "split"], "frame_fix": FRAMES})
     new = new.rename(columns={"rik_lemma": "lemma", "rik_decision": "decision", "rik_frame": "frame_fix"}).assign(notes="")
-    sheet("2 New lemmas", new,
-          ["stem_key", "forms", "silver_n", "gold_n", "frame", "example", "proposed", "lemma", "decision",
-           "frame_fix", "notes"],
-          {"lemma", "decision", "frame_fix", "notes"},
-          {"forms": 45, "frame": 18, "example": 60, "proposed": 16, "lemma": 16, "notes": 30},
-          {"decision": ["keep", "drop", "merge"], "frame_fix": FRAMES})
+    new["proposed_lemma"] = [_infinitive(f, p) for f, p in zip(new.forms, new.proposed)]
+    if old:
+        new = carry("2 New lemmas", new, "stem_key", ["lemma", "decision", "frame_fix", "notes"])
+        new["read_as"] = [read_as(r.decision, r.notes, r.lemma or r.proposed_lemma) for r in new.itertuples()]
+        new = apply_overrides(new, "2 New lemmas", "proposed_lemma", "forms")
+    new = new.rename(columns={"forms": "seen in silver", "lemma": "lemma_fix"})
+    c2 = ["proposed_lemma", "seen in silver", "silver_n", "gold_n", "frame", "example", "proposed"] + \
+         (["read_as"] if old else []) + ["lemma_fix", "decision", "frame_fix", "notes", "stem_key"]
+    sheet("2 New lemmas", new, c2, {"lemma_fix", "decision", "frame_fix", "notes"},
+          {"proposed_lemma": 16, "seen in silver": 45, "frame": 18, "example": 60, "proposed": 16,
+           "read_as": 22, "lemma_fix": 16, "notes": 30},
+          {"decision": ["keep", "drop", "merge"], "frame_fix": FRAMES}, hidden={"stem_key"})
+    if old:
+        c3 = carry("3 C3 passages", c3, "id", ["is_food", "evoking_word", "evoking_kind", "frame", "notes"])
+        ph = carry("4 Phonetic diag", ph.rename(columns={"rik_same_word": "same_word"}), "token", ["same_word"])
     sheet("3 C3 passages", c3,
           ["id", "stratum", "target", "passage", "is_food", "evoking_word", "evoking_kind", "frame", "notes"],
           {"is_food", "evoking_word", "evoking_kind", "frame", "notes"},
@@ -436,8 +537,287 @@ def review_xlsx() -> None:
     sheet("4 Phonetic diag", ph.rename(columns={"rik_same_word": "same_word"}),
           ["token", "n", "matches_form", "same_word"], {"same_word"}, {"token": 16, "matches_form": 16},
           {"same_word": ["y", "n"]})
-    wb.save(REVIEW_XLSX)
-    print(f"wrote {REVIEW_XLSX}: lemmas {len(lem)}, new lemmas {len(new)}, C3 {len(c3)}, phonetic {len(ph)}")
+    wb.save(dest)
+    print(f"wrote {dest}: lemmas {len(lem)}, new lemmas {len(new)}, C3 {len(c3)}, phonetic {len(ph)}")
+
+
+LEXICON_ASSET = ROOT / "trifecta_annotation" / "assets" / "verb_lexicon.csv"
+AMBIGUOUS_SHARE = 0.8            # VERB_LEXICON.md: a form the probe reads as a verb < 80% of the time is ambiguous
+
+
+def _split_forms(cell: str) -> set[str]:
+    return {x.strip().lower() for x in re.split(r"[,;]", str(cell or "")) if x.strip()}
+
+
+def _top_frame(cell: str) -> str:
+    parts = [p.rsplit(":", 1) for p in str(cell or "").split(";") if ":" in p]
+    return max(parts, key=lambda p: int(p[1]))[0] if parts else ""
+
+
+def reviewed_lemmas() -> tuple[dict[str, dict], set[str], dict[str, set[str]]]:
+    """Rik's decisions per lemma, from `verb_lexicon_review_2.xlsx` + `review_overrides.csv` (overrides win).
+
+    Empty decision = the proposal stands ("keep unless", 13 Nov). Notes are read with `read_as`;
+    `forms-of+X` / `merge` / "merge with X" put the row's forms under lemma X."""
+    from trifecta_annotation.spelling_key import loose_key
+
+    x = pd.read_excel(REVIEW_XLSX_2, sheet_name=None, dtype=str)
+    s1, s2 = x["1 Lemmas"].fillna(""), x["2 New lemmas"].fillna("")
+    lem: dict[str, dict] = {}
+    merges: list[tuple[str, set[str], str]] = []
+
+    def put(name: str, decision: str, frame: str, forms: set[str], source: str, flag: str = "") -> None:
+        name = name.strip().lower().rstrip("?").strip()
+        if not name:
+            return
+        e = lem.setdefault(name, {"decision": decision, "frame": "", "forms": set(), "sources": set(),
+                                  "flags": set()})
+        e["decision"] = decision                      # called in order sheet 1, sheet 2, overrides: last wins
+        e["frame"] = frame.strip() or e["frame"]
+        e["forms"] |= forms | {name}
+        e["sources"].add(source)
+        for f in filter(None, flag.split(";")):
+            if f.startswith("-"):                     # "-light": Rik keeps a light verb as a full trigger
+                e["flags"].discard(f[1:])
+                e.setdefault("unflags", set()).add(f[1:])
+            else:
+                e["flags"].add(f)
+
+    def resolve_decision(d: str, name: str) -> tuple[str, str, str]:
+        """-> (decision, lemma, flag)."""
+        if d.startswith("merge"):
+            return "merge", d.split("→", 1)[1].strip(" .,;"), ""
+        if d.startswith("check"):
+            return "keep", name, "check"            # Rik's to confirm; kept meanwhile (rather too large)
+        if d.startswith("keep as "):
+            return "keep", d[len("keep as "):].split(" (")[0].strip(), ""
+        return ("drop" if d == "drop" else "keep"), name, ""
+
+    prev = ""
+    for r in s1.to_dict("records"):
+        d = read_as(r["decision"], r["notes"], r["lemma"], prev)
+        prev = r["lemma"]
+        forms = _split_forms(r["variants"]) | _split_forms(r["seen in silver"]) | _split_forms(r.get("your_added_forms", ""))
+        frame = r["frame_fix"] or r["lexicon_frame"] or _top_frame(r["silver_frames"])
+        dec, name, flag = resolve_decision(d, r["lemma"])
+        if dec == "merge":
+            merges.append((name, forms, frame))
+        else:
+            put(name, dec, frame, forms, "lemmas", flag)
+    for r in s2.to_dict("records"):
+        name = r["lemma_fix"] or r["proposed_lemma"]
+        raw = r["decision"] or r["proposed"]
+        forms = _split_forms(r["seen in silver"])
+        frame = r["frame_fix"] or r["frame"]
+        if raw.startswith("forms-of+") or raw == "merge":
+            merges.append((raw.split("+", 1)[1] if "+" in raw else name, forms, frame))
+            continue
+        raw = {"drop-aux": "drop"}.get(raw, "keep" if raw.startswith("prefix+") else raw)
+        dec, name, flag = resolve_decision(read_as(raw, r["notes"], name), name)
+        if dec == "merge":
+            merges.append((name, forms, frame))
+        else:
+            put(name, dec, frame, forms, "new_lemmas", flag)
+    for target, forms, frame in merges:
+        t = target.strip().lower()
+        if t in lem:
+            lem[t]["forms"] |= forms
+        else:
+            put(t, "keep", frame, forms, "merge")
+    ovr = pd.read_csv(OUT / "review_overrides.csv", dtype=str).fillna("")
+    dropped_forms: set[str] = set()
+    form_flags: dict[str, set[str]] = {}
+    for o in ovr.to_dict("records"):
+        if o["lemma"] == "*":
+            continue
+        name, forms = o["lemma"].strip().lower(), _split_forms(o["match_forms"])
+        if o["decision"] == "flag-form":
+            # a noun-like form of a kept lemma (kook, bak, gebruik): the form is gated, the lemma is not
+            for f in forms:
+                form_flags.setdefault(f, set()).update(filter(None, o["flag"].split(";")))
+            continue
+        if o["decision"] == "drop-form":
+            # a wrong form under a kept lemma (weg / wech under wegnemen): remove the form, keep the lemma
+            for e in lem.values():
+                e["forms"] -= forms
+            dropped_forms.update(forms)
+            continue
+        # An override is authoritative for the forms it lists: take them out of every other lemma first
+        # (kopen dropped -> 'kocht' must not survive under a sheet lemma 'verkogten'), and inherit the frame
+        # of the sheet row they came from when the override gives none (zweten <- sheet row 'sweeten').
+        inherited = ""
+        for other, e in lem.items():
+            if other != name and e["forms"] & (forms | {name}):
+                inherited = inherited or e["frame"]
+                e["forms"] -= forms | {name}
+                if o["decision"] == "drop" and ("check" in e["flags"] or not e["forms"]
+                                                or loose_key(other) == loose_key(name)):
+                    # the same lemma under another spelling (smyten for smijten), or an unconfirmed sheet
+                    # lemma that held its forms (verkogten for kopen's past tense): Rik dropped the lemma,
+                    # not just the forms he listed. A confirmed lemma that merely shares a form (sieden
+                    # 'siet' with zien) keeps its decision.
+                    e["decision"] = "drop"
+        frame = o.get("frame", "") or inherited
+        put(name, "keep" if o["decision"] == "split" else o["decision"], frame, forms, "override", o["flag"])
+        lem[name]["flags"].discard("check")          # an override is Rik's decision: nothing left to check
+    return lem, dropped_forms, form_flags
+
+
+def export() -> None:
+    """V3: the reviewed trigger list, one row per form -> trifecta_annotation/assets/verb_lexicon.csv.
+
+    Forms per kept lemma: the forms Rik saw or added, plus the paradigm (`verb_forms.forms_for`, including the
+    vv/w and final -c rules) restricted to forms that occur in the 41 probe works. Generated forms the probe
+    calls 'not verb' are left out; forms the probe reads as a verb < 80% of the time, or listed homographs,
+    are flagged `ambiguous`. Dropped lemmas are written too (decision=drop), so the loader can remove their
+    forms from the older manual list. A form claimed by a kept and a dropped lemma stays kept."""
+    from scripts.verb_probe import HOMOGRAPHS, LIGHT_VERBS, load_texts
+    from trifecta_annotation.frame_verbs import _manual_lexicon
+    from trifecta_annotation.verb_forms import forms_for
+
+    lem, dropped_forms, form_flags = reviewed_lemmas()
+    manual = _manual_lexicon()
+    vocab: Counter = Counter()
+    for text, _ in load_texts().values():
+        vocab.update(w.lower() for w in re.findall(r"[A-Za-zÀ-ÿ']+", text))
+    sc = pd.read_csv(OUT / "candidates_scored.csv")
+    verdict = dict(zip(sc.form, sc.verdict))
+    share = dict(zip(sc.form, sc.verb_share))
+    rows: dict[str, dict] = {}
+    for name, e in sorted(lem.items()):
+        frame = e["frame"] or (manual[name].frame.value if name in manual else "")
+        flags = set(e["flags"]) | ({"no-frame"} if not frame else set()) | ({"light"} if name in LIGHT_VERBS and "light" not in e.get("unflags", set()) else set())
+        generated = {f for f in forms_for(name) if vocab[f] > 0 and verdict.get(f) != "not verb"}
+        for f in sorted((e["forms"] | generated) - {""} - dropped_forms):
+            if len(f) < 3 or " " in f:
+                continue
+            ff = set(flags)
+            if "ambiguous" not in e.get("unflags", set()) and (
+                    f in HOMOGRAPHS or verdict.get(f) == "ambiguous" or (f in share and share[f] < AMBIGUOUS_SHARE)):
+                ff.add("ambiguous")          # unless Rik kept the lemma as a full trigger ("-ambiguous")
+            ff |= form_flags.get(f, set())
+            row = {"form": f, "lemma": name, "frame": frame or "NONE", "decision": e["decision"],
+                   "flags": ";".join(sorted(ff)), "origin": "reviewed" if f in e["forms"] else "paradigm",
+                   "lemma_sources": ";".join(sorted(e["sources"])), "freq_probe_works": vocab[f]}
+            old = rows.get(f)
+            if old is None or (old["decision"] == "drop" and e["decision"] == "keep"):
+                rows[f] = row
+            elif old["lemma"] != name and e["decision"] == old["decision"]:
+                old["flags"] = ";".join(sorted(set(filter(None, old["flags"].split(";"))) | {f"shared:{name}"}))
+    df = pd.DataFrame(rows.values()).sort_values(["decision", "lemma", "form"])
+    LEXICON_ASSET.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(LEXICON_ASSET, index=False)
+    keep = df[df.decision == "keep"]
+    print(f"wrote {LEXICON_ASSET}: lemmas kept {keep.lemma.nunique()}, dropped {df[df.decision == 'drop'].lemma.nunique()}; "
+          f"forms kept {len(keep)} ({keep.origin.value_counts().to_dict()}), dropped {int((df.decision == 'drop').sum())}")
+    print("flags on kept forms:", Counter(x for c in keep["flags"] for x in c.split(";") if x))
+    print("kept forms by frame:", keep.frame.value_counts().to_dict())
+
+
+REVIEW_XLSX_3 = OUT / "verb_lexicon_review_3.xlsx"
+
+
+def review_xlsx_3() -> None:
+    """Round 3 (16 Nov): what still selects in the literary strata of the v3b re-harvest
+    (docs/evidence/triangulation_b/reharvest_v3.md), for Rik to mark. Three sheets:
+    verbs (keep / light / drop), nouns (keep / recipe-only / drop), the remaining `check` lemmas (keep / drop).
+    Refuses to overwrite."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font, PatternFill
+    from openpyxl.utils import get_column_letter
+    from openpyxl.worksheet.datavalidation import DataValidation
+
+    from trifecta_annotation.clear_frame_examples import body_part_terms
+    from trifecta_annotation.frame_verbs import get_frame_verb_lexicon
+
+    if REVIEW_XLSX_3.exists():
+        raise SystemExit(f"{REVIEW_XLSX_3} exists (it may hold your decisions). Move it aside to rebuild.")
+    with open(resolve("triangulation_b_v3b_kwic_inputs"), encoding="utf-8") as fh:
+        d = pd.DataFrame([json.loads(line) for line in fh if line.strip()])
+    lit = d[~d.stratum.isin(["RECIPE", "MEDICAL"]) & d.verb_selected].copy()
+    rec = d[d.stratum.isin(["RECIPE", "MEDICAL"]) & d.verb_selected]
+    lex = get_frame_verb_lexicon()
+    entry = lambda v: lex.entry_for(v)
+    lit["lemma"] = lit.verb_discovery_verb.map(lambda v: entry(v).canonical_lemma if entry(v) else v)
+    rec_lemma = rec.verb_discovery_verb.map(lambda v: entry(v).canonical_lemma if entry(v) else v).value_counts()
+
+    def ctx(rows: pd.DataFrame, word_col: str, k: int = 3) -> list[str]:
+        out = []
+        for r in rows.head(k).itertuples():
+            c, w = str(r.context_text), str(getattr(r, word_col))
+            i = c.lower().find(w.lower())
+            out.append("…" + c[max(0, i - 70):i + 70].replace("\n", " ") + "…")
+        return out + [""] * (k - len(out))
+
+    verbs = []
+    for lemma, grp in lit.groupby("lemma"):
+        e = entry(grp.verb_discovery_verb.iloc[0])
+        flags = sorted(e.flags) if e else []
+        verbs.append({"lemma": lemma, "frame": e.frame.value if e else "", "flags": ";".join(flags),
+                      "literary_hits": len(grp), "recipe_medical_hits": int(rec_lemma.get(lemma, 0)),
+                      **dict(zip(["example_1", "example_2", "example_3"],
+                                 ctx(grp.sample(min(3, len(grp)), random_state=1), "verb_discovery_verb"))),
+                      "decision": "", "notes": ""})
+    verbs = pd.DataFrame(verbs).sort_values("literary_hits", ascending=False).head(60)
+    body = body_part_terms()
+    lit["t"] = lit.target_word.str.lower()
+    nouns = []
+    for t, grp in lit[~lit.t.isin(body)].groupby("t"):
+        nouns.append({"term": t, "literary_hits": len(grp),
+                      "recipe_medical_hits": int((rec.target_word.str.lower() == t).sum()),
+                      **dict(zip(["example_1", "example_2", "example_3"],
+                                 ctx(grp.sample(min(3, len(grp)), random_state=1), "target_word"))),
+                      "decision": "", "notes": ""})
+    nouns = pd.DataFrame(nouns).sort_values("literary_hits", ascending=False).head(40)
+    asset = pd.read_csv(LEXICON_ASSET, dtype=str).fillna("")
+    chk = asset[(asset.decision == "keep") & asset["flags"].str.contains("check")]
+    checks = chk.groupby("lemma").form.apply(lambda s: ", ".join(s)).reset_index().rename(columns={"form": "forms"})
+    checks = checks.assign(decision="", notes="")
+
+    wb = Workbook()
+    rm = wb.active
+    rm.title = "Read me"
+    for i, (t, bold) in enumerate([
+        ("Verb lexicon review, round 3 (docs/evidence/triangulation_b/reharvest_v3.md)", True),
+        ("What still selects in the literary strata of the v3b re-harvest. Counts: verb-selected food-noun "
+         "occurrences in the 39 T1b works; examples are random.", False),
+        ("1 Verbs: keep / light (needs a recipe-medical text or a strong verb nearby) / drop. Empty = keep.", False),
+        ("2 Nouns: keep / recipe-only (food only in recipe and medical texts, like the body parts) / drop.", False),
+        ("3 Check: lemmas you marked drop where the note said 'stem is'. keep / drop. Empty = keep.", False),
+    ], 1):
+        c = rm.cell(row=i, column=1, value=t)
+        c.font = Font(bold=bold)
+        c.alignment = Alignment(wrap_text=True)
+    rm.column_dimensions["A"].width = 120
+    fill = PatternFill("solid", fgColor="FFF2CC")
+    for name, df, choices, widths in [
+        ("1 Verbs", verbs, ["keep", "light", "drop"], {"example_1": 60, "example_2": 60, "example_3": 60}),
+        ("2 Nouns", nouns, ["keep", "recipe-only", "drop"], {"example_1": 60, "example_2": 60, "example_3": 60}),
+        ("3 Check", checks, ["keep", "drop"], {"forms": 60}),
+    ]:
+        ws = wb.create_sheet(name)
+        cols = list(df.columns)
+        ws.append(cols)
+        for r in df.itertuples(index=False):
+            ws.append(list(r))
+        for j, col in enumerate(cols, 1):
+            ws.cell(row=1, column=j).font = Font(bold=True)
+            ws.column_dimensions[get_column_letter(j)].width = widths.get(col, 14)
+            if col in ("decision", "notes"):
+                for i in range(2, len(df) + 2):
+                    ws.cell(row=i, column=j).fill = fill
+            if col == "decision":
+                dv = DataValidation(type="list", formula1='"' + ",".join(choices) + '"', allow_blank=True)
+                ws.add_data_validation(dv)
+                dv.add(f"{get_column_letter(j)}2:{get_column_letter(j)}{len(df) + 1}")
+        for row in ws.iter_rows(min_row=2):
+            for c in row:
+                c.alignment = Alignment(wrap_text=True, vertical="top")
+        ws.freeze_panes = "B2"
+    wb.save(REVIEW_XLSX_3)
+    print(f"wrote {REVIEW_XLSX_3}: verbs {len(verbs)}, nouns {len(nouns)}, check {len(checks)}")
+    print(verbs[["lemma", "flags", "literary_hits", "recipe_medical_hits"]].head(20).to_string(index=False))
+    print(nouns[["term", "literary_hits", "recipe_medical_hits"]].head(15).to_string(index=False))
 
 
 if __name__ == "__main__":

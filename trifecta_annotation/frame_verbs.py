@@ -96,6 +96,9 @@ class LexiconEntry:
     sources: frozenset[str]
     technique: str | None = None
     canonical_lemma: str | None = None
+    # From the reviewed list: ambiguous (homograph / probe verb share < 0.8), aux-ambiguous, multi-frame,
+    # no-frame, check (Rik to confirm).
+    flags: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
@@ -106,6 +109,43 @@ class VerbHit:
     end: int
     lexicon_sources: tuple[str, ...] = ()
     technique: str | None = None
+    lemma: str | None = None
+    flags: tuple[str, ...] = ()
+
+
+# The reviewed trigger list (plans/steps/VERB_LEXICON.md V3), written by `scripts/verb_lexicon.py export`
+# from Rik's review. Package-relative, so it travels with the code.
+REVIEWED_LEXICON_PATH = Path(__file__).resolve().parent / "assets" / "verb_lexicon.csv"
+
+# Enclitic pronouns written onto a verb form: kooktse = kookt ze, doetmen = doet men, doet'er = doet er.
+# Only split when the host is a known form ending in -t/-dt/-en (tested on 4 works, 16 Nov:
+# docs/evidence/verb_lexicon/c3_patterns.md); bare -er after -t also makes nouns, hence the stop list.
+ENCLITICS: tuple[str, ...] = ("men", "ze", "se", "er")
+ENCLITIC_STOP: frozenset[str] = frozenset({"gieter", "gieters"})
+
+
+def load_reviewed_lexicon(path: str | Path | None = None) -> tuple[dict[str, LexiconEntry], frozenset[str]]:
+    """(kept form -> entry, dropped forms). Missing file -> ({}, frozenset())."""
+    resolved = Path(path) if path else REVIEWED_LEXICON_PATH
+    if not resolved.exists():
+        return {}, frozenset()
+    frame = pd.read_csv(resolved, dtype=str).fillna("")
+    kept: dict[str, LexiconEntry] = {}
+    dropped: set[str] = set()
+    for row in frame.itertuples(index=False):
+        norm = normalize_hist_dutch(row.form)
+        if not norm:
+            continue
+        if row.decision == "drop":
+            dropped.add(norm)
+            continue
+        kept[norm] = LexiconEntry(
+            frame=TrifectaFrame(row.frame or "NONE"),
+            sources=frozenset({"reviewed"}),
+            canonical_lemma=row.lemma or None,
+            flags=frozenset(x for x in row.flags.split(";") if x and not x.startswith("shared:")),
+        )
+    return kept, frozenset(dropped - set(kept))
 
 
 def _is_verb_like(term: str) -> bool:
@@ -222,9 +262,35 @@ def _merge_entries(
                 frame=existing.frame,
                 sources=existing.sources | entry.sources,
                 technique=existing.technique or entry.technique,
+                canonical_lemma=existing.canonical_lemma or entry.canonical_lemma,
+                flags=existing.flags | entry.flags,
             )
             continue
         merged[norm] = entry
+    return merged
+
+
+def _apply_reviewed(
+    merged: dict[str, LexiconEntry],
+    kept: dict[str, LexiconEntry],
+    dropped: frozenset[str],
+) -> dict[str, LexiconEntry]:
+    """Rik's review is authoritative: dropped forms leave the list whatever their source; for kept forms his
+    lemma, frame and flags win, older sources are kept (so the guideline gate still sees them)."""
+    for norm in dropped:
+        merged.pop(norm, None)
+    for norm, entry in kept.items():
+        existing = merged.get(norm)
+        if existing is None:
+            merged[norm] = entry
+            continue
+        merged[norm] = LexiconEntry(
+            frame=entry.frame if entry.frame != TrifectaFrame.NONE else existing.frame,
+            sources=existing.sources | entry.sources,
+            technique=existing.technique,
+            canonical_lemma=entry.canonical_lemma or existing.canonical_lemma,
+            flags=entry.flags,
+        )
     return merged
 
 
@@ -239,8 +305,17 @@ def build_merged_lexicon(
     include_corpus: bool = True,
     corpus_min_freq: int = 5,
     corpus_min_agreement: float = 0.75,
+    include_reviewed: bool = True,
+    reviewed_path: str | Path | None = None,
 ) -> dict[str, LexiconEntry]:
-    """Merge manual, cort-voc technique, and optional corpus-grown triggers."""
+    """Merge manual, cort-voc technique, and optional corpus-grown triggers; then apply the reviewed list.
+
+    With the reviewed list present, the mined corpus list (whose `keep=yes` was written automatically) is
+    not loaded unless `corpus_lexicon_path` is given explicitly: its real verbs went through Rik's review
+    as generator f (VERB_LEXICON.md: "auto-keep disappears")."""
+    reviewed, dropped = load_reviewed_lexicon(reviewed_path) if include_reviewed else ({}, frozenset())
+    if reviewed and corpus_lexicon_path is None:
+        include_corpus = False
     merged = _manual_lexicon()
     if include_technique_seeds:
         _merge_entries(
@@ -268,7 +343,7 @@ def build_merged_lexicon(
                 min_agreement=corpus_min_agreement,
             ),
         )
-    return merged
+    return _apply_reviewed(merged, reviewed, dropped) if include_reviewed else merged
 
 
 def _compile_pattern(terms: list[str]) -> re.Pattern[str]:
@@ -277,6 +352,45 @@ def _compile_pattern(terms: list[str]) -> re.Pattern[str]:
         r"\b(" + "|".join(re.escape(term) for term in ordered) + r")\b",
         re.IGNORECASE,
     )
+
+
+# Matching is a dictionary lookup per word, not one regex alternation: with ~2,000 reviewed forms the
+# alternation was 4x slower (16 Nov), and lookup cost does not grow with the list.
+_WORD = re.compile(r"[^\W\d_]+")
+_ENCLITIC_SET = frozenset(ENCLITICS)
+
+
+def _is_enclitic_host(term: str) -> bool:
+    return len(term) >= 3 and term.endswith(("t", "en"))
+
+
+# Separable verbs (16 Nov): the particle goes to the end of the clause, "legt'er de Peeren in" = inleggen.
+# A particle *closes* the clause (punctuation or a conjunction follows); a preposition heads a noun phrase
+# ("in kout water", "aan 't Spit") and is not taken. Measured on 4 works: 576 readings, 18/20 correct.
+SEPARABLE_PARTICLES: dict[str, str] = {
+    "in": "in", "op": "op", "af": "af", "uit": "uit", "uyt": "uit", "toe": "toe", "aan": "aan", "aen": "aan",
+    "door": "door", "deur": "door", "over": "over", "mede": "mede", "mee": "mede", "weg": "weg", "om": "om",
+}
+_CLAUSE_CLOSERS = frozenset({
+    "en", "ende", "of", "maar", "maer", "om", "als", "tot", "dat", "datmen", "zo", "soo", "zoo", "dan",
+    "totdat", "wanneer", "want",
+})   # not "te": "om'er goud op te leggen" -> op belongs to the infinitive (opleggen), not the finite verb
+_CLAUSE_TOKEN = re.compile(r"[^\W\d_]+|[.,;:!?]")
+_SEPARABLE_LOOKAHEAD = 7          # words after the verb
+
+
+def _separable_particle(text: str, end: int) -> tuple[str, str] | None:
+    """(particle as written, normalised particle) closing the clause after position `end`, or None."""
+    tokens = _CLAUSE_TOKEN.findall(text, end, min(len(text), end + 90))
+    for i, tok in enumerate(tokens[:_SEPARABLE_LOOKAHEAD]):
+        low = tok.lower()
+        if low in ".,;:!?":
+            return None
+        if low in SEPARABLE_PARTICLES:
+            nxt = tokens[i + 1].lower() if i + 1 < len(tokens) else "."
+            if nxt in ".,;:!?" or nxt in _CLAUSE_CLOSERS:
+                return tok, SEPARABLE_PARTICLES[low]
+    return None
 
 
 class FrameVerbLexicon:
@@ -293,6 +407,8 @@ class FrameVerbLexicon:
         include_corpus: bool = True,
         corpus_min_freq: int = 5,
         corpus_min_agreement: float = 0.75,
+        include_reviewed: bool = True,
+        reviewed_path: str | Path | None = None,
     ) -> None:
         self._technique_assoc_path = technique_assoc_path
         self._include_technique_seeds = include_technique_seeds
@@ -309,8 +425,18 @@ class FrameVerbLexicon:
             include_corpus=include_corpus,
             corpus_min_freq=corpus_min_freq,
             corpus_min_agreement=corpus_min_agreement,
+            include_reviewed=include_reviewed,
+            reviewed_path=reviewed_path,
         )
-        self._pattern = _compile_pattern(list(self._entries)) if self._entries else None
+        # Single words by lookup; the few multi-word entries keep a (small) regex.
+        multi = [t for t in self._entries if not _WORD.fullmatch(t)]
+        self._multi = _compile_pattern(multi) if multi else None
+        self._pattern = _compile_pattern(list(self._entries)) if self._entries else None   # snippet_has_trigger
+        # lemma -> its entry (the infinitive's own entry when there is one), for separable compounds
+        self._by_lemma: dict[str, LexiconEntry] = {}
+        for norm, entry in self._entries.items():
+            if entry.canonical_lemma and (entry.canonical_lemma not in self._by_lemma or norm == entry.canonical_lemma):
+                self._by_lemma[entry.canonical_lemma] = entry
 
     @property
     def entries(self) -> dict[str, LexiconEntry]:
@@ -324,32 +450,85 @@ class FrameVerbLexicon:
         return self._entries.get(normalize_hist_dutch(verb))
 
     def find_in_text(self, text: str) -> list[VerbHit]:
-        if self._pattern is None:
+        if not self._entries:
             return []
+        entries = self._entries
         hits: list[VerbHit] = []
-        for match in self._pattern.finditer(text):
-            surface = match.group(1)
-            entry = self.entry_for(surface)
-            if entry is None:
+        for match in _WORD.finditer(text):
+            surface = match.group(0)
+            key = surface.lower()
+            entry = entries.get(key)
+            if entry is None and not key.isascii():
+                key = normalize_hist_dutch(surface)          # long s, ligatures
+                entry = entries.get(key)
+            start, end = match.start(), match.end()
+            if entry is not None:
+                # doet'er: the host is a word on its own, the enclitic follows an apostrophe
+                tail = _WORD.match(text, end + 1) if text[end:end + 1] == "'" else None
+                if tail and tail.group(0).lower() in _ENCLITIC_SET and _is_enclitic_host(key):
+                    hits.append(self._hit(surface, entry, start, tail.end(), extra=("enclitic",)))
+                else:
+                    hits.append(self._hit(surface, entry, start, end))
                 continue
-            hits.append(
-                VerbHit(
-                    surface,
-                    entry.frame,
-                    match.start(),
-                    match.end(),
-                    lexicon_sources=tuple(sorted(entry.sources)),
-                    technique=entry.technique,
-                ),
-            )
-        return hits
+            if key in ENCLITIC_STOP:
+                continue
+            for clitic in ENCLITICS:                          # kooktse, doetmen: one written word
+                host = key[: -len(clitic)]
+                if key.endswith(clitic) and _is_enclitic_host(host) and host in entries:
+                    hits.append(self._hit(surface[: len(host)], entries[host], start, end, extra=("enclitic",)))
+                    break
+        if self._multi is not None:
+            for match in self._multi.finditer(text):
+                entry = self.entry_for(match.group(1))
+                if entry is not None:
+                    hits.append(self._hit(match.group(1), entry, match.start(), match.end()))
+            hits.sort(key=lambda hit: (hit.start, hit.end))
+        return [self._separable(text, hit) for hit in hits]
+
+    def _separable(self, text: str, hit: VerbHit) -> VerbHit:
+        """legt ... in -> lemma inleggen, with its frame; the hit keeps the verb's span and surface."""
+        if not hit.lemma:
+            return hit
+        found = _separable_particle(text, hit.end)
+        if found is None:
+            return hit
+        written, particle = found
+        compound = self._by_lemma.get(particle + hit.lemma) or self._by_lemma.get(written.lower() + hit.lemma)
+        if compound is None:
+            return hit
+        return VerbHit(
+            hit.verb,
+            compound.frame if compound.frame != TrifectaFrame.NONE else hit.frame,
+            hit.start,
+            hit.end,
+            lexicon_sources=tuple(sorted(set(hit.lexicon_sources) | compound.sources)),
+            technique=hit.technique,
+            lemma=compound.canonical_lemma,
+            flags=tuple(sorted(set(hit.flags) - {"ambiguous"} | compound.flags | {f"separable:{hit.lemma}"})),
+        )
+
+    @staticmethod
+    def _hit(surface: str, entry: LexiconEntry, start: int, end: int, extra: tuple[str, ...] = ()) -> VerbHit:
+        return VerbHit(
+            surface,
+            entry.frame,
+            start,
+            end,
+            lexicon_sources=tuple(sorted(entry.sources)),
+            technique=entry.technique,
+            lemma=entry.canonical_lemma,
+            flags=tuple(sorted(entry.flags)) + extra,
+        )
 
     def snippet_has_trigger(self, text: str) -> bool:
-        return self._pattern.search(text) is not None if self._pattern else False
+        return bool(self.find_in_text(text))
 
     def summary(self) -> dict[str, int]:
-        counts: dict[str, int] = {"guideline": 0, "manual": 0, "technique": 0, "corpus": 0, "total": 0}
+        counts: dict[str, int] = {"guideline": 0, "manual": 0, "technique": 0, "corpus": 0, "reviewed": 0,
+                                  "total": 0}
         for entry in self._entries.values():
+            if "reviewed" in entry.sources:
+                counts["reviewed"] += 1
             if "guideline" in entry.sources:
                 counts["guideline"] += 1
             if "manual" in entry.sources:

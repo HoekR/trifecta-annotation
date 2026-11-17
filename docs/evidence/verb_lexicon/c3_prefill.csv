@@ -1,0 +1,18 @@
+id,stratum,target,evoking_word,rik_kind_prefill,frame,notes,claude_word,claude_kind,claude_frame,kind_agree
+herl001besc01_01.xml__tri__219423__Druiven,sec - letterkunde,Druiven,,none,,druiven are food,,none,NONE,True
+herl001besc01_01.xml__tri__132843__water,sec - letterkunde,water,bevogtigt,verb,COOKING_CREATION,not the essence of the cooking though,maken / geloutert (refining),verb,COOKING_CREATION,True
+roor005over01_01.xml__tri__233170__water,sec - taalkunde,water,karaf,noun,,,,none,NONE,False
+_zin004zing02_01.xml__tri__18359__Bier,poëzie,Bier,drank,noun,,"bier is always food, except when it is traded",glaasje / aan drank geraken,construction,INGESTION,False
+_vol002volm01_01.xml__tri__21237__Niervet,RECIPE,Niervet,,none,,,smelten (in heading),heading,COOKING_CREATION,False
+_vol002volm01_01.xml__tri__391830__peper,RECIPE,peper,strooid'er ,verb,,"but peper is always food, except when traded",strooid'er,verb,COOKING_CREATION,True
+char007kind01_01.xml__tri__615__Olie,jeugdliteratuur,Olie,voor het knijpen,construction,,poetic for voor het grijpen,,none,NONE,False
+_vol002volm01_01.xml__tri__137870__booter,RECIPE,booter,laat bruin worden,verb,,,laat bruin worden / fruit,verb,COOKING_CREATION,True
+_pha001phar03_01.xml__tri__69568__syroop,MEDICAL,syroop,kooktse,verb,,concatenated form of kookt ze,kooktse,verb,COOKING_CREATION,True
+weye002holl01_01.xml__tri__43019__Marmelade,drama,Marmelade,,none,,unclear passage,,none,NONE,True
+buit010bloe01_01.xml__tri__402848__bier,poëzie,bier,op de tap,construction,,,,none,NONE,False
+_pha001phar03_01.xml__tri__44984__Honing,MEDICAL,Honing,van de,heading,,van de' is very current in older recipes,Van de Syropen (section heading),heading,COOKING_CREATION,True
+char007kind01_01.xml__tri__26791__thee,jeugdliteratuur,thee,drink,verb,,,drink,verb,INGESTION,True
+bate002secr02_01.xml__tri__520097__schoon water,RECIPE,schoon water,ziedt,verb,,,ziedt,verb,COOKING_CREATION,True
+_vol002volm01_01.xml__tri__327558__spek,RECIPE,spek,eeten met,verb,,,eeten met,verb,INGESTION,True
+busk001brie01_01.xml__tri__290718__brooden,non-fictie,brooden,en visschen,construction,,,vermenigvuldiging van brooden en visschen,construction,NONE,True
+love002poly01_01.xml__tri__153538__wafelen,proza,wafelen,smakelijk vonden,verb,,,smakelijk vonden,verb,INGESTION,True

@@ -13,6 +13,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
 
+import pandas as pd
+
 from trifecta_annotation.adapters.food_snippets import load_food_snippets_frame
 from trifecta_annotation.frame_verbs import (
     bewaren_context_ok,
@@ -207,6 +209,68 @@ def _passes_guideline_gate(
     return False
 
 
+# Reviewed forms that are not a trigger on their own (VERB_LEXICON V3; re-harvest 16 Nov: opening the gate to
+# the whole reviewed list made 17 of 51 non-food C3 targets verb-selected, docs/evidence/triangulation_b/
+# reharvest_v3.md).
+WEAK_REVIEWED_FLAGS = frozenset({"light", "ambiguous", "aux-ambiguous", "multi-frame", "check", "no-frame"})
+
+
+def _passes_reviewed_gate(hit, target_frame: TrifectaFrame, *, regime: TextRegime, supported: bool) -> bool:
+    """A reviewed form passes when unflagged. A weak one (light verb, homograph, several frames) passes only
+    in a regime that prefers the target frame (recipe/medical texts), or next to a strong hit of the same
+    frame."""
+    if "reviewed" not in hit.lexicon_sources:
+        return False
+    if not (set(hit.flags) & WEAK_REVIEWED_FLAGS):
+        return True
+    return regime in PREFERRED_REGIMES.get(target_frame, frozenset()) or supported
+
+
+def _is_strong(hit, target_frame: TrifectaFrame) -> bool:
+    sources = set(hit.lexicon_sources)
+    if _passes_guideline_gate(sources, target_frame, is_indication="indication" in sources):
+        return True
+    return "reviewed" in sources and not (set(hit.flags) & WEAK_REVIEWED_FLAGS)
+
+
+# Food terms that are not food everywhere (Rik, 16 Nov; assets/restricted_food_terms.csv):
+# - scope "recipe-only": food only in recipe and medical texts, elsewhere mostly something else. Body parts
+#   (hart, voet, oog, bloed: about 30 of 52 non-food C3 targets) and round-3 nouns (blad, tong, vogel …).
+# - scope "never": not food in this corpus (zult = 'will', voren = 'before', names): never a target.
+RESTRICTED_FOOD_TERMS_PATH = Path(__file__).resolve().parent / "assets" / "restricted_food_terms.csv"
+RECIPE_REGIMES = frozenset({TextRegime.RECIPE_PRACTICE, TextRegime.MEDICAL})
+_RESTRICTED: dict[str, str] | None = None
+_FOOD_TERMS_CACHE: dict[tuple[int, int, bool], list[str]] = {}
+
+
+def restricted_food_terms() -> dict[str, str]:
+    """normalised term -> scope ('recipe-only' or 'never')."""
+    global _RESTRICTED
+    if _RESTRICTED is None:
+        _RESTRICTED = {}
+        if RESTRICTED_FOOD_TERMS_PATH.exists():
+            frame = pd.read_csv(RESTRICTED_FOOD_TERMS_PATH, dtype=str).fillna("")
+            _RESTRICTED = {normalize_hist_dutch(t): s or "recipe-only" for t, s in zip(frame.term, frame.scope) if t}
+    return _RESTRICTED
+
+
+def body_part_terms() -> frozenset[str]:
+    """Terms that count as food only in recipe and medical texts (body parts and round-3 nouns)."""
+    return frozenset(t for t, s in restricted_food_terms().items() if s == "recipe-only")
+
+
+def food_terms_for_regime(food_terms: list[str], regime: TextRegime) -> list[str]:
+    """The food terms to look for in a snippet: 'never' terms not at all, 'recipe-only' terms only in recipe and
+    medical texts."""
+    recipe = regime in RECIPE_REGIMES
+    key = (id(food_terms), len(food_terms), recipe)
+    if key not in _FOOD_TERMS_CACHE:
+        restricted = restricted_food_terms()
+        drop = {"never"} if recipe else {"never", "recipe-only"}
+        _FOOD_TERMS_CACHE[key] = [t for t in food_terms if restricted.get(normalize_hist_dutch(t)) not in drop]
+    return _FOOD_TERMS_CACHE[key]
+
+
 def score_snippet_for_frame(
     snippet: str,
     food_terms: list[str],
@@ -223,7 +287,7 @@ def score_snippet_for_frame(
     if not hits:
         return None
 
-    food_positions = term_positions(snippet, food_terms)
+    food_positions = term_positions(snippet, food_terms_for_regime(food_terms, regime))
     if not food_positions:
         return None
 
@@ -231,12 +295,15 @@ def score_snippet_for_frame(
     if not frame_hits:
         return None
 
+    strong = [hit for hit in frame_hits if _is_strong(hit, target_frame)]
     best: ClearFrameCandidate | None = None
     for hit in frame_hits:
         sources = set(hit.lexicon_sources)
         is_indication = "indication" in sources
-        if guideline_only and not _passes_guideline_gate(
-            sources, target_frame, is_indication=is_indication,
+        supported = any(s is not hit and abs(s.start - hit.start) <= conflict_window for s in strong)
+        if guideline_only and not (
+            _passes_guideline_gate(sources, target_frame, is_indication=is_indication)
+            or _passes_reviewed_gate(hit, target_frame, regime=regime, supported=supported)
         ):
             continue
 
@@ -248,6 +315,9 @@ def score_snippet_for_frame(
         ):
             continue
 
+        # No same-sentence or tighter-window rule: tested on Rik's 83 marked keep-verb contexts (16 Nov), a
+        # '. ! ?' boundary removed 9 of 31 non-relevant hits but also 7 of 52 relevant ones, and a 40-char
+        # window 14 vs 12. Historical punctuation is no sentence marker; the later stages read the context.
         food_target = pick_food_near_verb(hit.start, food_positions)
         if food_target is None:
             continue
@@ -292,9 +362,22 @@ def score_snippet_for_frame(
             score -= 2
             reasons.append(f"regime_mismatch_{regime.value}")
 
-        if verb_norm in CORE_VERBS.get(target_frame, frozenset()):
+        # On the lemma, so inflected forms count (kookt, gekookt -> koken); not for lemmas Rik marked as used
+        # in several frames.
+        lemma_norm = normalize_hist_dutch(hit.lemma) if hit.lemma else verb_norm
+        flags = set(hit.flags)
+        if "multi-frame" not in flags and (
+            lemma_norm in CORE_VERBS.get(target_frame, frozenset())
+            or verb_norm in CORE_VERBS.get(target_frame, frozenset())
+        ):
             score += 2
             reasons.append("core_verb")
+
+        # A homograph form (zout, was, week; probe verb share < 0.8) is not a bare trigger: it needs the rest
+        # of the evidence (food near, regime) to reach a tier. Provisional; C4/C5 measure it.
+        if flags & {"ambiguous", "aux-ambiguous"}:
+            score -= 2
+            reasons.append("ambiguous_form")
 
         if conflicts:
             score -= 4 * len(conflicts)

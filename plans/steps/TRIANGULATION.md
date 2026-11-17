@@ -39,6 +39,30 @@ Interpretation:
   - heading vs sentence;
   - food noun (the *Ingestibles* element) vs the verb that evokes the frame.
 
+## 2b. Step back: what the attempts shared (16 Nov 2026)
+
+The lens is from dighum_template `wisdom/topics/step-back-review.md`: when different approaches all fail,
+that agreement is a result. The diagnostic question is *what did all the attempts have in common?*
+
+| Series | Attempts | Shared assumption | Outcome |
+|---|---|---|---|
+| Step C qualia | bigger model, grounding, BERT span extraction, mBERT/XLM-R, retrieval, frame-selective | sentence/snippet as unit | goal is in the title (PLAN §9e) |
+| Step B PRESERVING/CURE | few-shots ×2, two-stage split classifier, heading as context (handful, below) | one frame per occurrence, decided per sentence | see T3: two levels |
+| `text_regime` readings | genre-effect reading, failed-inference reading (both retracted) | the field means what its name says | mode marker, a bug (PLAN §9i) |
+| Cooking times | duration regex + nearest food word | sentence as unit for attribution | needs recipe as unit (COOKING_TIMES.md) |
+
+Across the series, selection, classification, extraction and attribution all share
+`KwicInput.context_text`, a KWIC window. The unit is built into the I/O contract, not into any one
+step. T3 is the matching redesign.
+
+Caveat: this is retrodiction, so the lens could not fail here. Its predictions are tested in T3 (done as a
+handful) and in VERB_LEXICON.md §4.
+
+The C5 rule there is retracted (16 Nov) and kept in T8. T1 as *triangulation* stands: the food route finds
+frames the verb route doesn't (G1). What T1 cannot do is judge the vocabulary. Verb reachability is
+proximity, so it rises with any list. Whether a frame is verb-reachable is structural and genre-dependent
+(T8).
+
 ## 3. Scope
 
 - **In:** DBNL TEI works, structured by `render_tei` entries and heads. This is most of the corpus.
@@ -140,6 +164,30 @@ The verb route's word list is infinitive-only and partly junk. See [VERB_LEXICON
 - **Decision:** adopt only if the sentence-level result does not get worse and the entry level adds
   frames the sentence route can't reach.
 
+**Test design caveats (Rik, 16 Nov):**
+- (a) **Not universal:** recipes also occur outside entry-structured books. Always report coverage, i.e.
+  the share of the target rows that sit in works with headings at all.
+- (b) **Headings are not always findable:** heading detection has its own error. Evaluate on rows whose
+  heading was found and checked by hand, and report not-found rows separately.
+- (c) **Entry structure ≠ cooking:** dictionaries, herbals and pharmacopoeias have the same structure. The
+  heading's purpose must be classified, not assumed.
+
+Stratify by *structure present* × *heading found and verified* × *genre*, with n per cell. Claim only for
+the cells where it helps.
+
+**Handful result, PRESERVING/CURE (16 Nov):** `docs/evidence/heading_context/handful.md`.
+- 18 three-frame confusions; at most 2–5 could be fixed by passing the heading in. 5 had the heading in
+  the context already. So the prototype run is not justified for this question as posed.
+- Gold splits COOKING_CREATION / CURE on the same entry type (*Syrupus*, *Oleum*, *Trochisci*).
+- **Rik's reading:** both frames apply, at different levels:
+  - COOKING_CREATION = the procedure (sentence);
+  - CURE = the purpose (heading/entry).
+- Weak first check (record-id verbs): purpose verbs in the sentence → gold CURE; procedure only → gold
+  COOKING_CREATION.
+- **Implication for T3:** the entry level is not a hint for the sentence label but a label of its own.
+  "Don't overwrite sentence labels" is then not a precaution but the design.
+- **To do:** read the full contexts of the split rows.
+
 ### T4 — Gold of a different unit
 
 - **T4a, heading gold:** about 150 entry heads, stratified by work and genre, labelled with the entry's
@@ -177,6 +225,70 @@ The verb route's word list is infinitive-only and partly junk. See [VERB_LEXICON
 - **Record:** add entries to a claims ledger (claim, evidence path, date, status: adopted / deferred /
   retracted).
 
+### T8 — Where frames live, by genre (added 16 Nov 2026, Rik)
+
+- **Question:** per genre, what evokes the frame? The options are a verb, a heading or entry, a noun, a
+  construction, or nothing explicit. That decides which route can reach it at all. Reach is structural, not
+  a matter of vocabulary.
+- **Why genre:**
+  - C3 (69 passages): RECIPE 5/6 food, MEDICAL 2/8, literary/linguistic strata about 10/55.
+  - Headings evoke frames only in the recipe and medical strata.
+  - Entry structure differs between dictionary, formulary and prose (`project_genre_predicate`: unit
+    density is not a genre classifier).
+- **Data, no new run:**
+  - C3 (`evoking_kind` × stratum, `c3_prefill.csv`);
+  - gold by position (head / near_head / body × genre, E1);
+  - T1 rows with `pool_verbs`. The T1 run with the new list was stopped; the 20-work trial is in
+    `$TMPDIR` only. Re-run per genre if needed.
+- **Measure:**
+  - evoking kind × genre, and position in the entry × genre, with n and CI;
+  - **not** verb reachability as a yardstick for the vocabulary.
+- **Decision:** routing per genre (verb route, entry/heading route, food route), as input to T3's two
+  levels and to the cost question (`project_pipeline_economics`).
+- Compatible with "don't stratify the sweep by `text_regime`" (§6): this stratifies the *analysis*, not
+  the harvest.
+
+**First result (17 Nov 2026): the annotated v3d set, 4,045 passages, 0 errors.**
+Source: `docs/evidence/triangulation_b/report_v3d.md`.
+
+Share of passages that get a real frame (cooking, eating, cure, preserving):
+
+| genre | food word + verb nearby | food word only |
+|---|---:|---:|
+| recipe books | 84% (80–88%) | **94%** (90–97%) |
+| medical books | 54% (49–60%) | 48% (42–55%) |
+| prose | 73% (64–80%) | 18% (13–23%) |
+| drama | 77% (50–92%) | 8% (5–13%) |
+| poetry | 59% (48–68%) | 16% (12–22%) |
+| non-fiction | 47% (39–55%) | 6% (4–11%) |
+| secondary literature (literary studies) | 70% (64–76%) | 42% (36–49%) |
+| secondary literature (linguistics) | 42% (29–55%) | 13% (9–18%) |
+| youth literature | 69% (42–87%) | 27% (21–34%) |
+
+- **Recipe books:** every food word is in a frame; the genre evokes it, so a verb adds nothing (Rik: "to be
+  expected"). Route: harvest all food words, no verb filter.
+- **Literary and other genres:** a verb nearby multiplies the frame share by 4–10. Route: verb filter.
+- **Medical books:** a verb barely helps (54% vs 48%). This is the open case; a likely reason is that
+  remedies (food as cure) and plain description are mixed in one book.
+- **Whether context is centred on the food word or the verb** rarely changes the label: 82% of 1,004 pairs agree (79–84%).
+  Disagreements are mostly cooking↔cure and cooking↔eating, the two-level overlap from the heading test.
+- **Not yet verified:** the frames' precision. To read: `read_food_only_frames_v3d.csv` (100 rows; better
+  drawn from non-recipe genres only, since recipe precision is not in doubt) and
+  `read_centring_disagreements_v3d.csv` (183 rows).
+
+**Retracted here (16 Nov 2026): the C5 decision rule from VERB_LEXICON.md §4.** The answer was wrong; the
+question stands, as T8.
+- **Why:** reachability ("a verb candidate within ±150 chars") measures proximity, not evocation.
+  - It can only rise as the list grows.
+  - The 20-work trial (unreachable 13/14 → 8/14) showed rows reached through verbs that are merely nearby
+    (*Legt* in a fishing poem, *doet* in a verse).
+- **The rule as it was written:** ~~re-run T1 with the reviewed list:~~
+  - ~~≥ 75% unreachable → the lexicon was not the bottleneck; put the effort into the entry route;~~
+  - ~~< 50% → it was the lexicon;~~
+  - ~~in between → C3 decides.~~
+- **Tools kept:** `scripts/c5_reach.py`, and `triangulate_harvests.py --out` with the `pool_verbs` column.
+  They are tools, not a gate.
+
 ## 5. Evaluation and gates per step
 
 Rules for every step:
@@ -200,6 +312,7 @@ Rules for every step:
 | **T5** | Verb-aware Step B | The same rows without the verb | Handful: the ~11 explicit E1 misses. Then T1b rows: INGESTION recall/precision with CI | **G7 (handful):** fewer than 6 of 11 flip correctly → stop; it's not the anchor. **G8 (scale):** recall up, precision not clearly down → adopt for food-anchored rows. |
 | **T6** | Structure markers for cookbooks/newspapers | Rik's reading of sample pages/articles | Marker precision by sequence/position on ~20 pages/articles per source | **G9:** markers pass the read sample → repeat T1b/T3 for that source type. Otherwise that source type stays sentence-only, labelled as such. |
 | **T7** | The headline | E1 (0.48) and the July 75% | Step B agreement with CI per source type and genre, on works never used for prompts | No gate. Replaces the quoted headline; logged in the claims ledger. |
+| **T8** | Where frames live, by genre | C3 strata; E1 positions | Evoking kind × genre; entry position × genre; n and CI per cell | Decision rule to be set before the analysis. Not verb reachability (retracted C5 rule, see T8). |
 
 Known threats to validity:
 - **Shared judge:** both routes go through the same Step B model.
@@ -225,3 +338,4 @@ Known threats to validity:
 5. T3 prototype on the T1b works.
 6. T7 once T4 exists.
 7. T6 later, per source type.
+8. T8 from existing data (C3, E1) at any time. It feeds the routing in T3.

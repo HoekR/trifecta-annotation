@@ -58,8 +58,10 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int)
     ap.add_argument("--window", type=int, default=150)
+    ap.add_argument("--out", default=str(OUT), help="evidence folder (keep earlier runs as baselines)")
     args = ap.parse_args()
     W = args.window
+    out = Path(args.out)
 
     food, verb = defaultdict(list), defaultdict(list)
     for r in load("dbnl_sweep_annotations"):
@@ -97,7 +99,8 @@ def main() -> None:
                 source_path=fn, title=fn, corpus=CORPUS, date=None, units=None, cap=10**9,
                 located=rendered.located, entry_scope=False,
             )
-            pool_offs = sorted(int(h["target_char_offset"]) for h in pool)
+            pool_sorted = sorted((int(h["target_char_offset"]), str(h.get("discovery_verb") or "")) for h in pool)
+            pool_offs = [o for o, _ in pool_sorted]
             vrows = []
             for v in verb[fn]:
                 pv = v["provenance"]
@@ -116,7 +119,9 @@ def main() -> None:
                     status["food row not located"] += 1
                     continue
                 status["food row located"] += 1
-                reach = bisect.bisect_left(pool_offs, off - W) < bisect.bisect_right(pool_offs, off + W)
+                lo_i, hi_i = bisect.bisect_left(pool_offs, off - W), bisect.bisect_right(pool_offs, off + W)
+                reach = lo_i < hi_i
+                pool_verbs = sorted({v for _, v in pool_sorted[lo_i:hi_i] if v})
                 near = vrows[bisect.bisect_left(v_offs, off - W):bisect.bisect_right(v_offs, off + W)]
                 vl = [lab for _, lab, _ in near]
                 # one verb-side verdict per food row: a real frame if any neighbour has one
@@ -126,6 +131,8 @@ def main() -> None:
                     "food_label": label(f), "verb_reachable": reach, "n_verb_neighbours": len(near),
                     "verb_label": (Counter(v_frames).most_common(1)[0][0] if v_frames else (vl[0] if vl else None)),
                     "verb_verbs": ";".join(sorted({str(d) for _, _, d in near})),
+                    # which verbs made the row reachable (C5: a large list can make reach trivial)
+                    "pool_verbs": ";".join(pool_verbs),
                     "context": pv.get("context_text", "")[:300],
                 })
             if i % 50 == 0 or i == len(works):
@@ -134,8 +141,8 @@ def main() -> None:
                       f"({el / 60:.0f} min, ~{(len(works) - i) * el / i / 60:.0f} min left)", flush=True)
 
     df = pd.DataFrame(rows)
-    OUT.mkdir(parents=True, exist_ok=True)
-    df.to_csv(OUT / "rows.csv", index=False)
+    out.mkdir(parents=True, exist_ok=True)
+    df.to_csv(out / "rows.csv", index=False)
 
     df["food_kind"] = df.food_label.map(kind)
     paired = df[df.verb_label.notna()].copy()
@@ -169,7 +176,7 @@ def main() -> None:
     for _, r in dis.head(25).iterrows():
         lines.append(f"- `{r.work}` [{r.target}] food={r.food_label}, verb={r.verb_label} ({r.verb_verbs}): "
                      f"{r.context[:200]!r}")
-    (OUT / "report.md").write_text("\n".join(lines) + "\n")
+    (out / "report.md").write_text("\n".join(lines) + "\n")
     print("\n".join(lines))
 
 

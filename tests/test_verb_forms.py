@@ -37,6 +37,12 @@ def test_no_doubled_vowel_in_prefix() -> None:
                    for x in forms_for("eten"))
 
 
+def test_vv_for_w_and_final_c() -> None:
+    assert "brouvven" in forms_for("brouwen") and "bevvaar" in forms_for("bewaren")
+    assert "brac" in forms_for("breken") and "stac" in forms_for("steken")
+    assert "kurert" in forms_for("cureren")
+
+
 def test_s_z_swap_only_before_vowel() -> None:
     assert "zieden" in forms_for("sieden")
     assert not any(x.startswith("zm") for x in forms_for("smaken"))

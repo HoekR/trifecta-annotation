@@ -58,6 +58,9 @@ VERB_INPUTS = "triangulation_b_verbctx_kwic_inputs"
 RUN_INPUTS = "triangulation_b_run_kwic_inputs"
 RUN_ANNOTATIONS = "triangulation_b_annotations"
 RECIPE_VERB_CAP = 300               # G2 (12 Nov): RECIPE alone had 1,035 verb-selected occurrences
+# G2 for the re-harvests (Rik, 16 Nov): with the reviewed list MEDICAL has 1,805 verb-selected occurrences, so it
+# is capped like RECIPE. The untagged (12 Nov) selection keeps its RECIPE-only cap, so it stays reproducible.
+VERB_CAPS_TAGGED = {"RECIPE": 300, "MEDICAL": 300}
 PER_STRATUM_FOOD_ONLY = 200          # G2: random non-verb-selected occurrences per stratum
 SEED = 20261112
 # Works per stratum (40 total). Every genre gets at least 2 works, so no stratum is a single anecdote.
@@ -123,7 +126,11 @@ def sample() -> None:
     print(f"wrote {len(picked)} works -> {WORKS} (seed {SEED})")
 
 
-def harvest() -> None:
+def harvest(tag: str = "") -> None:
+    """`tag` writes to `triangulation_b_<tag>_…` instead of the original inputs, which stay for comparison
+    (and are the parent of the C3 sample)."""
+    food_name = FOOD_INPUTS.replace("triangulation_b_", f"triangulation_b_{tag}_") if tag else FOOD_INPUTS
+    verb_name = VERB_INPUTS.replace("triangulation_b_", f"triangulation_b_{tag}_") if tag else VERB_INPUTS
     works = pd.read_csv(WORKS)
     terms = load_food_terms()
     canonical = alt_label_index(terms)
@@ -176,18 +183,20 @@ def harvest() -> None:
         if key not in seen:
             seen.add(key)
             dedup.append(v)
-    for rows, name, desc in ((food_rows, FOOD_INPUTS, "every food-noun occurrence, uncapped, noun-centred"),
-                             (dedup, VERB_INPUTS, "verb-route rows (verb-centred) for verb-selected occurrences")):
+    for rows, name, desc in ((food_rows, food_name, "every food-noun occurrence, uncapped, noun-centred"),
+                             (dedup, verb_name, "verb-route rows (verb-centred) for verb-selected occurrences")):
         out = save_semi_structured(rows, logical_name=name, parent_sources=["dbnl_xml"],
                                    description=f"T1b triangulation sample (40 works): {desc}", script=SCRIPT)
         print(f"wrote {len(rows)} rows -> {out}", flush=True)
 
 
-def estimate() -> None:
+def estimate(tag: str = "") -> None:
     def load(name):
         with open(resolve(name), encoding="utf-8") as fh:
             return pd.DataFrame([json.loads(l) for l in fh if l.strip()])
-    f, v = load(FOOD_INPUTS), load(VERB_INPUTS)
+    food_name = FOOD_INPUTS.replace("triangulation_b_", f"triangulation_b_{tag}_") if tag else FOOD_INPUTS
+    verb_name = VERB_INPUTS.replace("triangulation_b_", f"triangulation_b_{tag}_") if tag else VERB_INPUTS
+    f, v = load(food_name), load(verb_name)
     weak = ~f.text_regime.isin(["RECIPE_PRACTICE", "MEDICAL"])
     per = f.groupby("stratum").agg(works=("source_path", "nunique"), occurrences=("record_id", "size"),
                                    verb_selected=("verb_selected", "sum"))
@@ -205,11 +214,11 @@ def estimate() -> None:
              "a rough figure since the sieve's saving was measured on verb rows):", "",
              f"- food-anchored: **~{calls_food:,.0f}**", f"- verb-centred: **~{calls_verb:,.0f}**", "",
              f"G2a (power): passages with both anchors = {int(f.verb_selected.sum())} (want ≥ ~100).", ""]
-    (OUT / "estimate.md").write_text("\n".join(lines))
+    (OUT / (f"estimate_{tag}.md" if tag else "estimate.md")).write_text("\n".join(lines))
     print("\n".join(lines))
 
 
-def select() -> None:
+def select(tag: str = "") -> None:
     """G2 decision (Rik, 12 Nov 2026): about 4k rows instead of 44k. Each row gets a `tri_set`:
 
     - `verb_noun`: verb-selected occurrence, noun-centred (RECIPE capped at RECIPE_VERB_CAP, evenly spaced);
@@ -220,7 +229,10 @@ def select() -> None:
     def load(name):
         with open(resolve(name), encoding="utf-8") as fh:
             return [json.loads(l) for l in fh if l.strip()]
-    food, verb = load(FOOD_INPUTS), load(VERB_INPUTS)
+    t = (lambda n: n.replace("triangulation_b_", f"triangulation_b_{tag}_")) if tag else (lambda n: n)
+    food_name, verb_name, run_name = t(FOOD_INPUTS), t(VERB_INPUTS), t(RUN_INPUTS)
+    caps = VERB_CAPS_TAGGED if tag else {"RECIPE": RECIPE_VERB_CAP}
+    food, verb = load(food_name), load(verb_name)
     verb_by_pair = {v["pair_record_id"]: v for v in verb}
     rng = random.Random(SEED)
     run, weights = [], {}
@@ -229,8 +241,9 @@ def select() -> None:
         by_stratum[r["stratum"]]["verb" if r["verb_selected"] else "food_only"].append(r)
     for stratum, d in sorted(by_stratum.items()):
         vs = sorted(d["verb"], key=lambda r: (r["source_path"], r["target_char_offset"]))
-        if stratum == "RECIPE" and len(vs) > RECIPE_VERB_CAP:
-            vs = [vs[k * len(vs) // RECIPE_VERB_CAP] for k in range(RECIPE_VERB_CAP)]
+        cap = caps.get(stratum)
+        if cap and len(vs) > cap:
+            vs = [vs[k * len(vs) // cap] for k in range(cap)]      # evenly spaced over the works
         for r in vs:
             run.append({**r, "tri_set": "verb_noun", "tri_weight": 1.0})
             v = verb_by_pair.get(r["record_id"])
@@ -247,27 +260,29 @@ def select() -> None:
         if r["record_id"] not in seen:
             seen.add(r["record_id"])
             dedup.append(r)
-    (OUT / "weights.json").write_text(json.dumps(weights, indent=2, ensure_ascii=False))
-    out = save_semi_structured(dedup, logical_name=RUN_INPUTS, parent_sources=[FOOD_INPUTS, VERB_INPUTS],
+    (OUT / (f"weights_{tag}.json" if tag else "weights.json")).write_text(json.dumps(weights, indent=2, ensure_ascii=False))
+    out = save_semi_structured(dedup, logical_name=run_name, parent_sources=[food_name, verb_name],
                                description="T1b annotation set (G2: verb-selected + verb-centred + 200 food-only/stratum)",
                                script=SCRIPT)
     print(json.dumps(weights, indent=1, ensure_ascii=False))
     print(f"wrote {len(dedup)} rows -> {out}; " + ", ".join(f"{k}: {v}" for k, v in Counter(r['tri_set'] for r in dedup).items()))
 
 
-def annotate() -> None:
+def annotate(tag: str = "") -> None:
     from trifecta_annotation.batch import load_inputs, run_batch
 
+    t = (lambda n: n.replace("triangulation_b_", f"triangulation_b_{tag}_")) if tag else (lambda n: n)
+    run_inputs, run_annotations = t(RUN_INPUTS), t(RUN_ANNOTATIONS)
     model_dir = Path(resolve("trifecta_step_a_keepdrop_models")) / "globertise-keepdrop" / "model"
     run_batch(
-        load_inputs(input_logical=RUN_INPUTS), output_logical=RUN_ANNOTATIONS, resume=True,
-        parent_sources=[RUN_INPUTS], step_a_sieve_model=model_dir,
+        load_inputs(input_logical=run_inputs), output_logical=run_annotations, resume=True,
+        parent_sources=[run_inputs], step_a_sieve_model=model_dir,
         description="A->B->C annotations for the T1b triangulation set (local Ollama, Step A sieve as routed)",
         script=SCRIPT,
     )
 
 
-def report() -> None:
+def report(tag: str = "") -> None:
     """Measures fixed before the labels were seen (12 Nov 2026):
 
     1. frame yield per set, with Wilson CI; food_only also weighted up to its stratum totals, giving the
@@ -278,14 +293,16 @@ def report() -> None:
     """
     from scripts.eval_gold_by_position import label, wilson
 
+    t = (lambda n: n.replace("triangulation_b_", f"triangulation_b_{tag}_")) if tag else (lambda n: n)
+    sfx = f"_{tag}" if tag else ""
     inputs = {}
-    with open(resolve(RUN_INPUTS), encoding="utf-8") as fh:
+    with open(resolve(t(RUN_INPUTS)), encoding="utf-8") as fh:
         for l in fh:
             if l.strip():
                 r = json.loads(l)
                 inputs[r["record_id"]] = r
     rows = []
-    with open(resolve(RUN_ANNOTATIONS), encoding="utf-8") as fh:
+    with open(resolve(t(RUN_ANNOTATIONS)), encoding="utf-8") as fh:
         for l in fh:
             if not l.strip():
                 continue
@@ -302,13 +319,13 @@ def report() -> None:
     df = pd.DataFrame(rows)
     REAL = {"COOKING_CREATION", "INGESTION", "CURE", "PRESERVING"}
     df["frame"] = df.label.isin(REAL)
-    df.to_csv(OUT / "rows.csv", index=False)
+    df.to_csv(OUT / f"rows{sfx}.csv", index=False)
 
     def ci(k, n):
         lo, hi = wilson(int(k), int(n))
         return f"{k / max(n, 1):.0%} ({lo:.0%}–{hi:.0%})"
 
-    weights = json.loads((OUT / "weights.json").read_text())
+    weights = json.loads((OUT / f"weights{sfx}.json").read_text())
     ylines = []
     for st in sorted(df.stratum.unique()):
         d = df[df.stratum == st]
@@ -327,13 +344,13 @@ def report() -> None:
     same = int((pairs.label == pairs.label_verbctx).sum())
     fo_frames = df[(df.set == "food_only") & df.frame].sample(frac=1, random_state=SEED).head(100)
     fo_frames[["work", "stratum", "target", "label", "context"]].assign(rik_correct="").to_csv(
-        OUT / "read_food_only_frames.csv", index=False)
+        OUT / f"read_food_only_frames{sfx}.csv", index=False)
     dis = pairs[pairs.label != pairs.label_verbctx]
     dis[["work", "target", "verb", "label", "label_verbctx", "context"]].assign(rik_which="").to_csv(
-        OUT / "read_centring_disagreements.csv")
+        OUT / f"read_centring_disagreements{sfx}.csv")
 
     lines = [
-        "# T1b: passage-first triangulation (39 works)", "",
+        f"# T1b: passage-first triangulation (39 works){' — ' + tag if tag else ''}", "",
         f"Rows annotated: {len(df)} of {len(inputs)} ({int(df.error.sum())} errors). "
         "Yield = share of rows with a real frame (CC/ING/CURE/PRES), Wilson 95% CI.", "",
         "## 1. Yield per route, and frames the food route adds", "",
@@ -350,14 +367,20 @@ def report() -> None:
         f"- `read_food_only_frames.csv`: 100 random food-only frames; fill in `rik_correct` (gate G3 input).",
         f"- `read_centring_disagreements.csv`: {len(dis)} rows; fill in `rik_which` (noun / verb / neither).", "",
     ]
-    (OUT / "report.md").write_text("\n".join(lines))
+    (OUT / f"report{sfx}.md").write_text("\n".join(lines))
     print("\n".join(lines))
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=["sample", "harvest", "estimate", "select", "annotate", "report"])
-    {"sample": sample, "harvest": harvest, "estimate": estimate, "select": select, "annotate": annotate, "report": report}[ap.parse_args().cmd]()
+    ap.add_argument("--tag", default="", help="harvest/estimate: write and read triangulation_b_<tag>_* (e.g. v3)")
+    a = ap.parse_args()
+    if a.cmd in ("harvest", "estimate", "select", "annotate", "report"):
+        {"harvest": harvest, "estimate": estimate, "select": select, "annotate": annotate,
+         "report": report}[a.cmd](a.tag)
+        return
+    sample()
 
 
 if __name__ == "__main__":
