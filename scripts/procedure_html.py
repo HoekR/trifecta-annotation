@@ -116,6 +116,9 @@ DECISIONS = [
     ("17 Nov", "New harvest with the word restrictions", "44,372 → 26,994 occurrences; medical: verb 84% vs food-only 63%"),
     ("18 Nov", "Extended sample annotated", "95 works, 5,841 passages, 0 errors; every genre ≥150 passages per route"),
     ("17 Nov", "Centring disagreements dropped", "not contradictions: the two windows read different sentences"),
+    ("18 Nov", "Verb-route frames read", "right 72% (69/96) outside recipe books, against 38% for food-only"),
+    ("18 Nov", "Routing decided", "all food words in recipe books, verb route elsewhere (medical included); "
+     "food-only elsewhere would add ≈1,850 real frames with ≈11,600 wrong ones"),
 ]
 
 
@@ -151,14 +154,19 @@ def sheet_progress(name: str, col: str) -> tuple[int, int] | None:
 def waiting() -> list[tuple[str, str, str]]:
     """(what, detail, where); live parts first."""
     items = []
-    from scripts.reading_sheet import WORKBOOK, progress
+    from scripts.reading_sheet import VERB_SHEET, VERB_WORKBOOK, WORKBOOK, progress
     prog = progress()
     if prog:
-        for sheet, what in [("1 Food-only frames", "Read 100 food-only frames: right or wrong?"),
-                            ("2 Disagreements", "Read the passages where the two routes disagree")]:
-            n, t = prog.get(sheet, (0, 0))
+        for sheet, what, wbk in [
+            (VERB_SHEET, "Read the verb-route frames outside recipe books: right or wrong?", VERB_WORKBOOK),
+            ("1 Food-only frames", "Read 100 food-only frames: right or wrong?", WORKBOOK),
+            ("2 Disagreements", "Read the passages where the two routes disagree", WORKBOOK),
+        ]:
+            if sheet not in prog:
+                continue
+            n, t = prog[sheet]
             if n < t and sheet not in CLOSED_SHEETS:
-                items.append((what, f"{n} of {t} done · sheet '{sheet}'", str(WORKBOOK.relative_to(ROOT))))
+                items.append((what, f"{n} of {t} done · sheet '{sheet}'", str(wbk.relative_to(ROOT))))
     for name, col, what in [] if prog else [
         (f"read_food_only_frames_{TAG}.csv", "rik_correct", "Read 100 food-only frames: right or wrong?"),
         (f"read_centring_disagreements_{TAG}.csv", "rik_which", "Read the passages where the two routes disagree"),
@@ -167,13 +175,11 @@ def waiting() -> list[tuple[str, str, str]]:
         if p and p[0] < p[1]:
             items.append((what, f"{p[0]} of {p[1]} done", f"docs/evidence/triangulation_b/{name}"))
     items += [
-        ("Decide: which route for medical books?", "after the filter a verb clearly helps (84% vs 63%); "
-         "proposal: verb route, food route in recipe books only", "docs/evidence/triangulation_b/reharvest_v3.md"),
         ("Decide: the verb bestellen", "no decision yet", "docs/evidence/verb_lexicon/"),
         ("Label about 150 entry headings with their purpose", "about an afternoon; the reference for two levels",
          "plans/steps/TRIANGULATION.md"),
-        ("When: the full run", "with routing (all food words in recipe books, verb route elsewhere) about "
-         "19k passages, ~16 h at the measured 3 s each; unrouted ~32k, ~1–2 days", ""),
+        ("When: the full run", "routed (decided 18 Nov) over the 95 sample works: 20,354 passages, 83% from "
+         "recipe books, ~17 h at 3 s each (less what is already annotated)", "plans/steps/TRIANGULATION.md"),
     ]
     ahead = git("rev-list", "--count", "main..verb-lexicon-v3")
     if ahead and ahead != "0":

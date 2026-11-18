@@ -315,6 +315,28 @@ Share of passages that get a real frame (cooking, eating, cure, preserving):
   only 2 clearly one side. Four notes say the same thing: the two windows straddle a sentence boundary
   (period or semicolon), so each centring reads a *different* sentence and both labels can be right for
   their window. Centring is a window effect, not a model error; not worth reading further.
+- **Verb-route precision outside recipe books (Rik, 18 Nov 2026), the counterpart of the food-only reading.**
+  96 noun-centred frames from verb-selected occurrences in the extended set (v3f), 12 per genre, recipe books
+  left out (`scripts/reading_sheet.py verb`, `reading_verb_v3f.xlsx`).
+  - Right **69/96 = 72% [62–80%]**, not food 23, wrong frame 1, unsure 3. The food route there: 18/47 = 38%
+    [26–53%]. The intervals don't overlap: the verb roughly doubles precision.
+  - By genre, mostly 8–11 of 12. **Studies of language is the exception: 4/12**. There the verb is in a proverb
+    or a gloss (*knollen voor citroenen verkopen*, *al moes* = aalmoes, *teelt* of herbs).
+  - Medical books 9/12, in line with the frame-share result (verb 87% vs food-only 64%).
+  - 'not food' errors are homonyms and idioms: *spruiten* (to grow), *vleesch en bloet*, *sout* for 'sou[dt]'.
+  - Rik's recurring note, **'change of context'** (about 10 rows): right frame, but the passage moves on within
+    the window. The same window effect as the centring disagreements.
+  - **For the routing decision:** the verb route outside recipe books gives about 3 real frames in 4; the
+    extra food-only passages there give about 1 in 7 (≈1,850 real frames for ≈13.5k passages, ≈13 h).
+- **DECIDED (Rik, 18 Nov 2026): routing per genre.** Recipe books get every food word (food route). All other
+  genres, medical books included, get verb-selected occurrences only.
+  - **Why:** the food-only passages outside recipe books would add ≈1,850 real frames but ≈11,600 wrong ones,
+    diluting every per-genre count.
+  - **Scope:** over the 95 sample works (v3f harvest) that is 20,354 passages: 16,985 from recipe books and
+    3,369 verb-selected elsewhere. 16,410 food-only occurrences outside recipe books are dropped.
+  - **Known costs:**
+    - studies of language stays weak even on the verb route (4/12);
+    - the 'change of context' window effect is untouched.
 
 **Retracted here (16 Nov 2026): the C5 decision rule from VERB_LEXICON.md §4.** The answer was wrong; the
 question stands, as T8.

@@ -1,7 +1,7 @@
 # Delpher newspapers as a corpus slice — assessment before acquisition
 
-**Status:** draft, **not approved**, deferred by operator (30 Oct 2026). Nothing
-here is started. K0 is blocked on hardware (see below).
+**Status:** draft, **not approved**, deferred by operator (30 Oct 2026). K0 done 18 Nov 2026: full open
+archive re-downloading, first decade inspected (see K0). K1–K4 not started.
 
 **Blocked on:** the operator's `External Disk` was not mounted when this was
 written — only `2tb disk`, `Extreme SSD` and `Macintosh HD` were available, and
@@ -103,7 +103,57 @@ instead of a type-bounded one.
 
 ## Steps
 
-### K0 — Inventory what is actually held locally — **blocked on mounting `External Disk`**
+### K0 — Inventory what is actually held locally — **done 18 Nov 2026 (by re-download)**
+
+**What happened.**
+- The WD Elements disk (`ExterneSchijf/kranten`) held the open archive for 1618–1869 (20 zips, ≈88 GB),
+  downloaded by `delpher_download.sh` in October. It lacked the 1870s and the title index.
+- It mounts and lists, but every file read hangs. Probably too little power: two USB 2 hubs give 500 mA.
+  Unresolved.
+- The download script survived in the VS Code history. It is now [scripts/delpher_download.sh](../../scripts/delpher_download.sh),
+  taking the destination as an argument, resumable and md5-checked.
+- The full set (24 files, ≈115 GB, 1618–1879 + index) is downloading to `/Volumes/2tb disk/kranten`
+  (ExFAT, at about 3.5 MB/s).
+- **Still to do:** register as a `data_io` logical name once complete. Don't unpack onto ExFAT (millions of small
+  files); read straight from the zips.
+
+**Observed in the files** (`kranten_pd_171x.zip` and the index, quoted, not assumed):
+- **Index:** 370,016 issues, 199 titles, 1618–1879. Steep growth: 2,392 issues in the 1710s against 52,864 in
+  the 1870s.
+- **Zip layout:** `YYYY/MM/DD/DDD_ddd_<id>_mpeg21/` holds `didl.xml`, one `*_alto.xml` per page, and
+  **one `*_articletext.xml` per article**, `<text><title>…</title><p>…</p></text>`.
+- **This corrects the Background and K2:**
+  - articles *are* segmented and *do* carry a heading;
+  - in the 1710s the heading is a place of origin (NEDERLANDEN., VRANCKRYCK.), and 2,332 food-bearing
+    articles have an empty one;
+  - an article *type* field is still unverified.
+- **Per-issue DIDL:** `dc:title` (the newspaper, e.g. *Oprechte Haerlemsche courant*), `dc:date` (exact day),
+  `dcterms:spatial` (place), `dc:publisher`, `dcterms:issued` (title run, 1662–1795).
+
+**Cursory food-word scan, 1710s** (scratch script, our food lexicon, body-part scopes applied; 18,571 articles,
+10.8M words):
+- 48% of articles contain a lexicon word, but **the top hits are mostly OCR or homonyms**:
+  - *geit* 1,991 = OCR of **Gelt**;
+  - *biet* = niet; *wei* = wel; *ert*; *lil*;
+  - *kruyt* = gunpowder; *orange* = the House of Orange; *munt* = coin.
+- Undoing long-s OCR (f for s) adds only 6% more hits, and those are themselves ambiguous (*fout*, *offen*,
+  *borft*).
+- **Real food here is trade and provisioning**, not cooking:
+  - *bier, wijn, brandewijn, zout, taback, meel, mout, rog, broot, vis*;
+  - ships arriving "met Zout en Brandewijn", army meat rations, grain prices.
+- **What follows:**
+  1. **The food route is unusable on newspapers.** The verb route (or a commodity context) is the minimum
+     filter. That is the T8 result again, magnified by OCR.
+  2. **Early newspapers suit a commodities and prices question**, by date and place, rather than the
+     cooking or cure frames. It is the natural link to kg_mockup's VOC-commodity export.
+  3. **Advertisements and household columns are expected later.** Repeat the scan on a 19th-century
+     decade (1860s) once downloaded, before K1 is designed. Cookery may only appear there.
+- **Scale:** the 1710s are 0.6% of issues, so the archive is a few billion words. A full model pass is out of
+  the question (5.28 calls/row); K3's filtered slice is mandatory.
+
+The original K0 text follows.
+
+~~**blocked on mounting `External Disk`**~~
 
 Establish ground truth before any design. Report: which Delpher products are
 present (open-archive zips? loose ALTO/DIDL? PDFs only?), year span, which
