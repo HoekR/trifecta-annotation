@@ -382,7 +382,7 @@ def report(tag: str = "") -> None:
         OUT / f"read_centring_disagreements{sfx}.csv")
 
     lines = [
-        f"# T1b: passage-first triangulation (39 works){' — ' + tag if tag else ''}", "",
+        f"# T1b: passage-first triangulation ({df.work.nunique()} works){' — ' + tag if tag else ''}", "",
         f"Rows annotated: {len(df)} of {len(inputs)} ({int(df.error.sum())} errors). "
         "Yield = share of rows with a real frame (CC/ING/CURE/PRES), Wilson 95% CI.", "",
         "## 1. Yield per route, and frames the food route adds", "",

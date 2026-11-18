@@ -203,3 +203,26 @@ word, including body parts and 'never' words. Now both routes use `term_allowed`
 - before the filter it was 54% vs 48%: the body parts had pulled both down;
 - Rik's reading of the remaining food-only medical frames: 3 of 6 right (tiny n).
 - So in medical books a verb now clearly helps, as in the other non-recipe genres.
+
+## v3f: extended sample (Rik, 17 Nov: "up the cap a bit for the rest") → `works_ext.csv`, `report_v3f.md`
+
+95 works (39 frozen + 56 new, same seed); v3e rules. Annotation set 5,841 passages (1,815 reused from v3d,
+4,026 new; 4 h, 0 errors). Every genre ≥150 passages per route.
+
+| genre | frame share, verb nearby | food word only | est. frames, verb route | est. frames, food route |
+|---|---:|---:|---:|---:|
+| recipe books | 84% (80–88) | 91% (86–94) | 3,891 | 11,258 |
+| medical books | 87% (82–90) | 64% (57–70) | 1,536 | 2,897 |
+| prose | 73% (66–79) | 46% (39–52) | 137 | 643 |
+| youth literature | 71% (64–77) | 49% (42–56) | 135 | 642 |
+| studies of literature | 67% (61–72) | 45% (38–52) | 182 | 767 |
+| poetry | 54% (46–61) | 33% (27–40) | 81 | 397 |
+| non-fiction | 53% (49–58) | 44% (38–51) | 228 | 1,630 |
+| drama | 48% (40–55) | 32% (25–38) | 82 | 407 |
+| studies of language | 37% (30–43) | 30% (24–36) | 72 | 382 |
+
+- **Counterfactual for "verb route only outside recipe books":** the food route there labels ~4,870
+  passages as frames (weighted). At Rik's measured precision (~38%, 18/47 after the filter) that is
+  roughly **1,850 real frames the verb route would not find**, for ~13.5k extra passages (~13 h).
+- **Unmeasured:** the verb route's own precision. Rik's reading so far was of food-only frames only.
+- Centring: 82% same label (1,844 pairs), the same as v3d.

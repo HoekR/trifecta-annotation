@@ -24,7 +24,7 @@ import pandas as pd
 ROOT = Path(__file__).resolve().parents[1]
 EVID = ROOT / "docs" / "evidence"
 TRI = EVID / "triangulation_b"
-TAG = "v3d"  # latest annotated set
+TAG = "v3f"  # latest annotated set (extended sample, 95 works)
 TEMPLATE = ROOT.parent / "dighum_template"
 
 RECIPE = {"RECIPE": "recipe books", "MEDICAL": "medical books"}
@@ -114,6 +114,7 @@ DECISIONS = [
     ("17 Nov", "Food-only frames read", "right: recipe 93%, medical 25%, other genres 33%"),
     ("17 Nov", "Body parts: food in recipe books only", "scopes now on both routes; food-only rows outside recipe books halve"),
     ("17 Nov", "New harvest with the word restrictions", "44,372 → 26,994 occurrences; medical: verb 84% vs food-only 63%"),
+    ("18 Nov", "Extended sample annotated", "95 works, 5,841 passages, 0 errors; every genre ≥150 passages per route"),
     ("17 Nov", "Centring disagreements dropped", "not contradictions: the two windows read different sentences"),
 ]
 
@@ -336,7 +337,7 @@ Verb-list history: <a href="triangulation_b/overview.html">verb lexicon overview
 
 <div class="tiles">
  <div class="tile"><div class="k">Waiting on you</div><div class="v">{len(wait)}</div><div class="was">items, list on the left</div></div>
- <div class="tile"><div class="k">Latest annotation run</div><div class="v">{n_rows:,}</div><div class="was">passages, 0 errors (17 Nov)</div></div>
+ <div class="tile"><div class="k">Latest annotation run</div><div class="v">{n_rows:,}</div><div class="was">passages, 95 works, 0 errors (18 Nov)</div></div>
  <div class="tile"><div class="k">Frame agreement with gold, DBNL texts</div><div class="v">0.48</div><div class="was">not the 75% of the old gold</div></div>
  <div class="tile"><div class="k">Same label, noun- or verb-centred</div><div class="v">{same / max(pairs, 1):.0%}</div><div class="was">{same} of {pairs} pairs</div></div>
 </div>
@@ -351,8 +352,8 @@ Verb-list history: <a href="triangulation_b/overview.html">verb lexicon overview
    <span><span class="sw" style="background:var(--s2)"></span>food word only</span></div>
    <ul class="finding">
     <li><b>Recipe books:</b> every food word is in a frame; the genre evokes it. No verb filter needed.</li>
-    <li><b>Other genres:</b> a verb nearby raises the share 4–10×. Keep the verb filter.</li>
-    <li><b>Medical books:</b> a verb barely helps. Open.</li>
+    <li><b>Other genres:</b> a verb nearby raises the share by 7–27 points; the food route still finds more frames in total, at about 38% precision.</li>
+    <li><b>Medical books:</b> after removing body parts, a verb clearly helps (87% vs 64%).</li>
     <li><b>Your reading:</b> food-only frames right in recipe books 93%, medical 25% (body parts), other genres 33%.</li>
    </ul>
    <details><summary>Table</summary><div class="scroll">{tbl}</div></details>
