@@ -61,13 +61,17 @@ def main() -> None:
     start_rows, _ = count(out)
     notify(a.title, f"reporter on: {start_rows} of {total} rows present, report every {a.every:g} min")
     t0, n0 = None, start_rows
+    if out.exists() and time.time() - out.stat().st_mtime < 120:   # run already writing: clock starts now
+        t0 = time.monotonic()
     while running(a.process):
         time.sleep(a.every * 60)
         n, err = count(out)
         if n == n0 and t0 is None:          # scheduled but not started yet
             continue
-        if t0 is None:                      # first rows: start the clock here
-            t0, n0 = time.monotonic() - a.every * 60, start_rows
+        if t0 is None:                      # first rows seen: start the clock now (the run may have begun
+            t0, n0 = time.monotonic(), n    # anywhere in the last interval, so no rate from this tick)
+            notify(a.title, f"run started: {n} of {total} rows; speed and finish time from the next report")
+            continue
         rate = (n - n0) / max(time.monotonic() - t0, 1)
         left = total - n
         eta = dt.datetime.now() + dt.timedelta(seconds=left / rate) if rate > 0 else None
