@@ -300,6 +300,42 @@ def select(tag: str = "") -> None:
     print(f"wrote {len(dedup)} rows -> {out}; " + ", ".join(f"{k}: {v}" for k, v in Counter(r['tri_set'] for r in dedup).items()))
 
 
+ROUTED_FROM = "v3f"  # the harvest the full routed run is drawn from
+
+
+def routed() -> None:
+    """Routing decision (Rik, 18 Nov 2026): every food word in recipe books, verb-selected occurrences elsewhere
+    (medical books included), noun-centred only. Writes `triangulation_b_routed_run_kwic_inputs` and seeds
+    `triangulation_b_routed_annotations` with the v3f annotations of the same record_id *and* context_text, so
+    `annotate --tag routed` (resume on record_id) only runs the rest. Refuses to overwrite either file."""
+    src = f"triangulation_b_{ROUTED_FROM}_"
+    run_name, ann_name = "triangulation_b_routed_run_kwic_inputs", "triangulation_b_routed_annotations"
+    if Path(resolve(run_name)).exists() or Path(resolve(ann_name)).exists():
+        raise SystemExit(f"{run_name} or {ann_name} exists; move it aside to rebuild")
+    with open(resolve(src + "kwic_inputs"), encoding="utf-8") as fh:
+        food = [json.loads(l) for l in fh if l.strip()]
+    run = [{**r, "tri_set": "routed_recipe" if r["stratum"] == "RECIPE" else "routed_verb", "tri_weight": 1.0}
+           for r in food if r["stratum"] == "RECIPE" or r["verb_selected"]]
+    out = save_semi_structured(run, logical_name=run_name, parent_sources=[src + "kwic_inputs"],
+                               description="Full routed run: recipe books all food words, verb route elsewhere",
+                               script=SCRIPT)
+    ctx = {r["record_id"]: r["context_text"] for r in run}
+    kept = 0
+    with open(resolve(src + "annotations"), encoding="utf-8") as fh, \
+            open(resolve(ann_name), "w", encoding="utf-8") as oh:
+        for line in fh:
+            if not line.strip():
+                continue
+            a = json.loads(line)
+            p = a.get("provenance") or {}
+            if not a.get("error") and ctx.get(p.get("record_id")) == p.get("context_text"):
+                oh.write(line if line.endswith("\n") else line + "\n")
+                kept += 1
+    print(f"wrote {len(run)} rows -> {out}; " + ", ".join(f"{k}: {v}" for k, v in Counter(r['tri_set'] for r in run).items()))
+    print(f"seeded {kept} annotations from {ROUTED_FROM}; {len(run) - kept} to annotate "
+          f"(~{(len(run) - kept) * 3 / 3600:.1f} h at 3 s each)")
+
+
 def annotate(tag: str = "") -> None:
     from trifecta_annotation.batch import load_inputs, run_batch
 
@@ -405,14 +441,14 @@ def report(tag: str = "") -> None:
 
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["sample", "extend", "harvest", "estimate", "select", "annotate", "report"])
+    ap.add_argument("cmd", choices=["sample", "extend", "harvest", "estimate", "select", "annotate", "report", "routed"])
     ap.add_argument("--tag", default="", help="harvest/estimate: write and read triangulation_b_<tag>_* (e.g. v3)")
     a = ap.parse_args()
     if a.cmd in ("harvest", "estimate", "select", "annotate", "report"):
         {"harvest": harvest, "estimate": estimate, "select": select, "annotate": annotate,
          "report": report}[a.cmd](a.tag)
         return
-    {"sample": sample, "extend": extend}[a.cmd]()
+    {"sample": sample, "extend": extend, "routed": routed}[a.cmd]()
 
 
 if __name__ == "__main__":
