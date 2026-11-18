@@ -23,9 +23,35 @@ from trifecta_annotation.schemas import KwicInput, TrifectaAnnotation
 _REPORT_EVERY = 25
 
 
+def _repair_truncated_tail(output_path: Path) -> None:
+    """Cut a half-written last line (run killed mid-append: power loss, kill, disk dropped) back to the last
+    complete line, so a resume neither crashes on it nor glues the next record onto it (Rik, 18 Nov 2026:
+    the routed run is planned in two stretches). The removed fragment is reported, not kept."""
+    if not output_path.exists() or output_path.stat().st_size == 0:
+        return
+    with output_path.open("rb+") as fh:
+        fh.seek(-1, 2)
+        if fh.read(1) == b"\n":
+            return
+        fh.seek(0)
+        data = fh.read()
+        cut = data.rfind(b"\n") + 1          # 0 when the only line is the broken one
+        tail = data[cut:]
+        try:
+            json.loads(tail)                  # complete record, just no final newline: keep it
+            fh.seek(0, 2)
+            fh.write(b"\n")
+            return
+        except ValueError:
+            pass
+        fh.truncate(cut)
+    print(f"Resume: removed a half-written last line ({len(tail)} bytes) from {output_path.name}", flush=True)
+
+
 def _load_existing_ids(output_path: Path) -> set[str]:
     if not output_path.exists():
         return set()
+    _repair_truncated_tail(output_path)
     ids: set[str] = set()
     for record in load_jsonl(output_path):
         if record.get("error"):
