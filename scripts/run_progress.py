@@ -41,6 +41,25 @@ def running(pattern: str) -> bool:
     return subprocess.run(["pgrep", "-f", pattern], capture_output=True).returncode == 0
 
 
+def machine_state(ollama_url: str) -> str:
+    """What the model server has loaded and how much memory is free: the routed run slowed from 5 to 33 s/row
+    overnight on identical passages (18-19 Nov 2026), so each report records the machine side too."""
+    import urllib.request
+
+    try:
+        with urllib.request.urlopen(f"{ollama_url}/api/ps", timeout=5) as r:
+            models = [m["name"] for m in json.load(r).get("models", [])]
+        loaded = "ollama: " + (", ".join(models) or "nothing loaded")
+    except Exception as e:  # report, never stop the reporter
+        loaded = f"ollama: unreachable ({type(e).__name__})"
+    try:
+        out = subprocess.run(["memory_pressure", "-Q"], capture_output=True, text=True, timeout=10).stdout
+        free = next((l.split(":")[-1].strip() for l in out.splitlines() if "free percentage" in l), "?")
+    except Exception:
+        free = "?"
+    return f"{loaded}; memory free {free}"
+
+
 def notify(title: str, msg: str) -> None:
     print(f"{dt.datetime.now():%H:%M} {msg}", flush=True)
     subprocess.run(["osascript", "-e", f"display notification {json.dumps(msg)} with title {json.dumps(title)}"],
@@ -54,6 +73,8 @@ def main() -> None:
     ap.add_argument("--process", required=True, help="pgrep -f pattern of the run")
     ap.add_argument("--every", type=float, default=60, help="minutes between reports")
     ap.add_argument("--title", default="Annotation run")
+    ap.add_argument("--ollama-url", default="http://localhost:11434",
+                    help="log what this model server has loaded with each report; '' to switch off")
     a = ap.parse_args()
 
     total, _ = count(Path(resolve(a.inputs)))
@@ -78,6 +99,8 @@ def main() -> None:
         msg = (f"{n} of {total} rows ({n / total:.0%}), {1 / rate:.1f} s/row, done ~{eta:%a %H:%M}" if eta
                else f"{n} of {total} rows, no progress yet")
         notify(a.title, msg + (f", {err} error rows" if err else ""))
+        if a.ollama_url:
+            print(f"{dt.datetime.now():%H:%M}   machine: {machine_state(a.ollama_url)}", flush=True)
     n, err = count(out)
     notify(a.title, f"run ended: {n} of {total} rows" + (f", {err} error rows" if err else "")
            + ("" if n >= total else " — NOT complete, check the log"))

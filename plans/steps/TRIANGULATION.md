@@ -337,6 +337,16 @@ Share of passages that get a real frame (cooking, eating, cure, preserving):
   - **Known costs:**
     - studies of language stays weak even on the verb route (4/12);
     - the 'change of context' window effect is untouched.
+- **Full routed run: paused (Rik, 19 Nov 2026, ~08:15).**
+  - **Progress:** 7,905 of 20,354 rows (2,397 reused from v3f, 5,508 new); 12,449 left, ≈17 h at 5 s/row.
+  - **Errors:** 14 'Request timed out'; these are retried on resume.
+  - **Resume** (one instance only, never two at once on the same file):
+    `uv run python scripts/triangulation_sample.py annotate --tag routed`, plus `scripts/run_progress.py`
+    for the hourly report (it now also logs what Ollama has loaded and free memory).
+    A half-written last line is repaired on resume.
+  - **Open:** overnight speed varied from 5 to 33 s/row on identical passages (same two cookbooks, mean
+    context 366 chars). It is not sleep and not thermal throttling, so the cause is machine- or server-side,
+    still unknown. Before resuming, check that `ollama ps` shows only `qwen2.5-coder:latest`.
 
 **Retracted here (16 Nov 2026): the C5 decision rule from VERB_LEXICON.md §4.** The answer was wrong; the
 question stands, as T8.

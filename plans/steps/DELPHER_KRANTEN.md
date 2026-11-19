@@ -114,8 +114,11 @@ instead of a type-bounded one.
   taking the destination as an argument, resumable and md5-checked.
 - The full set (24 files, ≈115 GB, 1618–1879 + index) is downloading to `/Volumes/2tb disk/kranten`
   (ExFAT, at about 3.5 MB/s).
-- **Still to do:** register as a `data_io` logical name once complete. Don't unpack onto ExFAT (millions of small
-  files); read straight from the zips.
+- **Complete 18 Nov 2026, 18:53:** all 24 files md5-verified, 121 GB, no failures.
+- **Registered** as `delpher_kranten_pd` (the folder) and `delpher_kranten_pd_index` (the title index) in
+  `data_manifest.toml`, tier warm.
+  - No DVC mirror: the KB's published md5s are the integrity check, and the KB is the upstream copy.
+  - Don't unpack onto ExFAT (millions of small files); read straight from the zips.
 
 **Observed in the files** (`kranten_pd_171x.zip` and the index, quoted, not assumed):
 - **Index:** 370,016 issues, 199 titles, 1618–1879. Steep growth: 2,392 issues in the 1710s against 52,864 in
