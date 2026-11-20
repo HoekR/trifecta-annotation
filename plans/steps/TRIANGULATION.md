@@ -337,16 +337,25 @@ Share of passages that get a real frame (cooking, eating, cure, preserving):
   - **Known costs:**
     - studies of language stays weak even on the verb route (4/12);
     - the 'change of context' window effect is untouched.
-- **Full routed run: paused (Rik, 19 Nov 2026, ~08:15).**
-  - **Progress:** 7,905 of 20,354 rows (2,397 reused from v3f, 5,508 new); 12,449 left, ≈17 h at 5 s/row.
-  - **Errors:** 14 'Request timed out'; these are retried on resume.
+- **Full routed run: resumed 19 Nov 2026, 17:45** (paused 08:15 that day at 7,905 rows).
+  - **Status 20 Nov, 09:15:** 11,776 of 20,354 rows, back at 5–6 s/row, done ≈22:00 that evening.
+    18 error rows, all 'Request timed out'.
   - **Resume** (one instance only, never two at once on the same file):
     `uv run python scripts/triangulation_sample.py annotate --tag routed`, plus `scripts/run_progress.py`
-    for the hourly report (it now also logs what Ollama has loaded and free memory).
-    A half-written last line is repaired on resume.
-  - **Open:** overnight speed varied from 5 to 33 s/row on identical passages (same two cookbooks, mean
-    context 366 chars). It is not sleep and not thermal throttling, so the cause is machine- or server-side,
-    still unknown. Before resuming, check that `ollama ps` shows only `qwen2.5-coder:latest`.
+    for the hourly report (it logs what Ollama has loaded and free memory). A half-written last line is
+    repaired on resume. Mount the Extreme SSD first (`diskutil mount`): the scratch tier refuses otherwise.
+  - **Slowdown explained (was open):** not the machine. Memory free stayed at 35–45% and only
+    `qwen2.5-coder:latest` was loaded. Specific passages in two cookbooks (magi007kooc02, _vol002volm01) make
+    a request run until it times out, about 25 min each. On resume all 14 earlier timeouts were retried and
+    every one timed out again: 6 h for 14 rows (18:45–00:45). The "5 → 33 s/row" was these stalls averaged
+    in, and so is the reporter's inflated finish estimate (its rate is cumulative).
+  - **After the run (do not change mid-run):**
+    1. **Shorter timeout, no endless retries.** Cap a request at about 2 min, and record a row that has
+       timed out twice as a hard failure instead of retrying it on every resume. A stall costs about 300
+       normal rows. The timeout lives in the LLM client, not in `trifecta_annotation/`: find it first.
+    2. **Look at the 18 passages.** Why does the model never finish (repetition loop, no output cap, or
+       something in the text)? Record ids: `grep '"error"'` in `triangulation_b_routed_annotations`.
+    3. Optional: make `run_progress.py` report the speed over the last interval, not since start.
 
 **Retracted here (16 Nov 2026): the C5 decision rule from VERB_LEXICON.md §4.** The answer was wrong; the
 question stands, as T8.

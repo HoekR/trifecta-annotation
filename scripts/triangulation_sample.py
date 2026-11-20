@@ -336,7 +336,7 @@ def routed() -> None:
           f"(~{(len(run) - kept) * 3 / 3600:.1f} h at 3 s each)")
 
 
-def annotate(tag: str = "") -> None:
+def annotate(tag: str = "", retry_errors: bool = True) -> None:
     from trifecta_annotation.batch import load_inputs, run_batch
 
     t = (lambda n: n.replace("triangulation_b_", f"triangulation_b_{tag}_")) if tag else (lambda n: n)
@@ -346,7 +346,7 @@ def annotate(tag: str = "") -> None:
         load_inputs(input_logical=run_inputs), output_logical=run_annotations, resume=True,
         parent_sources=[run_inputs], step_a_sieve_model=model_dir,
         description="A->B->C annotations for the T1b triangulation set (local Ollama, Step A sieve as routed)",
-        script=SCRIPT,
+        script=SCRIPT, retry_errors=retry_errors,
     )
 
 
@@ -443,7 +443,12 @@ def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("cmd", choices=["sample", "extend", "harvest", "estimate", "select", "annotate", "report", "routed"])
     ap.add_argument("--tag", default="", help="harvest/estimate: write and read triangulation_b_<tag>_* (e.g. v3)")
+    ap.add_argument("--skip-errors", action="store_true",
+                    help="annotate: keep earlier error rows as they are instead of retrying them")
     a = ap.parse_args()
+    if a.cmd == "annotate":
+        annotate(a.tag, retry_errors=not a.skip_errors)
+        return
     if a.cmd in ("harvest", "estimate", "select", "annotate", "report"):
         {"harvest": harvest, "estimate": estimate, "select": select, "annotate": annotate,
          "report": report}[a.cmd](a.tag)

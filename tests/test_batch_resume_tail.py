@@ -36,3 +36,9 @@ def test_clean_file_untouched_and_errors_not_counted(tmp_path):
     p.write_text(text, encoding="utf-8")
     assert _load_existing_ids(p) == {"a"}
     assert p.read_text(encoding="utf-8") == text
+
+
+def test_errors_counted_as_done_when_not_retrying(tmp_path):
+    p = tmp_path / "ann.jsonl"
+    p.write_text(_row("a") + "\n" + _row("b", error="timeout") + "\n", encoding="utf-8")
+    assert _load_existing_ids(p, include_errors=True) == {"a", "b"}

@@ -48,13 +48,15 @@ def _repair_truncated_tail(output_path: Path) -> None:
     print(f"Resume: removed a half-written last line ({len(tail)} bytes) from {output_path.name}", flush=True)
 
 
-def _load_existing_ids(output_path: Path) -> set[str]:
+def _load_existing_ids(output_path: Path, *, include_errors: bool = False) -> set[str]:
+    """record_ids already in the output. Error rows count only with `include_errors` (then they are kept
+    as they are rather than retried: some passages time out every time, ~25 min each, 19-20 Nov 2026)."""
     if not output_path.exists():
         return set()
     _repair_truncated_tail(output_path)
     ids: set[str] = set()
     for record in load_jsonl(output_path):
-        if record.get("error"):
+        if record.get("error") and not include_errors:
             continue
         provenance = record.get("provenance") or {}
         record_id = provenance.get("record_id")
@@ -164,7 +166,7 @@ def run_step_a_batch(
     hint_lookup = default_review_hint_lookup() if english_hint else None
     instructor_client = make_instructor_client(base_url=base_url, api_key=api_key)
 
-    existing_ids = _load_existing_ids(path) if resume else set()
+    existing_ids = _load_existing_ids(path, include_errors=not retry_errors) if resume else set()
     if not resume and path.exists():
         path.unlink()
 
@@ -285,6 +287,7 @@ def run_batch(
     api_key: str | None = None,
     step_a_sieve_model: str | Path | None = None,
     step_a_sieve_threshold: float | None = None,
+    retry_errors: bool = True,
 ) -> Path:
     """Annotate KwicInput rows; append each result incrementally with tqdm progress.
 
