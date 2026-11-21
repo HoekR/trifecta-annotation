@@ -213,6 +213,20 @@ def run_step_a_batch(
     return path
 
 
+SERVER_ERROR_LIMIT = 10
+
+
+class ServerDownError(RuntimeError):
+    """The model server failed on many rows in a row: stop instead of recording every row as an error."""
+
+
+def _is_server_error(record: dict[str, Any]) -> bool:
+    """Server-side failure (HTTP 5xx, no connection), not a problem with this passage. Timeouts and invalid
+    model output stay per-passage errors. On 21 Nov 2026 a missing model disk wrote 2,300 false error rows
+    in 80 s."""
+    return str(record.get("error") or "").startswith(("Error code: 5", "Connection error"))
+
+
 def _strip_retry_errors(path: Path, pending: list[dict[str, Any]]) -> None:
     """Drop prior error rows for record_ids we are about to retry."""
     if not path.exists() or not pending:
@@ -344,10 +358,26 @@ def run_batch(
         with path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(record, ensure_ascii=False) + "\n")
 
+    held: list[dict[str, Any]] = []  # consecutive server errors, written only if the server recovers
+
+    def _accept(record: dict[str, Any]) -> None:
+        if _is_server_error(record):
+            held.append(record)
+            if len(held) >= SERVER_ERROR_LIMIT:
+                raise ServerDownError(
+                    f"Stopped: {len(held)} server errors in a row, none written to {path.name}. "
+                    f"Last: {record['error'][:200]}"
+                )
+            return
+        for prior in held:
+            _write(prior)
+        held.clear()
+        _write(record)
+
     total = len(pending)
     if concurrency <= 1:
         for done, record in enumerate(tqdm(pending, desc="TRIFECTA A→B→C", unit="row"), start=1):
-            _write(
+            _accept(
                 _annotate_one(
                     record,
                     model=model,
@@ -376,8 +406,15 @@ def run_batch(
                 tqdm(as_completed(futures), total=len(futures), desc="TRIFECTA A→B→C", unit="row"),
                 start=1,
             ):
-                _write(future.result())
+                try:
+                    _accept(future.result())
+                except ServerDownError:
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    raise
                 _report(done, total)
+
+    for prior in held:  # fewer than the limit at the very end: keep them, a later resume retries them
+        _write(prior)
 
     total_rows = sum(1 for line in path.open(encoding="utf-8") if line.strip())
     _write_batch_sidecar(
