@@ -345,6 +345,12 @@ Share of passages that get a real frame (cooking, eating, cure, preserving):
     `uv run python scripts/triangulation_sample.py annotate --tag routed --skip-errors`, plus `scripts/run_progress.py`
     for the hourly report (it logs what Ollama has loaded and free memory). A half-written last line is
     repaired on resume. Mount the Extreme SSD first (`diskutil mount`): the scratch tier refuses otherwise.
+  - **Model location (21 Nov 2026):** the 2tb disk stopped mounting, so `qwen2.5-coder:latest` was downloaded
+    again to the internal disk (same ID, `dae161e27b0e`). `~/.ollama/models` now links to
+    `~/.ollama/models_internal`; the old link is kept as `~/.ollama/models.2tb_link`. Other Ollama models
+    are on the 2tb disk and unavailable until it is back.
+  - **Later (Rik):** move the Ollama models to the Extreme SSD, which has been more reliable than the 2tb
+    disk. Not during the run. Check first that the SSD no longer shares the USB 2 hub.
   - **Slowdown explained (was open):** not the machine. Memory free stayed at 35–45% and only
     `qwen2.5-coder:latest` was loaded. Specific passages in two cookbooks (magi007kooc02, _vol002volm01) make
     a request run until it times out, about 25 min each. On resume all 14 earlier timeouts were retried and
