@@ -340,8 +340,9 @@ Share of passages that get a real frame (cooking, eating, cure, preserving):
 - **Full routed run: resumed 19 Nov 2026, 17:45** (paused 08:15 that day at 7,905 rows).
   - **Status 20 Nov, 09:15:** 11,776 of 20,354 rows, back at 5–6 s/row, done ≈22:00 that evening.
     18 error rows, all 'Request timed out'.
-  - **Resume** (one instance only, never two at once on the same file):
-    `uv run python scripts/triangulation_sample.py annotate --tag routed`, plus `scripts/run_progress.py`
+  - **Resume** (one instance only, never two at once on the same file; charger connected, since
+    `caffeinate` does nothing on battery and on 20 Nov a 1%-battery sleep cut the run at 17:22):
+    `uv run python scripts/triangulation_sample.py annotate --tag routed --skip-errors`, plus `scripts/run_progress.py`
     for the hourly report (it logs what Ollama has loaded and free memory). A half-written last line is
     repaired on resume. Mount the Extreme SSD first (`diskutil mount`): the scratch tier refuses otherwise.
   - **Slowdown explained (was open):** not the machine. Memory free stayed at 35–45% and only
@@ -350,10 +351,11 @@ Share of passages that get a real frame (cooking, eating, cure, preserving):
     every one timed out again: 6 h for 14 rows (18:45–00:45). The "5 → 33 s/row" was these stalls averaged
     in, and so is the reporter's inflated finish estimate (its rate is cumulative).
   - **After the run (do not change mid-run):**
-    1. **Shorter timeout, no endless retries.** Cap a request at about 2 min, and record a row that has
-       timed out twice as a hard failure instead of retrying it on every resume. A stall costs about 300
-       normal rows. The timeout lives in the LLM client, not in `trifecta_annotation/`: find it first.
-    2. **Look at the 18 passages.** Why does the model never finish (repetition loop, no output cap, or
+    1. **DONE (20 Nov): shorter timeout, no endless retries.** `client.py` now sets `timeout=120`,
+       `max_retries=0` (the openai defaults were 600 s × 3 attempts, ~30 min per stuck row). Resume with
+       `--skip-errors` keeps earlier error rows instead of retrying them. Verified: the stuck Moerilles
+       passage failed at 2 min and the rest of its recipe went through normally.
+    2. **Look at the timed-out passages** (18 plus any new ones). Why does the model never finish (repetition loop, no output cap, or
        something in the text)? Record ids: `grep '"error"'` in `triangulation_b_routed_annotations`.
     3. Optional: make `run_progress.py` report the speed over the last interval, not since start.
 

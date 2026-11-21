@@ -42,3 +42,27 @@ def test_errors_counted_as_done_when_not_retrying(tmp_path):
     p = tmp_path / "ann.jsonl"
     p.write_text(_row("a") + "\n" + _row("b", error="timeout") + "\n", encoding="utf-8")
     assert _load_existing_ids(p, include_errors=True) == {"a", "b"}
+
+
+def _run(tmp_path, monkeypatch, retry_errors):
+    import trifecta_annotation.batch as batch
+
+    p = tmp_path / "ann.jsonl"
+    p.write_text(_row("a") + "\n" + _row("b", error="Request timed out.") + "\n", encoding="utf-8")
+    seen = []
+    monkeypatch.setattr(batch, "make_instructor_client", lambda **k: None)
+    monkeypatch.setattr(batch, "_write_batch_sidecar", lambda *a, **k: None)
+    monkeypatch.setattr(batch, "_annotate_one", lambda rec, **k: seen.append(rec["record_id"]) or json.loads(_row(rec["record_id"])))
+    inputs = [{"record_id": r} for r in ("a", "b", "c")]
+    batch.run_batch(inputs, output_path=p, resume=True, retry_errors=retry_errors)
+    return seen, p.read_text(encoding="utf-8")
+
+
+def test_run_batch_skip_errors_keeps_error_rows(tmp_path, monkeypatch):
+    seen, text = _run(tmp_path, monkeypatch, retry_errors=False)
+    assert seen == ["c"] and "Request timed out." in text
+
+
+def test_run_batch_retries_errors_by_default(tmp_path, monkeypatch):
+    seen, text = _run(tmp_path, monkeypatch, retry_errors=True)
+    assert seen == ["b", "c"] and "Request timed out." not in text

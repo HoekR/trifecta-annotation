@@ -166,7 +166,7 @@ def run_step_a_batch(
     hint_lookup = default_review_hint_lookup() if english_hint else None
     instructor_client = make_instructor_client(base_url=base_url, api_key=api_key)
 
-    existing_ids = _load_existing_ids(path, include_errors=not retry_errors) if resume else set()
+    existing_ids = _load_existing_ids(path) if resume else set()
     if not resume and path.exists():
         path.unlink()
 
@@ -325,7 +325,7 @@ def run_batch(
         path = resolve(output_logical)
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    existing_ids = _load_existing_ids(path) if resume else set()
+    existing_ids = _load_existing_ids(path, include_errors=not retry_errors) if resume else set()
     if not resume and path.exists():
         path.unlink()
 
