@@ -337,10 +337,17 @@ Share of passages that get a real frame (cooking, eating, cure, preserving):
   - **Known costs:**
     - studies of language stays weak even on the verb route (4/12);
     - the 'change of context' window effect is untouched.
-- **Full routed run: resumed 19 Nov 2026, 17:45** (paused 08:15 that day at 7,905 rows).
-  - **Status 20 Nov, 09:15:** 11,776 of 20,354 rows, back at 5–6 s/row, done ≈22:00 that evening.
-    18 error rows, all 'Request timed out'.
-  - **Resume** (one instance only, never two at once on the same file; charger connected, since
+- **Full routed run: COMPLETE (21 Nov 2026, ~18:55).**
+  - **Output:** 20,354 of 20,354 passages, ids match the inputs exactly (none missing, duplicated or extra).
+    25 timed out (0.12%) and stay in the file as error rows. 93 of the 95 works have passages: zett001marg01
+    and zuyl001osma01 are not recipe books and had no verb-selected occurrence.
+  - **Result:** 17,617 frames, see `docs/evidence/triangulation_b/report_routed.md`
+    (`triangulation_sample.py routed-report`). Recipe books 15,250; elsewhere 2,367, of which about 1,700
+    (1,470-1,890) are right at the 72% (62-80%) read precision.
+  - **Read with care:** shares are not comparable across the two routes; works were drawn per genre by quota,
+    so counts are not corpus totals; several genres lean on one work (recipe 46%, studies of literature 69%).
+  - **Software:** rows from 21 Nov 09:38 ran on Ollama 0.40.17, earlier ones on 0.40.16; same model ID.
+  - **If it ever needs resuming** (one instance only, never two at once on the same file; charger connected, since
     `caffeinate` does nothing on battery and on 20 Nov a 1%-battery sleep cut the run at 17:22):
     `uv run python scripts/triangulation_sample.py annotate --tag routed --skip-errors`, plus `scripts/run_progress.py`
     for the hourly report (it logs what Ollama has loaded and free memory). A half-written last line is
@@ -356,7 +363,7 @@ Share of passages that get a real frame (cooking, eating, cure, preserving):
     a request run until it times out, about 25 min each. On resume all 14 earlier timeouts were retried and
     every one timed out again: 6 h for 14 rows (18:45–00:45). The "5 → 33 s/row" was these stalls averaged
     in, and so is the reporter's inflated finish estimate (its rate is cumulative).
-  - **After the run (do not change mid-run):**
+  - **Follow-ups:**
     1. **DONE (20 Nov): shorter timeout, no endless retries.** `client.py` now sets `timeout=120`,
        `max_retries=0` (the openai defaults were 600 s × 3 attempts, ~30 min per stuck row). Resume with
        `--skip-errors` keeps earlier error rows instead of retrying them. Verified: the stuck Moerilles

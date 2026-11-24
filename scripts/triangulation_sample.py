@@ -439,9 +439,48 @@ def report(tag: str = "") -> None:
     print("\n".join(lines))
 
 
+def routed_report() -> None:
+    """Frames per genre in the full routed run. Descriptive only: recipe books went through the food route and
+    the other genres through the verb route, and works were drawn per genre by quota, so shares of frames are
+    not comparable across routes and counts are not corpus totals. Writes report_routed.md."""
+    from scripts.eval_gold_by_position import label
+
+    frames = ["COOKING_CREATION", "CURE", "INGESTION", "PRESERVING"]
+    with open(resolve("triangulation_b_routed_run_kwic_inputs"), encoding="utf-8") as fh:
+        inputs = {r["record_id"]: r for r in map(json.loads, filter(str.strip, fh))}
+    rows = []
+    with open(resolve("triangulation_b_routed_annotations"), encoding="utf-8") as fh:
+        for a in map(json.loads, filter(str.strip, fh)):
+            i = inputs[a["provenance"]["record_id"]]
+            rows.append({"genre": i["stratum"], "route": "food" if i["tri_set"] == "routed_recipe" else "verb",
+                         "work": i["source_path"], "label": "ERROR" if a.get("error") else label(a)})
+    df = pd.DataFrame(rows)
+    df["frame"] = df.label.isin(frames)
+    ok = df[df.label != "ERROR"]
+    table = []
+    for genre, d in ok.groupby("genre"):
+        f = d[d.frame]
+        top = f.work.value_counts(normalize=True)
+        table.append({"genre": genre, "route": d.route.iloc[0], "works": d.work.nunique(), "passages": len(d),
+                      "frames": len(f), "frame share": f"{len(f) / len(d):.0%}",
+                      "largest work's share of frames": f"{top.iloc[0]:.0%}" if len(top) else "-"})
+    mix = pd.crosstab(ok[ok.frame].genre, ok[ok.frame].label)
+    lines = [
+        "# Full routed run: frames per genre", "",
+        f"{len(df):,} passages from {df.work.nunique()} works; {int((df.label == 'ERROR').sum())} timed out and are "
+        f"left out below; {int(ok.frame.sum()):,} frames.", "",
+        "Recipe books: every food word. Other genres: food words with a reviewed verb nearby. Shares are not "
+        "comparable across the two routes, and works were drawn per genre by quota, so counts are not corpus "
+        "totals. Frames are model output; read precision outside recipe books was 72% (62-80%).", "",
+        pd.DataFrame(table).to_markdown(index=False), "", "## Frame mix (counts)", "", mix.to_markdown(), "",
+    ]
+    (OUT / "report_routed.md").write_text("\n".join(lines))
+    print("\n".join(lines))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["sample", "extend", "harvest", "estimate", "select", "annotate", "report", "routed"])
+    ap.add_argument("cmd", choices=["sample", "extend", "harvest", "estimate", "select", "annotate", "report", "routed", "routed-report"])
     ap.add_argument("--tag", default="", help="harvest/estimate: write and read triangulation_b_<tag>_* (e.g. v3)")
     ap.add_argument("--skip-errors", action="store_true",
                     help="annotate: keep earlier error rows as they are instead of retrying them")
@@ -453,7 +492,7 @@ def main() -> None:
         {"harvest": harvest, "estimate": estimate, "select": select, "annotate": annotate,
          "report": report}[a.cmd](a.tag)
         return
-    {"sample": sample, "extend": extend, "routed": routed}[a.cmd]()
+    {"sample": sample, "extend": extend, "routed": routed, "routed-report": routed_report}[a.cmd]()
 
 
 if __name__ == "__main__":

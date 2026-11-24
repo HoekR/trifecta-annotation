@@ -119,6 +119,7 @@ DECISIONS = [
     ("18 Nov", "Verb-route frames read", "right 72% (69/96) outside recipe books, against 38% for food-only"),
     ("18 Nov", "Routing decided", "all food words in recipe books, verb route elsewhere (medical included); "
      "food-only elsewhere would add ≈1,850 real frames with ≈11,600 wrong ones"),
+    ("21 Nov", "Full routed run complete", "20,354 passages, 17,617 frames (15,250 in recipe books); 25 timeouts"),
 ]
 
 
@@ -178,8 +179,8 @@ def waiting() -> list[tuple[str, str, str]]:
         ("Decide: the verb bestellen", "no decision yet", "docs/evidence/verb_lexicon/"),
         ("Label about 150 entry headings with their purpose", "about an afternoon; the reference for two levels",
          "plans/steps/TRIANGULATION.md"),
-        ("When: the full run", "routed (decided 18 Nov) over the 95 sample works: 20,354 passages, 83% from "
-         "recipe books, ~17 h at 3 s each (less what is already annotated)", "plans/steps/TRIANGULATION.md"),
+        ("Read the full-run report", "17,617 frames from 93 works; 25 of 20,354 passages timed out",
+         "docs/evidence/triangulation_b/report_routed.md"),
     ]
     ahead = git("rev-list", "--count", "main..verb-lexicon-v3")
     if ahead and ahead != "0":
